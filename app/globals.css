@@ -1,0 +1,182 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── TEL Global styles ── */
+
+:root {
+  --color-cosmos: #0A0A0F;
+  --color-gold: #C9A84C;
+  --color-gold-light: #F5ECD7;
+  --color-night: #1A1A2E;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body {
+  height: 100%;
+  overflow-x: hidden;
+  background: var(--color-cosmos);
+  color: #ffffff;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ── Custom scrollbar — minimal, gold ── */
+::-webkit-scrollbar {
+  width: 4px;
+}
+::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.02);
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(201, 168, 76, 0.25);
+  border-radius: 2px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(201, 168, 76, 0.45);
+}
+
+/* ── Input / textarea focus ring ── */
+input:focus,
+textarea:focus {
+  outline: none;
+  box-shadow: 0 0 0 1px rgba(201, 168, 76, 0.35);
+}
+
+textarea {
+  resize: none;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, monospace;
+}
+
+/* ── Buttons ── */
+button {
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* ── Typography utilities ── */
+.tel-serif {
+  font-family: Georgia, 'Times New Roman', serif;
+}
+
+.tel-mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, monospace;
+}
+
+.tel-italic {
+  font-family: Georgia, 'Times New Roman', serif;
+  font-style: italic;
+}
+
+/* ── Gold text gradient ── */
+.tel-gold-gradient {
+  background: linear-gradient(135deg, #C9A84C, #F5ECD7, #C9A84C);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ── Glass panel ── */
+.tel-glass {
+  background: rgba(10, 10, 15, 0.90);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(201, 168, 76, 0.12);
+  border-radius: 20px;
+}
+
+/* ── Hero text size ── */
+.tel-hero-title {
+  font-family: Georgia, 'Times New Roman', serif;
+  font-style: italic;
+  font-size: clamp(1.25rem, 4vw, 2.5rem);
+  line-height: 1.4;
+  color: #F5ECD7;
+}
+
+/* ── Section reveal animation ── */
+@keyframes sectionReveal {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.section-reveal {
+  animation: sectionReveal 0.5s ease forwards;
+}
+
+/* ── Fade in ── */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* ── Slide up ── */
+@keyframes slideUp {
+  from { transform: translateY(24px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+/* ── Glow pulse ── */
+@keyframes glowPulse {
+  0%, 100% { box-shadow: 0 0 8px rgba(201, 168, 76, 0.15); }
+  50% { box-shadow: 0 0 24px rgba(201, 168, 76, 0.45); }
+}
+
+/* ── Hero text fade loop ── */
+@keyframes heroTextFade {
+  0%, 85% { opacity: 1; }
+  92%, 100% { opacity: 0; }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.55s ease-out forwards;
+}
+
+.animate-slide-up {
+  animation: slideUp 0.65s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-glow-pulse {
+  animation: glowPulse 2.5s ease-in-out infinite;
+}
+
+/* ── Mobile safe area ── */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  body {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
+/* ── Reduced motion ── */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ── Mobile tap highlight ── */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* ── Selection color ── */
+::selection {
+  background: rgba(201, 168, 76, 0.25);
+  color: #F5ECD7;
+}

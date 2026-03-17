@@ -1,0 +1,58 @@
+# ── TEL — .dockerignore ───────────────────────────────────────────────────────
+
+# Git
+.git
+.gitignore
+.github
+
+# Node
+node_modules
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Next.js
+.next
+out
+
+# Environment (NEVER in image)
+.env
+.env.local
+.env.*.local
+.env.development
+.env.test
+.env.production
+
+# Development
+*.md
+DEPLOY.md
+scripts
+.claude
+
+# OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+Thumbs.db
+
+# Editor
+.vscode
+.idea
+*.swp
+*.swo
+
+# Docker
+Dockerfile*
+docker-compose*
+
+# Tests
+__tests__
+*.test.*
+*.spec.*
+coverage
+
+# CI/CD
+.github
+.gitlab-ci.yml
