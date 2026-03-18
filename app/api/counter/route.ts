@@ -1,0 +1,93 @@
+// TEL — The Experience Layer
+// POST /api/counter — Génère un contre-insight ("Et si c'était faux ?")
+
+import Anthropic from '@anthropic-ai/sdk'
+import { buildCounterInsightPrompt } from '@/lib/prompt'
+import type { InsightCard } from '@/lib/types'
+
+export const dynamic = 'force-dynamic'
+
+async function callLLM(prompt: string): Promise<string> {
+  // N2 — Mistral API (preferred for analytical reasoning)
+  if (process.env.MISTRAL_API_KEY) {
+    try {
+      const res = await fetch('https://api.mistral.ai/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${process.env.MISTRAL_API_KEY}`,
+        },
+        body: JSON.stringify({
+          model: 'mistral-large-latest',
+          messages: [{ role: 'user', content: prompt }],
+          temperature: 0.4,
+          max_tokens: 1500,
+        }),
+        signal: AbortSignal.timeout(60000),
+      })
+      if (res.ok) {
+        const data = await res.json()
+        const text: string = data.choices?.[0]?.message?.content ?? ''
+        if (text.trim()) return text
+      }
+    } catch (err) {
+      console.warn('[counter] N2 indisponible:', err instanceof Error ? err.message : err)
+    }
+  }
+
+  // N3 — Anthropic Claude (fallback — expensive but powerful)
+  if (process.env.ANTHROPIC_API_KEY) {
+    try {
+      const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
+      const response = await client.messages.create({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 1500,
+        messages: [{ role: 'user', content: prompt }],
+      })
+      const text = response.content[0].type === 'text' ? response.content[0].text : ''
+      if (text.trim()) return text
+    } catch (err) {
+      console.warn('[counter] N3 indisponible:', err instanceof Error ? err.message : err)
+    }
+  }
+
+  // N1 — Ollama (last resort)
+  const ollamaUrl = process.env.OLLAMA_URL || 'http://localhost:11434'
+  const ollamaModel = process.env.OLLAMA_MODEL || 'mistral'
+  const res = await fetch(`${ollamaUrl}/api/chat`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: ollamaModel,
+      messages: [{ role: 'user', content: prompt }],
+      stream: false,
+      options: { temperature: 0.4, num_predict: 1000 },
+    }),
+    signal: AbortSignal.timeout(90000),
+  })
+  if (!res.ok) throw new Error(`Ollama ${res.status}: ${await res.text().then(t => t.slice(0, 200))}`)
+  const data = await res.json()
+  const text: string = data.message?.content ?? ''
+  if (!text.trim()) throw new Error('Réponse vide de tous les modèles')
+  return text
+}
+
+export async function POST(request: Request) {
+  try {
+    const body = await request.json()
+    const insight = body.insight as InsightCard
+
+    if (!insight?.theme) {
+      return Response.json({ error: 'insight manquant ou invalide' }, { status: 400 })
+    }
+
+    const prompt = buildCounterInsightPrompt(insight)
+    const counter = await callLLM(prompt)
+
+    return Response.json({ counter })
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Erreur inconnue'
+    console.error('[/api/counter]', message)
+    return Response.json({ error: message }, { status: 500 })
+  }
+}

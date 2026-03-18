@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback, useRef } from 'react'
+import { useState, useCallback, useRef, useEffect } from 'react'
 import type { SouffleContexte } from '@/lib/types'
 import { detectInputMode, getModeLabel } from '@/lib/detect-mode'
 import type { InputMode } from '@/lib/detect-mode'
@@ -55,6 +55,22 @@ const CONTEXTES: { value: SouffleContexte; label: string; niveaux: string; descr
 export default function SourceInput({ onCross, isLoading }: SourceInputProps) {
   const [inputs, setInputs] = useState<string[]>(['', ''])
   const [contexte, setContexte] = useState<SouffleContexte>('exploration')
+
+  // Pre-fill from sessionStorage when "Approfondir" is triggered from InsightCard
+  useEffect(() => {
+    try {
+      const stored = sessionStorage.getItem('tel:approfondir')
+      if (stored) {
+        const urls = JSON.parse(stored) as string[]
+        sessionStorage.removeItem('tel:approfondir')
+        if (Array.isArray(urls) && urls.length > 0) {
+          setInputs(urls.length >= 2 ? urls : [...urls, ''])
+        }
+      }
+    } catch {
+      // sessionStorage unavailable or parse error — silent fail
+    }
+  }, [])
   const [error, setError] = useState<string | null>(null)
   const [showContexte, setShowContexte] = useState(false)
   const inputRefs = useRef<(HTMLTextAreaElement | null)[]>([])

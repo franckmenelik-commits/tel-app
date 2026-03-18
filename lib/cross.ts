@@ -199,6 +199,7 @@ export async function crossNarratives(
     sourceCoordinates: parsed.sourceCoordinates || [],
     createdAt: new Date(),
     anglesMorts,
+    actionables: parsed.actionables,
   }
 
   return {

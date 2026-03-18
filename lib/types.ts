@@ -94,6 +94,14 @@ export interface AnglesMortsAnalyse {
   questionsEvitees: string[]
 }
 
+// ─── Actionables — Ce que ça permet ──────────────────────────────────────────
+
+export interface Actionables {
+  individu: string      // What a regular person can do with this insight
+  chercheur: string     // What a researcher / journalist / practitioner can explore
+  institution: string   // What an institution / NGO / collective can implement
+}
+
 // ─── Niveau 4 — Mémoire des vécus ────────────────────────────────────────────
 
 export interface Resonance {
@@ -157,6 +165,7 @@ export interface InsightCard {
   sourceCoordinates: MapCoordinate[]
   createdAt: Date
   anglesMorts?: AnglesMortsAnalyse    // Niveau 3 — added after crossing
+  actionables?: Actionables           // Ce que ça permet — generated with insight
 }
 
 // Full result returned by /api/cross
@@ -199,6 +208,7 @@ export interface LogosInsightResponse {
   theUnspeakable: string
   questionNoOneHasAsked: string
   sourceCoordinates: MapCoordinate[]
+  actionables?: Actionables           // Ce que ça permet
 }
 // Backward compat alias
 export type ClaudeInsightResponse = LogosInsightResponse
