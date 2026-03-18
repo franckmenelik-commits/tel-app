@@ -12,6 +12,16 @@ import type { InsightCard } from '@/lib/types'
 // ─── Decode slug ──────────────────────────────────────────────────────────────
 
 function decodeInsight(slug: string): InsightCard | null {
+  // Try localStorage first (short 8-char ID from share/presenter flow)
+  try {
+    const stored = localStorage.getItem(`tel:shared:${slug}`)
+    if (stored) {
+      const data = JSON.parse(stored)
+      return { ...data, createdAt: new Date(data.createdAt) }
+    }
+  } catch { /* localStorage unavailable or not a stored insight */ }
+
+  // Fall back to base64 decode (legacy long-URL slugs)
   try {
     const b64 = slug.replace(/-/g, '+').replace(/_/g, '/')
     const json = decodeURIComponent(atob(b64))
@@ -377,8 +387,8 @@ export default function LivingInsightPage() {
     try {
       await navigator.clipboard.writeText(outline)
       setGammaCopied(true)
-      setTimeout(() => setGammaCopied(false), 4000)
-      window.open('https://gamma.app', '_blank')
+      setTimeout(() => { window.open('https://gamma.app/create', '_blank') }, 1500)
+      setTimeout(() => setGammaCopied(false), 5000)
     } catch {
       window.prompt('Copiez ce contenu dans Gamma.app :', outline)
     }
@@ -516,7 +526,7 @@ export default function LivingInsightPage() {
                 cursor: 'pointer',
               }}
             >
-              {shareToast ? '✓ Copié' : '⊕ Partager'}
+              {shareToast ? 'Lien copié' : 'Partager'}
             </button>
 
             {/* Gamma */}
@@ -531,7 +541,7 @@ export default function LivingInsightPage() {
                 cursor: 'pointer',
               }}
             >
-              {gammaCopied ? '✓ Contenu copié — ouvrez Gamma' : '⊠ Exporter Gamma'}
+              {gammaCopied ? 'Contenu copié — ouvrez Gamma' : 'Exporter Gamma'}
             </button>
 
             {/* Presentation mode */}

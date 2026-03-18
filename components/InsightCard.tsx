@@ -19,10 +19,10 @@ const SOURCE_TYPE_LABELS: Record<string, string> = {
 }
 
 const ANGLE_TYPE_LABELS: Record<string, string> = {
-  geographique: '🌍 Géographique',
-  temporel: '⏳ Temporel',
-  genre_posture: '👁 Posture / Genre',
-  silence: '🔇 Silence',
+  geographique: 'Géographique',
+  temporel: 'Temporel',
+  genre_posture: 'Posture / Genre',
+  silence: 'Silence',
 }
 
 const SCRIPT_LOADING_MSGS = [
@@ -40,7 +40,31 @@ const DEBATE_LOADING_MSGS = [
   "Écriture de la conclusion ouverte…",
 ]
 
-// ─── Slug builder ─────────────────────────────────────────────────────────────
+const COUNTER_LOADING_MSGS = [
+  'Recherche de perspectives contradictoires…',
+  'Analyse des failles du pattern…',
+  'Construction du contre-argument…',
+  'Évaluation de la robustesse…',
+]
+
+// ─── Short-ID share helpers ────────────────────────────────────────────────────
+
+function generateShortId(): string {
+  return Math.random().toString(36).slice(2, 10)
+}
+
+function storeSharedInsight(id: string, insight: InsightCardType): void {
+  try {
+    localStorage.setItem(`tel:shared:${id}`, JSON.stringify({
+      ...insight,
+      createdAt: insight.createdAt instanceof Date
+        ? insight.createdAt.toISOString()
+        : insight.createdAt,
+    }))
+  } catch { /* localStorage unavailable */ }
+}
+
+// ─── Slug builder (kept for legacy decode fallback) ────────────────────────────
 
 function buildSlug(card: InsightCardType): string {
   try {
@@ -276,6 +300,8 @@ export default function InsightCard({
   const [counterInsight, setCounterInsight] = useState<string | null>(null)
   const [counterScriptLoading, setCounterScriptLoading] = useState(false)
   const [counterShareToast, setCounterShareToast] = useState(false)
+  const [counterMsgIndex, setCounterMsgIndex] = useState(0)
+  const [counterMsgVisible, setCounterMsgVisible] = useState(true)
 
   // ── Debate ─────────────────────────────────────────────────────────────────
   const [isGeneratingDebate, setIsGeneratingDebate] = useState(false)
@@ -336,6 +362,21 @@ export default function InsightCard({
     }, 2000)
     return () => clearInterval(interval)
   }, [isGeneratingDebate])
+
+  // ── Counter loading rotation ────────────────────────────────────────────────
+  useEffect(() => {
+    if (!isGeneratingCounter) return
+    setCounterMsgIndex(0)
+    setCounterMsgVisible(true)
+    const interval = setInterval(() => {
+      setCounterMsgVisible(false)
+      setTimeout(() => {
+        setCounterMsgIndex(i => (i + 1) % COUNTER_LOADING_MSGS.length)
+        setCounterMsgVisible(true)
+      }, 300)
+    }, 2000)
+    return () => clearInterval(interval)
+  }, [isGeneratingCounter])
 
   const date = card.createdAt instanceof Date ? card.createdAt : new Date(card.createdAt)
   const formattedDate = date.toLocaleDateString('fr-FR', {
@@ -439,14 +480,16 @@ export default function InsightCard({
 
   const handleCounterPresenter = () => {
     if (!counterInsight) return
-    const slug = buildSlug(makeCounterCard())
-    window.open(`/i/${slug}`, '_blank')
+    const id = generateShortId()
+    storeSharedInsight(id, makeCounterCard())
+    window.open(`/i/${id}`, '_blank')
   }
 
   const handleCounterShare = async () => {
     if (!counterInsight) return
-    const slug = buildSlug(makeCounterCard())
-    const url = `${window.location.origin}/i/${slug}`
+    const id = generateShortId()
+    storeSharedInsight(id, makeCounterCard())
+    const url = `${window.location.origin}/i/${id}`
     try {
       await navigator.clipboard.writeText(url)
       setCounterShareToast(true)
@@ -463,7 +506,9 @@ export default function InsightCard({
   }
 
   const handlePresenter = () => {
-    window.open(`/i/${buildSlug(card)}`, '_blank')
+    const id = generateShortId()
+    storeSharedInsight(id, card)
+    window.open(`/i/${id}`, '_blank')
   }
 
   const handleGammaExport = async () => {
@@ -471,15 +516,17 @@ export default function InsightCard({
     try {
       await navigator.clipboard.writeText(outline)
       setGammaCopied(true)
-      setTimeout(() => setGammaCopied(false), 4000)
-      window.open('https://gamma.app', '_blank')
+      setTimeout(() => { window.open('https://gamma.app/create', '_blank') }, 1500)
+      setTimeout(() => setGammaCopied(false), 5000)
     } catch {
       window.prompt('Contenu à coller dans Gamma :', outline)
     }
   }
 
   const handleShare = async () => {
-    const url = `${window.location.origin}/i/${buildSlug(card)}`
+    const id = generateShortId()
+    storeSharedInsight(id, card)
+    const url = `${window.location.origin}/i/${id}`
     try {
       await navigator.clipboard.writeText(url)
       setShareToast(true)
@@ -819,7 +866,7 @@ export default function InsightCard({
                   onClick={handleGammaExport}
                   title="Copier le contenu structuré, puis ouvrir Gamma.app"
                 >
-                  {gammaCopied ? '✓ Collez dans Gamma' : '⊠ Gamma'}
+                  {gammaCopied ? 'Contenu copié — collez dans Gamma' : 'Gamma'}
                 </ActionBtn>
 
                 {/* PDF */}
@@ -860,7 +907,7 @@ export default function InsightCard({
                   letterSpacing: '0.06em',
                 }}
               >
-                {shareToast ? '✓ Lien copié dans le presse-papier' : '⊕ Partager — copier le lien /i/[slug]'}
+                {shareToast ? 'Lien copié' : 'Partager — copier le lien'}
               </button>
 
               {/* ── Counter-insight panel ── */}
@@ -876,7 +923,21 @@ export default function InsightCard({
                   </div>
 
                   {isGeneratingCounter && !counterInsight ? (
-                    <p className="text-xs" style={{ color: '#444', fontFamily: 'ui-monospace, monospace' }}>Génération du contre-insight…</p>
+                    <div className="text-center py-4">
+                      <div style={{
+                        width: '22px', height: '22px', borderRadius: '50%', margin: '0 auto 1rem',
+                        border: '1px solid rgba(201,168,76,0.12)',
+                        borderTopColor: 'rgba(201,168,76,0.45)',
+                        animation: 'spin 1.2s linear infinite',
+                      }} />
+                      <p style={{
+                        color: '#C9A84C', fontFamily: 'ui-monospace, monospace', fontSize: '0.7rem',
+                        opacity: counterMsgVisible ? 1 : 0, transition: 'opacity 0.3s ease',
+                        minHeight: '1.2em',
+                      }}>
+                        {COUNTER_LOADING_MSGS[counterMsgIndex]}
+                      </p>
+                    </div>
                   ) : (
                     <>
                       <p className="text-sm leading-relaxed mb-4" style={{ color: '#AA8888', fontFamily: 'Georgia, serif', lineHeight: 1.8, whiteSpace: 'pre-wrap' }}>
@@ -913,7 +974,7 @@ export default function InsightCard({
                           cursor: isGeneratingDebate ? 'not-allowed' : 'pointer',
                         }}
                       >
-                        {isGeneratingDebate ? '…' : '⚡ Script de confrontation — 2 actes'}
+                        {isGeneratingDebate ? '…' : 'Script de confrontation — 2 actes'}
                       </button>
 
                       {/* Debate loading messages */}

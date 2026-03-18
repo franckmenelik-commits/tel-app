@@ -65,7 +65,7 @@ function analyserGeographie(sources: ExtractedSource[]): AngleMort[] {
       const manquantes = ALL_REGIONS.filter(r => r !== region && r !== 'global' && !regionCounts.has(r))
       angles.push({
         type: 'geographique',
-        description: `⚠️ Ce croisement est dominé par des sources ${labelRegion(region)} (${Math.round(pct)}% des sources). D'autres perspectives mondiales sont absentes.`,
+        description: `Ce croisement est dominé par des sources ${labelRegion(region)} (${Math.round(pct)}% des sources). D'autres perspectives mondiales sont absentes.`,
         regions: manquantes,
         suggestion: manquantes.length > 0
           ? `Perspectives manquantes : ${manquantes.map(labelRegion).join(', ')}.`
@@ -81,7 +81,7 @@ function analyserGeographie(sources: ExtractedSource[]): AngleMort[] {
   if (southPct === 0 && total >= 2) {
     angles.push({
       type: 'geographique',
-      description: `🌍 Aucune source du Sud global (Afrique, Asie, Amérique latine, Monde arabe). Ce croisement reflète principalement des perspectives du Nord.`,
+      description: `Aucune source du Sud global (Afrique, Asie, Amérique latine, Monde arabe). Ce croisement reflète principalement des perspectives du Nord.`,
       regions: southRegions,
       suggestion: 'Enrichir avec des sources africaines, asiatiques ou latino-américaines ?',
     })
@@ -112,13 +112,13 @@ function analyserTemporalite(sources: ExtractedSource[]): AngleMort[] {
   if (age > 20) {
     angles.push({
       type: 'temporel',
-      description: `⏳ Ce croisement manque de vécus contemporains. La source la plus récente date de ${plusRecente} (${age} ans).`,
+      description: `Ce croisement manque de vécus contemporains. La source la plus récente date de ${plusRecente} (${age} ans).`,
       suggestion: 'Rechercher des témoignages ou analyses post-2020 sur ce sujet ?',
     })
   } else if ((currentYear - plusAncienne) < 5) {
     angles.push({
       type: 'temporel',
-      description: `⏳ Ce croisement manque de profondeur historique. Toutes les sources semblent récentes (après ${plusAncienne}).`,
+      description: `Ce croisement manque de profondeur historique. Toutes les sources semblent récentes (après ${plusAncienne}).`,
       suggestion: 'Rechercher des sources historiques pour ancrer ce croisement dans le temps long ?',
     })
   }
@@ -163,7 +163,7 @@ function analyserPosture(sources: ExtractedSource[]): AngleMort[] {
         .map(p => labels[p])
       angles.push({
         type: 'genre_posture',
-        description: `🔍 Toutes les sources sont ${labels[posture]} (${Math.round(pct)}%). Une perspective unique domine.`,
+        description: `Toutes les sources sont ${labels[posture]} (${Math.round(pct)}%). Une perspective unique domine.`,
         suggestion: `Les voix ${manquantes.join(' et ')} enrichiraient ce croisement.`,
       })
     }
@@ -175,19 +175,45 @@ function analyserPosture(sources: ExtractedSource[]): AngleMort[] {
 // ─── Détection des silences ───────────────────────────────────────────────────
 
 const THEMES_SILENCES = [
-  { theme: "l'impact sur les femmes et les filles", keywords: /femm|genre|gender|woman|women|féminin|maternité|patriarcat/ },
-  { theme: 'les perspectives de la jeunesse', keywords: /enfant|jeune|youth|child|génération|adolescent/ },
-  { theme: 'les communautés rurales et paysannes', keywords: /rural|campagne|village|paysan|agriculteur|fermier/ },
-  { theme: 'les populations déplacées et réfugiées', keywords: /réfugié|déplacé|migrant|diaspora|refugee|displaced|exil/ },
-  { theme: "la dimension économique pour les plus vulnérables", keywords: /pauvre|poverty|poor|misère|vulnérable|inégalité|chômage/ },
-  { theme: 'les langues autochtones et savoirs locaux', keywords: /autochtone|indigenous|native|langue locale|savoir traditionnel|oral/ },
-  { theme: 'la mémoire traumatique non-dite', keywords: /trauma|deuil|blessure|honte|silence|indicible|non.dit|stigma/ },
-  { theme: 'les liens entre colonialisme et situation actuelle', keywords: /coloni|néocoloni|postcoloni|exploitation|indépendance|dette/ },
+  {
+    theme: "l'impact sur les femmes et les filles",
+    keywords: /femm|femmes|genre|gender|woman|women|féminin|maternité|patriarcat|fille|girls|sexe|féminisme|parité|égalité femme|violence conjugale|droits des femmes|matriarcat/,
+  },
+  {
+    theme: 'les perspectives de la jeunesse',
+    keywords: /enfant|jeune|jeunes|youth|child|children|génération|adolescent|teen|mineur|étudiant|student|scolaire|école|jeunesse|futur générat|nés après/,
+  },
+  {
+    theme: 'les communautés rurales et paysannes',
+    keywords: /rural|campagne|village|paysan|agriculteur|fermier|agriculture|terres|subsistan|rural|paysannerie/,
+  },
+  {
+    theme: 'les populations déplacées et réfugiées',
+    keywords: /réfugié|déplacé|migrant|diaspora|refugee|displaced|exil|asile|frontière|camps de|déplacement/,
+  },
+  {
+    theme: 'la dimension économique des plus vulnérables',
+    keywords: /pauvre|poverty|poor|misère|vulnérable|inégalité|chômage|précarité|accès aux ressources|économie informelle|survie|sans ressources/,
+  },
+  {
+    theme: 'les savoirs et langues autochtones',
+    keywords: /autochtone|indigenous|native|langue locale|savoir traditionnel|oral|ancestral|peuple premier|first nations|tradition orale|savoir paysan/,
+  },
+  {
+    theme: 'la mémoire traumatique non dite',
+    keywords: /trauma|deuil|blessure|honte|indicible|non.dit|stigma|guérison|cicatrice|résilience|survivant|témoignage douloureux/,
+  },
+  {
+    theme: 'les héritages coloniaux dans la situation actuelle',
+    keywords: /coloni|néocoloni|postcoloni|exploitation|indépendance|dette|impérialisme|esclavage|réparations|décoloni/,
+  },
 ]
 
 function detecterSilences(sources: ExtractedSource[], insight: InsightCard): AngleMort[] {
+  // Check substantially more content per source, include titles/URLs and the insight theme
   const texteComplet = [
-    ...sources.map(s => s.content.slice(0, 500)),
+    insight.theme,
+    ...sources.map(s => `${s.title} ${s.url} ${s.content.slice(0, 1500)}`),
     insight.revealedPattern,
     ...insight.convergenceZones,
     ...insight.divergenceZones,
@@ -195,14 +221,17 @@ function detecterSilences(sources: ExtractedSource[], insight: InsightCard): Ang
   ].join(' ').toLowerCase()
 
   const silences = THEMES_SILENCES.filter(t => !t.keywords.test(texteComplet))
-  if (silences.length === 0) return []
 
-  const silencesList = silences.slice(0, 4).map(s => s.theme)
+  // Only flag if sources are quite narrow (5+ themes absent) — avoids generic results
+  if (silences.length < 5) return []
+
+  // Report at most 2 silences, the ones most plausibly absent
+  const silencesList = silences.slice(0, 3).map(s => s.theme)
 
   return [{
     type: 'silence',
-    description: `🤫 Ces croisements n'évoquent pas : ${silencesList.join(', ')}.`,
-    suggestion: 'Le non-dit révèle souvent autant que le dit. Ce silence est peut-être le plus important.',
+    description: `Ces sources n'abordent pas : ${silencesList.join(', ')}.`,
+    suggestion: 'L\'absence d\'une perspective révèle souvent autant que sa présence.',
   }]
 }
 

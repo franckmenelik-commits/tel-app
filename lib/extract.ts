@@ -57,25 +57,25 @@ async function extractYouTube(url: string): Promise<{ title: string; content: st
     }
   } catch { /* Plan A failed — try Plan B */ }
 
-  // ── Plan B — Whisper local (Hetzner endpoint) ─────────────────────────────
-  const whisperEndpoint = process.env.WHISPER_ENDPOINT
-  if (whisperEndpoint) {
-    try {
-      const whisperRes = await fetch(`${whisperEndpoint}/transcribe`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url }),
-        signal: AbortSignal.timeout(30000),
-      })
-      if (whisperRes.ok) {
-        const data = await whisperRes.json()
-        const text: string = data.text || data.transcript || ''
-        if (text.trim().length > 100) {
-          return { title, content: `[Transcription Whisper]\n\n${text}` }
-        }
+  // ── Plan B — Whisper local ────────────────────────────────────────────────
+  const whisperEndpoint = process.env.WHISPER_ENDPOINT || 'http://127.0.0.1:9000'
+  try {
+    console.log(`[TEL] Whisper utilisé pour : ${url}`)
+    const whisperRes = await fetch(`${whisperEndpoint}/transcribe`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url }),
+      signal: AbortSignal.timeout(120000),
+    })
+    if (whisperRes.ok) {
+      const data = await whisperRes.json()
+      const text: string = data.text || data.transcript || ''
+      if (text.trim().length > 100) {
+        console.log(`[TEL] Whisper transcription réussie pour : ${url} (${text.length} chars)`)
+        return { title, content: `[Transcription Whisper]\n\n${text}` }
       }
-    } catch { /* Plan B failed — try Plan C */ }
-  }
+    }
+  } catch { /* Plan B failed — try Plan C */ }
 
   // ── Plan C — Metadata assembly (quasi-crossing fallback) ──────────────────
   // Scrape page for description + tags
