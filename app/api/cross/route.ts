@@ -138,6 +138,10 @@ export async function POST(request: Request) {
         onSectionReady: (section, value) => {
           send({ type: 'section_ready', data: { section, value } })
         },
+        // Niveau 3 — Angles morts détectés après le croisement
+        onAnglesMorts: (analyse) => {
+          send({ type: 'angles_morts', data: analyse, message: `${analyse.anglesDetectes.length} angle(s) mort(s) détecté(s)` })
+        },
       }
 
       try {

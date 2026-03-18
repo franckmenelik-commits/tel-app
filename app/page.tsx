@@ -1,10 +1,11 @@
 'use client'
 
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback, useEffect, useRef } from 'react'
 import dynamic from 'next/dynamic'
 import SourceInput from '@/components/SourceInput'
 import LoadingState from '@/components/LoadingState'
 import InsightCard from '@/components/InsightCard'
+import EnrichissementPanel from '@/components/EnrichissementPanel'
 import type {
   InsightCard as InsightCardType,
   MapPoint,
@@ -14,12 +15,16 @@ import type {
   SouffleNiveau,
   SessionCrossing,
   SSEEvent,
+  AnglesMortsAnalyse,
+  Resonance,
+  EnrichissementProposal,
 } from '@/lib/types'
+import { detecterResonances, sauvegarderSession, chargerSession } from '@/lib/memoire'
 
 // Canvas — no SSR
 const LiveMap = dynamic(() => import('@/components/LiveMap'), { ssr: false })
 
-type AppState = 'idle' | 'loading' | 'result' | 'error'
+type AppState = 'idle' | 'analysing' | 'enrichissement' | 'loading' | 'result' | 'error'
 
 // ── Hero rotating fragments ───────────────────────────────────────────────────
 const HERO_FRAGMENTS = [
@@ -77,6 +82,22 @@ export default function TELPage() {
   const [sessionHistory, setSessionHistory] = useState<SessionCrossing[]>([])
   const [showSidebar, setShowSidebar] = useState(false)
   const [showingSidebar, setShowingSidebar] = useState(false)
+  const [currentResonances, setCurrentResonances] = useState<Resonance[]>([])
+  const [enrichissementProposal, setEnrichissementProposal] = useState<EnrichissementProposal | null>(null)
+  const [pendingInputs, setPendingInputs] = useState<string[]>([])
+  const [pendingContexte, setPendingContexte] = useState<SouffleContexte>('exploration')
+
+  // Ref to track sessionHistory inside callbacks
+  const sessionHistoryRef = useRef<SessionCrossing[]>([])
+  sessionHistoryRef.current = sessionHistory
+
+  // ── Load session from localStorage on mount ───────────────────────────────
+  useEffect(() => {
+    const saved = chargerSession()
+    if (saved.length > 0) {
+      setSessionHistory(saved)
+    }
+  }, [])
 
   // Auto-rotate hero
   useEffect(() => {
@@ -93,11 +114,47 @@ export default function TELPage() {
     }
   }, [sessionHistory.length])
 
+  // ── Step 1: User submits inputs → analyse + enrichissement ───────────────
   const handleCross = useCallback(
     async (inputs: string[], contexte: SouffleContexte) => {
-      setAppState('loading')
+      setAppState('analysing')
       setError(null)
       setCurrentCard(null)
+      setCurrentResonances([])
+      setPendingInputs(inputs)
+      setPendingContexte(contexte)
+
+      try {
+        const enrichRes = await fetch('/api/enrichir', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ inputs }),
+        })
+
+        if (enrichRes.ok) {
+          const proposal: EnrichissementProposal = await enrichRes.json()
+          // Only show enrichissement panel if there are useful proposals
+          if (proposal.sourcesProposees && proposal.sourcesProposees.length > 0) {
+            setEnrichissementProposal(proposal)
+            setAppState('enrichissement')
+            return
+          }
+        }
+      } catch {
+        // Enrichissement failed — proceed directly to crossing
+      }
+
+      // No enrichissement available → go straight to crossing
+      await runCrossing(inputs, contexte)
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    []
+  )
+
+  // ── Step 2: Run the actual SOUFFLE crossing ───────────────────────────────
+  const runCrossing = useCallback(
+    async (inputs: string[], contexte: SouffleContexte) => {
+      setAppState('loading')
       setLoadingMessage(undefined)
 
       // Estimate SOUFFLE levels for loading display
@@ -122,10 +179,10 @@ export default function TELPage() {
             try { const body = await res.json(); errMsg = body.error || errMsg } catch { /* ignore */ }
             throw new Error(errMsg)
           }
-          // If response is not OK but IS SSE, let readSSEStream handle the error event
         }
 
         let finalResult: CrossResult | null = null
+        let latestAnglesMorts: AnglesMortsAnalyse | null = null
 
         await readSSEStream(res, (event) => {
           switch (event.type) {
@@ -150,6 +207,11 @@ export default function TELPage() {
               setLoadingMessage('LOGOS construit la carte…')
               break
             }
+            case 'angles_morts': {
+              latestAnglesMorts = event.data as AnglesMortsAnalyse
+              setLoadingMessage(`${latestAnglesMorts.anglesDetectes.length} angle(s) mort(s) détecté(s)`)
+              break
+            }
             case 'complete': {
               finalResult = event.data as CrossResult
               break
@@ -162,9 +224,11 @@ export default function TELPage() {
 
         if (!finalResult) throw new Error('Aucun résultat reçu')
 
-        // TypeScript can't narrow through callback closures — explicit cast
         const result = finalResult as CrossResult
-        const card = result.insight
+        const card: InsightCardType = {
+          ...result.insight,
+          anglesMorts: result.anglesMorts || latestAnglesMorts || undefined,
+        }
 
         if (result.souffleNiveaux) {
           setSouffleNiveaux(result.souffleNiveaux)
@@ -172,15 +236,27 @@ export default function TELPage() {
 
         setCurrentCard(card)
 
-        // ── Session history ────────────────────────────────────────────
-        setSessionHistory(prev => [{
+        // ── Session history + resonances ──────────────────────────────
+        const newCrossing: SessionCrossing = {
           id: card.id,
           theme: card.theme,
           sourceCount: card.sources.length,
           souffleNiveaux: result.souffleNiveaux || [1],
           createdAt: Date.now(),
           card,
-        }, ...prev.slice(0, 9)])
+        }
+
+        const newHistory = [newCrossing, ...sessionHistoryRef.current.slice(0, 9)]
+        setSessionHistory(newHistory)
+
+        // Persist to localStorage
+        sauvegarderSession(newHistory)
+
+        // Detect resonances with previous crossings
+        if (sessionHistoryRef.current.length > 0) {
+          const resonances = detecterResonances(card, sessionHistoryRef.current)
+          setCurrentResonances(resonances)
+        }
 
         // ── Living Map ─────────────────────────────────────────────────
         const now = Date.now()
@@ -244,16 +320,63 @@ export default function TELPage() {
     []
   )
 
+  // ── EnrichissementPanel callbacks ─────────────────────────────────────────
+  const handleEnrichirEtCroiser = useCallback((allUrls: string[]) => {
+    setEnrichissementProposal(null)
+    runCrossing([...pendingInputs, ...allUrls], pendingContexte)
+  }, [pendingInputs, pendingContexte, runCrossing])
+
+  const handleSelectionnerEtCroiser = useCallback((selectedUrls: string[]) => {
+    setEnrichissementProposal(null)
+    runCrossing([...pendingInputs, ...selectedUrls], pendingContexte)
+  }, [pendingInputs, pendingContexte, runCrossing])
+
+  const handleCroiserSansEnrichir = useCallback(() => {
+    setEnrichissementProposal(null)
+    runCrossing(pendingInputs, pendingContexte)
+  }, [pendingInputs, pendingContexte, runCrossing])
+
+  // ── "Combler ces angles morts" ────────────────────────────────────────────
+  const handleCombler = useCallback((newInputs: string[]) => {
+    setCurrentCard(null)
+    setCurrentResonances([])
+    setAppState('idle')
+    // After reset, we'd like to pre-fill the form — but SourceInput is self-managed.
+    // Instead, auto-trigger a new crossing with the suggested inputs
+    setTimeout(() => {
+      handleCross(newInputs, 'culturel_profond')
+    }, 100)
+  }, [handleCross])
+
+  // ── "Méta-croisement" ─────────────────────────────────────────────────────
+  const handleMetaCroisement = useCallback((ids: string[]) => {
+    const crossings = ids.map(id => sessionHistoryRef.current.find(c => c.id === id)).filter(Boolean) as SessionCrossing[]
+    if (crossings.length < 2) return
+
+    const themes = crossings.map(c => c.theme)
+    setCurrentCard(null)
+    setCurrentResonances([])
+    // Trigger a crossing using the two themes as keywords
+    setTimeout(() => {
+      handleCross(themes, 'culturel_profond')
+    }, 100)
+  }, [handleCross])
+
   const handleReset = useCallback(() => {
     setAppState('idle')
     setCurrentCard(null)
     setError(null)
     setLoadingMessage(undefined)
+    setCurrentResonances([])
+    setEnrichissementProposal(null)
   }, [])
 
   const handleLoadFromHistory = useCallback((item: SessionCrossing) => {
     setCurrentCard(item.card)
     setSouffleNiveaux(item.souffleNiveaux)
+    // Compute resonances for the loaded card
+    const others = sessionHistoryRef.current.filter(c => c.id !== item.id)
+    setCurrentResonances(detecterResonances(item.card, others))
     setAppState('result')
     setShowingSidebar(false)
   }, [])
@@ -321,7 +444,7 @@ export default function TELPage() {
                   {item.theme}
                 </p>
                 <p className="text-xs" style={{ color: '#222', fontFamily: 'ui-monospace, monospace' }}>
-                  {item.sourceCount} sources · {item.souffleNiveaux.map(n => '•').join('')}
+                  {item.sourceCount} sources · {item.souffleNiveaux.map(() => '•').join('')}
                 </p>
               </button>
             ))}
@@ -471,6 +594,67 @@ export default function TELPage() {
               </div>
             )}
 
+            {/* ── ANALYSING — brief transition ── */}
+            {appState === 'analysing' && (
+              <div
+                className="animate-fade-in text-center"
+                style={{
+                  background: 'rgba(10,10,15,0.90)',
+                  backdropFilter: 'blur(28px)',
+                  border: '1px solid rgba(201,168,76,0.1)',
+                  borderRadius: '20px',
+                  padding: '3rem 2rem',
+                }}
+              >
+                <div
+                  className="w-8 h-8 rounded-full mx-auto mb-5"
+                  style={{
+                    border: '1px solid rgba(201,168,76,0.4)',
+                    borderTopColor: '#C9A84C',
+                    animation: 'spin 1s linear infinite',
+                  }}
+                />
+                <p
+                  className="text-sm"
+                  style={{ color: '#C9A84C', fontFamily: 'ui-monospace, monospace', letterSpacing: '0.12em' }}
+                >
+                  Analyse des sources…
+                </p>
+                <p
+                  className="text-xs mt-2"
+                  style={{ color: '#333', fontFamily: 'Georgia, serif', fontStyle: 'italic' }}
+                >
+                  TEL recherche des perspectives complémentaires
+                </p>
+              </div>
+            )}
+
+            {/* ── ENRICHISSEMENT — propose additional sources ── */}
+            {appState === 'enrichissement' && enrichissementProposal && (
+              <div className="animate-fade-in">
+                <div className="mb-4 text-center">
+                  <p
+                    className="text-xs uppercase tracking-widest"
+                    style={{ color: '#C9A84C', fontFamily: 'ui-monospace, monospace', letterSpacing: '0.2em' }}
+                  >
+                    Enrichissement automatique
+                  </p>
+                  <p
+                    className="text-xs mt-1"
+                    style={{ color: '#333', fontFamily: 'Georgia, serif', fontStyle: 'italic' }}
+                  >
+                    TEL a trouvé des sources complémentaires
+                  </p>
+                </div>
+                <EnrichissementPanel
+                  proposal={enrichissementProposal}
+                  onEnrichirEtCroiser={handleEnrichirEtCroiser}
+                  onSelectionnerEtCroiser={handleSelectionnerEtCroiser}
+                  onCroiserSansEnrichir={handleCroiserSansEnrichir}
+                />
+              </div>
+            )}
+
             {/* ── LOADING ── */}
             {appState === 'loading' && (
               <div
@@ -533,7 +717,14 @@ export default function TELPage() {
 
             {/* ── RESULT — InsightCard ── */}
             {appState === 'result' && currentCard && (
-              <InsightCard card={currentCard} onClose={handleReset} streaming={true} />
+              <InsightCard
+                card={currentCard}
+                onClose={handleReset}
+                streaming={true}
+                resonances={currentResonances}
+                onCombler={handleCombler}
+                onMetaCroisement={handleMetaCroisement}
+              />
             )}
           </div>
         </div>
@@ -559,6 +750,13 @@ export default function TELPage() {
           </p>
         </footer>
       </div>
+
+      {/* ── Spin keyframe (for analysing state) ── */}
+      <style>{`
+        @keyframes spin {
+          to { transform: rotate(360deg); }
+        }
+      `}</style>
     </main>
   )
 }

@@ -105,7 +105,27 @@ async function searchYouTube(keyword: string): Promise<{ url: string; title: str
     }
   }
 
-  // No YouTube API key — skip silently
+  // ── Fallback: yt-search (no API key needed) ──────────────────────────────
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const yts = require('yt-search') as (q: string) => Promise<{
+      videos: Array<{ videoId: string; title: string; duration: { seconds: number }; views: number }>
+    }>
+    const results = await yts(`${keyword} témoignage histoire`)
+    const video = results.videos.find(v =>
+      v.duration?.seconds > 180 &&   // > 3 min
+      v.views > 1000                  // > 1K views
+    ) || results.videos[0]
+
+    if (video?.videoId) {
+      return {
+        url: `https://www.youtube.com/watch?v=${video.videoId}`,
+        title: video.title || keyword,
+        found: true,
+      }
+    }
+  } catch { /* yt-search not available */ }
+
   return { url: '', title: '', found: false }
 }
 

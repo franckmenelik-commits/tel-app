@@ -6,12 +6,14 @@ import { extractContent, extractFreeText, extractKeyword, extractDirectCrossing 
 import { SOUFFLE } from './souffle'
 import { detectInputMode } from './detect-mode'
 import { autoSearchCrossing } from './auto-search'
+import { analyserAnglesMorts } from './angles-morts'
 import type {
   InsightCard,
   CrossResult,
   SouffleContexte,
   SouffleCallbacks,
   ExtractedSource,
+  AnglesMortsAnalyse,
 } from './types'
 
 function generateId(): string {
@@ -153,6 +155,29 @@ export async function crossNarratives(
   const souffleResult = await SOUFFLE(rawSources, contexte, callbacks)
   const { insight: parsed, sourcesEnrichies, niveauxUtilises, decision } = souffleResult
 
+  // ── Niveau 3 — Analyse des angles morts ──────────────────────────────────
+  let anglesMorts: AnglesMortsAnalyse | undefined
+  try {
+    const insightTemp: InsightCard = {
+      id: 'temp',
+      theme: parsed.theme || '',
+      sources: [],
+      revealedPattern: parsed.revealedPattern || '',
+      convergenceZones: parsed.convergenceZones || [],
+      divergenceZones: parsed.divergenceZones || [],
+      globalConfidence: parsed.globalConfidence ?? 50,
+      geographicRepresentativity: parsed.geographicRepresentativity || '',
+      theUnspeakable: parsed.theUnspeakable || '',
+      questionNoOneHasAsked: parsed.questionNoOneHasAsked || '',
+      sourceCoordinates: parsed.sourceCoordinates || [],
+      createdAt: new Date(),
+    }
+    anglesMorts = analyserAnglesMorts(sourcesEnrichies, insightTemp)
+    callbacks?.onAnglesMorts?.(anglesMorts)
+  } catch {
+    // Angles morts analysis is non-critical — continue without it
+  }
+
   // ── Assemble InsightCard ─────────────────────────────────────────────────
   const insight: InsightCard = {
     id: generateId(),
@@ -173,6 +198,7 @@ export async function crossNarratives(
     questionNoOneHasAsked: parsed.questionNoOneHasAsked || '',
     sourceCoordinates: parsed.sourceCoordinates || [],
     createdAt: new Date(),
+    anglesMorts,
   }
 
   return {
@@ -180,5 +206,6 @@ export async function crossNarratives(
     processingTime: Date.now() - startTime,
     souffleNiveaux: niveauxUtilises,
     souffleDecision: decision,
+    anglesMorts,
   }
 }

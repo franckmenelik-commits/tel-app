@@ -33,45 +33,70 @@ async function extractYouTube(url: string): Promise<{ title: string; content: st
   const videoId = extractYouTubeVideoId(url)
   if (!videoId) throw new Error('Cannot extract YouTube video ID from URL')
 
+  // ── Get title first (oEmbed — fast, always available) ────────────────────
+  let title = `YouTube video ${videoId}`
+  let description = ''
+  try {
+    const oembedRes = await fetch(
+      `https://www.youtube.com/oembed?url=${encodeURIComponent(url)}&format=json`,
+      { headers: { 'User-Agent': USER_AGENT }, signal: AbortSignal.timeout(5000) }
+    )
+    if (oembedRes.ok) {
+      const oembed = await oembedRes.json()
+      title = oembed.title || title
+    }
+  } catch { /* oEmbed failed */ }
+
+  // ── Plan A — youtube-transcript ───────────────────────────────────────────
   try {
     const { YoutubeTranscript } = await import('youtube-transcript')
     const transcript = await YoutubeTranscript.fetchTranscript(videoId)
     const text = transcript.map((item: { text: string }) => item.text).join(' ')
-
-    let title = `YouTube video ${videoId}`
-    try {
-      const oembedRes = await fetch(
-        `https://www.youtube.com/oembed?url=${encodeURIComponent(url)}&format=json`,
-        { headers: { 'User-Agent': USER_AGENT } }
-      )
-      if (oembedRes.ok) {
-        const oembed = await oembedRes.json()
-        title = oembed.title || title
-      }
-    } catch {
-      // oEmbed failed
+    if (text.trim().length > 100) {
+      return { title, content: text }
     }
+  } catch { /* Plan A failed — try Plan B */ }
 
-    return { title, content: text }
-  } catch {
-    // Transcript not available — fall back to page metadata
+  // ── Plan B — Whisper local (Hetzner endpoint) ─────────────────────────────
+  const whisperEndpoint = process.env.WHISPER_ENDPOINT
+  if (whisperEndpoint) {
+    try {
+      const whisperRes = await fetch(`${whisperEndpoint}/transcribe`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url }),
+        signal: AbortSignal.timeout(30000),
+      })
+      if (whisperRes.ok) {
+        const data = await whisperRes.json()
+        const text: string = data.text || data.transcript || ''
+        if (text.trim().length > 100) {
+          return { title, content: `[Transcription Whisper]\n\n${text}` }
+        }
+      }
+    } catch { /* Plan B failed — try Plan C */ }
+  }
+
+  // ── Plan C — Metadata assembly (quasi-crossing fallback) ──────────────────
+  // Scrape page for description + tags
+  try {
     const pageRes = await fetch(`https://www.youtube.com/watch?v=${videoId}`, {
       headers: { 'User-Agent': USER_AGENT },
+      signal: AbortSignal.timeout(15000),
     })
-    const html = await pageRes.text()
-    const $ = cheerio.load(html)
-
-    const title =
-      $('meta[property="og:title"]').attr('content') ||
-      $('title').text().replace(' - YouTube', '').trim() ||
-      `YouTube video ${videoId}`
-
-    const description = $('meta[property="og:description"]').attr('content') || ''
-
-    return {
-      title,
-      content: `[Note: Transcript not available. Extracted from page metadata.]\n\nTitle: ${title}\n\nDescription: ${description}`,
+    if (pageRes.ok) {
+      const html = await pageRes.text()
+      const $ = cheerio.load(html)
+      title = $('meta[property="og:title"]').attr('content') ||
+        $('title').text().replace(' - YouTube', '').trim() || title
+      description = $('meta[property="og:description"]').attr('content') ||
+        $('meta[name="description"]').attr('content') || ''
     }
+  } catch { /* ignore */ }
+
+  return {
+    title,
+    content: `[Note: Transcription non disponible — croisement basé sur les métadonnées YouTube. Niveau de confiance réduit.]\n\nTitre : ${title}\n\nDescription : ${description}\n\nIdentifiant vidéo : ${videoId}\nURL : ${url}`,
   }
 }
 
