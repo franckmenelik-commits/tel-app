@@ -1,78 +1,10 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Standalone output for Docker deployment
+  // Standalone output for Docker / Coolify deployment
   output: 'standalone',
 
   experimental: {
     serverComponentsExternalPackages: ['youtube-transcript', 'cheerio'],
-  },
-
-  async headers() {
-    const isDev = process.env.NODE_ENV !== 'production'
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://theexperiencelayer.org'
-
-    return [
-      {
-        // ── API routes — CORS ─────────────────────────────────────────
-        source: '/api/:path*',
-        headers: [
-          { key: 'Access-Control-Allow-Origin', value: isDev ? '*' : appUrl },
-          { key: 'Access-Control-Allow-Methods', value: 'GET, POST, OPTIONS' },
-          { key: 'Access-Control-Allow-Headers', value: 'Content-Type' },
-        ],
-      },
-      {
-        // ── All pages — security headers ──────────────────────────────
-        source: '/(.*)',
-        headers: [
-          // Prevent clickjacking
-          { key: 'X-Frame-Options', value: 'DENY' },
-          // Prevent MIME type sniffing
-          { key: 'X-Content-Type-Options', value: 'nosniff' },
-          // Referrer policy — privacy-first
-          { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
-          // Permissions policy — disable unnecessary APIs
-          {
-            key: 'Permissions-Policy',
-            value: 'camera=(), microphone=(), geolocation=(), payment=()',
-          },
-          // Content Security Policy
-          {
-            key: 'Content-Security-Policy',
-            value: [
-              "default-src 'self'",
-              // Scripts: self + inline (needed for Next.js) + Umami analytics
-              "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://analytics.umami.is",
-              // Styles: self + inline (needed for Tailwind/inline styles)
-              "style-src 'self' 'unsafe-inline'",
-              // Images: self + data URIs
-              "img-src 'self' data: blob: https:",
-              // Fonts: self
-              "font-src 'self'",
-              // Connect: self + AI APIs + Wikipedia + YouTube oEmbed
-              [
-                "connect-src 'self'",
-                'https://api.mistral.ai',
-                'https://api.anthropic.com',
-                'https://*.wikipedia.org',
-                'https://www.youtube.com',
-                'https://www.googleapis.com',
-                'http://localhost:11434',
-                'https://analytics.umami.is',
-              ].join(' '),
-              // Media: blob for canvas
-              "media-src 'self' blob:",
-              // Worker: self + blob
-              "worker-src 'self' blob:",
-              // Frame: none
-              "frame-src 'none'",
-              // Object: none
-              "object-src 'none'",
-            ].join('; '),
-          },
-        ],
-      },
-    ]
   },
 
   // Disable x-powered-by header
@@ -80,6 +12,70 @@ const nextConfig = {
 
   // Compress responses
   compress: true,
+
+  async headers() {
+    const isProd = process.env.NODE_ENV === 'production'
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://theexperiencelayer.org'
+
+    // Build connect-src: common APIs + Ollama only in dev
+    const connectSrc = [
+      "'self'",
+      'https://api.mistral.ai',
+      'https://api.anthropic.com',
+      'https://*.wikipedia.org',
+      'https://www.youtube.com',
+      'https://www.googleapis.com',
+      'https://analytics.umami.is',
+      // Ollama local only allowed in dev to avoid mixed-content warnings
+      ...(isProd ? [] : ['http://localhost:11434']),
+    ].join(' ')
+
+    // script-src: unsafe-eval needed only in dev (Next.js hot reload uses eval)
+    const scriptSrc = isProd
+      ? "'self' 'unsafe-inline' https://analytics.umami.is"
+      : "'self' 'unsafe-inline' 'unsafe-eval'"
+
+    const csp = [
+      "default-src 'self'",
+      `script-src ${scriptSrc}`,
+      "style-src 'self' 'unsafe-inline'",
+      "img-src 'self' data: blob: https:",
+      "font-src 'self' data:",
+      `connect-src ${connectSrc}`,
+      "media-src 'self' blob:",
+      "worker-src 'self' blob:",
+      "frame-src 'none'",
+      "object-src 'none'",
+      "base-uri 'self'",
+      "form-action 'self'",
+    ].join('; ')
+
+    return [
+      {
+        // API routes — CORS
+        source: '/api/:path*',
+        headers: [
+          { key: 'Access-Control-Allow-Origin', value: isProd ? appUrl : '*' },
+          { key: 'Access-Control-Allow-Methods', value: 'GET, POST, OPTIONS' },
+          { key: 'Access-Control-Allow-Headers', value: 'Content-Type' },
+          // SSE — disable buffering at Next.js level
+          { key: 'X-Accel-Buffering', value: 'no' },
+          { key: 'Cache-Control', value: 'no-cache, no-transform' },
+        ],
+      },
+      {
+        // All pages — security headers
+        source: '/(.*)',
+        headers: [
+          { key: 'X-Frame-Options', value: 'DENY' },
+          { key: 'X-Content-Type-Options', value: 'nosniff' },
+          { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
+          { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=(), payment=()' },
+          { key: 'Content-Security-Policy', value: csp },
+        ],
+      },
+    ]
+  },
 }
 
 module.exports = nextConfig
