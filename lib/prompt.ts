@@ -383,6 +383,65 @@ Règles:
 - Écrire [IMAGE: description] pour suggérer des visuels`
 }
 
+// ─── SCRIPT DE CONFRONTATION — Débat en 2 actes ──────────────────────────────
+
+export function buildDebateScriptPrompt(insight: InsightCard, counter: string): string {
+  const sourcesLine = insight.sources
+    .map(s => `"${s.title}" (${s.geographicContext})`)
+    .join(' × ')
+
+  return `Tu es LOGOS — scripteur pour TEL, The Experience Layer.
+
+Écris un script de confrontation en 2 actes entre une analyse et son contre-argument.
+
+ANALYSE — THÈME: ${insight.theme}
+SOURCES: ${sourcesLine}
+PATTERN: ${insight.revealedPattern.slice(0, 350)}
+QUESTION: ${insight.questionNoOneHasAsked}
+
+CONTRE-ARGUMENT:
+${counter.slice(0, 500)}
+
+═══════════════════════════════════════
+FORMAT DU SCRIPT DE CONFRONTATION
+═══════════════════════════════════════
+
+[OUVERTURE — 15 sec]
+Une image ou situation concrète qui met en scène la tension entre les deux lectures. Pas d'explication — une scène.
+
+ACTE 1 : LA RÉVÉLATION [3 min]
+
+[PRÉSENTATION — 30 sec]
+Les sources, leur croisement inattendu. Pourquoi les mettre ensemble.
+
+[LE PATTERN — 90 sec]
+Ce qui émerge. Dense. Ancré dans des faits précis. [IMAGE: suggestions visuelles]
+
+[LA QUESTION — 30 sec]
+Ce que ce croisement révèle. La question ouverte.
+
+ACTE 2 : LA DESTRUCTION [2 min]
+
+[LE RETOURNEMENT — 30 sec]
+Un fait, une voix, un angle qui fragilise tout ce qui précède. [CAMÉRA: contre-champ]
+
+[L'ATTAQUE — 60 sec]
+Le contre-argument au cœur. Dense. Sans ménagement. Ancré. [PAUSE après les moments clés]
+
+[LE RÉSIDU — 30 sec]
+Ce qui résiste aux deux lectures. Ce qu'aucune des deux ne peut expliquer.
+
+[CONCLUSION OUVERTE — 15 sec]
+Pas de résolution. Une double question qui force le spectateur à choisir.
+
+Règles:
+- Langage oral, phrases courtes
+- Indiquer [PAUSE] pour les moments de respiration
+- Indiquer [CAMÉRA: description] pour les changements de point de vue
+- Indiquer [IMAGE: description] pour les suggestions visuelles
+- Pas de conclusion morale — seulement l'ouverture`
+}
+
 // ─── BACKWARD COMPAT ──────────────────────────────────────────────────────────
 
 export { buildNiveau2CrossingPrompt as buildCrossPrompt }

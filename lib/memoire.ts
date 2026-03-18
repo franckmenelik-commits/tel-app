@@ -165,7 +165,7 @@ export function searchSimilarInsights(
 
 // ─── LocalStorage persistence ─────────────────────────────────────────────────
 
-const STORAGE_KEY = 'tel:session:v2'
+const STORAGE_KEY = 'tel:history:v3'
 const MAX_STORED = 20
 
 export function sauvegarderSession(croisements: SessionCrossing[]): void {

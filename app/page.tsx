@@ -228,7 +228,7 @@ export default function TELPage() {
           id: card.id, theme: card.theme, sourceCount: card.sources.length,
           souffleNiveaux: result.souffleNiveaux || [1], createdAt: Date.now(), card,
         }
-        const newHistory = [newCrossing, ...sessionHistoryRef.current.slice(0, 9)]
+        const newHistory = [newCrossing, ...sessionHistoryRef.current.slice(0, 19)]
         setSessionHistory(newHistory)
         sauvegarderSession(newHistory)
         if (sessionHistoryRef.current.length > 0) {
@@ -356,7 +356,7 @@ export default function TELPage() {
                 onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.05)' }}
               >
                 <p className="text-xs mb-1" style={{ color: '#C9A84C', fontFamily: 'Georgia, serif', fontStyle: 'italic', lineHeight: 1.4 }}>{item.theme}</p>
-                <p className="text-xs" style={{ color: '#222', fontFamily: 'ui-monospace, monospace' }}>{item.sourceCount} sources · {'•'.repeat(item.souffleNiveaux.length)}</p>
+                <p className="text-xs" style={{ color: '#222', fontFamily: 'ui-monospace, monospace' }}>{item.sourceCount} sources · {'•'.repeat(item.souffleNiveaux.length)} · {new Date(item.createdAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}</p>
               </button>
             ))}
           </div>
@@ -374,16 +374,14 @@ export default function TELPage() {
               <p className="text-xs mt-0.5" style={{ color: 'rgba(201,168,76,0.3)', fontFamily: 'ui-monospace, monospace', letterSpacing: '0.18em' }}>The Experience Layer</p>
             </button>
             <div className="flex items-center gap-3">
-              {sessionHistory.length > 0 && (
-                <button onClick={() => setShowingSidebar(!showingSidebar)}
-                  className="px-2 py-1 rounded"
-                  style={{ border: '1px solid rgba(201,168,76,0.15)', color: '#333', background: 'transparent', fontFamily: 'ui-monospace, monospace', fontSize: '0.65rem', cursor: 'pointer', transition: 'all 0.2s' }}
-                  onMouseEnter={e => { e.currentTarget.style.color = '#C9A84C'; e.currentTarget.style.borderColor = 'rgba(201,168,76,0.3)' }}
-                  onMouseLeave={e => { e.currentTarget.style.color = '#333'; e.currentTarget.style.borderColor = 'rgba(201,168,76,0.15)' }}
-                >
-                  {sessionHistory.length} croisement{sessionHistory.length > 1 ? 's' : ''}
-                </button>
-              )}
+              <button onClick={() => setShowingSidebar(!showingSidebar)}
+                className="px-2 py-1 rounded"
+                style={{ border: '1px solid rgba(201,168,76,0.15)', color: '#333', background: 'transparent', fontFamily: 'ui-monospace, monospace', fontSize: '0.65rem', cursor: 'pointer', transition: 'all 0.2s' }}
+                onMouseEnter={e => { e.currentTarget.style.color = '#C9A84C'; e.currentTarget.style.borderColor = 'rgba(201,168,76,0.3)' }}
+                onMouseLeave={e => { e.currentTarget.style.color = '#333'; e.currentTarget.style.borderColor = 'rgba(201,168,76,0.15)' }}
+              >
+                Mes croisements{sessionHistory.length > 0 ? ` (${sessionHistory.length})` : ''}
+              </button>
               {crossingCount > 0 && (
                 <div className="w-1.5 h-1.5 rounded-full" style={{ background: '#C9A84C', boxShadow: '0 0 5px #C9A84C', animation: 'pulse 2.5s infinite' }} />
               )}
