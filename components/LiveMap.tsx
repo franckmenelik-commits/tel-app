@@ -309,7 +309,21 @@ export default function LiveMap({ points, arcs }: LiveMapProps) {
   const crossingCount = points.filter(p => p.type === 'crossing').length
 
   return (
-    <div className="fixed inset-0" style={{ zIndex: 0 }}>
+    <div
+      className="fixed inset-0"
+      style={{
+        zIndex: 0,
+        // Inline fallback — ensures canvas has dimensions even if Tailwind CSS
+        // hasn't loaded yet (e.g. first paint in standalone build)
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        width: '100%',
+        height: '100%',
+      }}
+    >
       <canvas
         ref={canvasRef}
         style={{ display: 'block', width: '100%', height: '100%' }}

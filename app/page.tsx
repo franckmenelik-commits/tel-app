@@ -114,9 +114,15 @@ export default function TELPage() {
           body: JSON.stringify({ inputs, contexte }),
         })
 
-        if (!res.ok && !res.headers.get('content-type')?.includes('text/event-stream')) {
-          const err = await res.json()
-          throw new Error(err.error || `HTTP ${res.status}`)
+        // Handle non-SSE error responses (rate limit, bad request, server error)
+        if (!res.ok) {
+          const contentType = res.headers.get('content-type') || ''
+          if (!contentType.includes('text/event-stream')) {
+            let errMsg = `HTTP ${res.status}`
+            try { const body = await res.json(); errMsg = body.error || errMsg } catch { /* ignore */ }
+            throw new Error(errMsg)
+          }
+          // If response is not OK but IS SSE, let readSSEStream handle the error event
         }
 
         let finalResult: CrossResult | null = null
@@ -501,11 +507,11 @@ export default function TELPage() {
                 </p>
                 <p
                   className="text-sm mb-6 leading-relaxed"
-                  style={{ color: '#444', fontFamily: 'Georgia, serif', lineHeight: 1.7 }}
+                  style={{ color: '#aaa', fontFamily: 'Georgia, serif', lineHeight: 1.7 }}
                 >
                   {error}
                 </p>
-                <p className="text-xs mb-6" style={{ color: '#2a2a2a', fontFamily: 'ui-monospace, monospace' }}>
+                <p className="text-xs mb-6" style={{ color: '#555', fontFamily: 'ui-monospace, monospace' }}>
                   Exécutez <code style={{ color: '#C9A84C' }}>npm run check-souffle</code> pour diagnostiquer.
                 </p>
                 <button

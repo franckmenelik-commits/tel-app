@@ -95,15 +95,9 @@ export default function SourceInput({ onCross, isLoading }: SourceInputProps) {
       return
     }
 
-    // Check if single input that auto-expands (keyword or crossing)
-    if (validInputs.length === 1) {
-      const detected = detectInputMode(validInputs[0])
-      if (detected.mode === 'keyword') {
-        setError('Un mot-clé seul sera recherché sur Wikipedia FR + EN automatiquement. Ajoutez une deuxième source pour croiser.')
-        return
-      }
-      // crossing mode is fine with single input
-    }
+    // Single keyword auto-expands to Wikipedia FR + EN (2 sources) — valid.
+    // Single crossing "A × B" uses LOGOS direct knowledge — valid.
+    // No early-return needed; let the API validate source count after resolution.
 
     setError(null)
     onCross(validInputs, contexte)

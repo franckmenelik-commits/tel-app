@@ -159,10 +159,12 @@ export async function POST(request: Request) {
 
   return new Response(stream, {
     headers: {
-      'Content-Type': 'text/event-stream',
-      'Cache-Control': 'no-cache, no-transform',
-      Connection: 'keep-alive',
-      'X-Accel-Buffering': 'no', // Disable nginx buffering
+      'Content-Type': 'text/event-stream; charset=utf-8',
+      'Cache-Control': 'no-cache, no-store, no-transform',
+      // NOTE: Connection: keep-alive is a hop-by-hop header — FORBIDDEN in HTTP/2.
+      // Cloudflare → Coolify uses HTTP/2; setting it breaks SSE through the proxy.
+      'X-Accel-Buffering': 'no',  // nginx: disable response buffering
+      'X-Content-Type-Options': 'nosniff',
       'X-RateLimit-Limit': '10',
       'X-RateLimit-Remaining': String(rateResult.remaining),
       'X-RateLimit-Reset': String(Math.ceil(rateResult.resetAt / 1000)),
