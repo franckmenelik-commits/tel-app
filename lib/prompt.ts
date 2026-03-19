@@ -442,6 +442,112 @@ Règles:
 - Pas de conclusion morale — seulement l'ouverture`
 }
 
+// ─── DISCOVERY — source unique → connexion improbable ─────────────────────────
+
+export function buildDiscoveryPrompt(source: ExtractedSource): string {
+  return `Tu es LOGOS — système de croisement narratif de TEL, The Experience Layer.
+
+Tu reçois une source unique. Trouve la perspective la plus inattendue, la plus géographiquement et culturellement éloignée, qui partage un pattern profond avec cette source.
+
+Ne cherche PAS la similarité évidente. Cherche la connexion que personne n'aurait imaginée — l'archétype commun, la structure narrative partagée, le pattern humain universel qui relie deux réalités que tout oppose en surface.
+
+SOURCE:
+Titre: ${source.title}
+Type: ${source.type}
+Contexte géographique: ${source.geographicContext}
+
+CONTENU:
+${source.content.slice(0, 3000)}
+
+Retourne UNIQUEMENT du JSON valide:
+{
+  "pistes": [
+    {
+      "titre_wikipedia": "titre exact d'un article Wikipedia FR ou EN à rechercher",
+      "langue": "fr",
+      "pourquoi": "en une phrase, pourquoi ce croisement serait révélateur — quelle connexion improbable révèle un pattern humain universel",
+      "richesse": 3
+    },
+    {
+      "titre_wikipedia": "titre exact d'un article Wikipedia FR ou EN",
+      "langue": "en",
+      "pourquoi": "en une phrase, la connexion inattendue",
+      "richesse": 2
+    },
+    {
+      "titre_wikipedia": "titre exact d'un article Wikipedia FR ou EN",
+      "langue": "fr",
+      "pourquoi": "en une phrase, la connexion inattendue",
+      "richesse": 1
+    }
+  ]
+}
+
+Règles absolues:
+- 3 pistes EXACTEMENT, numérotées de 3 (la plus riche) à 1
+- Chaque piste doit être géographiquement ET culturellement différente des deux autres ET de la source originale
+- Pas de connexion thématique évidente — cherche l'archétype commun profond
+- Les titres Wikipedia doivent être réels ou très plausibles
+- richesse: 3 = connexion la plus inattendue et révélatrice, 1 = la moins improbable`
+}
+
+// ─── ÉDUCATION — perspectives culturelles par classe ──────────────────────────
+
+export function buildEducationPrompt(
+  sujet: string,
+  origines: string[],
+  niveau: string
+): string {
+  return `Tu es LOGOS — système de croisement narratif de TEL, The Experience Layer.
+
+Un enseignant te demande d'analyser un sujet de cours depuis les perspectives culturelles de ses élèves.
+
+SUJET DU COURS: ${sujet}
+NIVEAU: ${niveau}
+ORIGINES CULTURELLES DES ÉLÈVES: ${origines.join(', ')}
+
+Pour CHACUNE des origines culturelles listées, génère une carte de perspective.
+
+Règles:
+- Chaque carte révèle comment cette culture spécifique VIT et VOIT ce sujet
+- Pas de stéréotype — cherche la perspective épistémique, historique ou culturelle réelle
+- Ancre dans des faits historiques, philosophiques ou culturels concrets
+- La "tension potentielle" est honnête et bienveillante sur les frictions possibles en classe
+- Si la tension est absente pour cette origine, omets le champ "tension"
+
+Retourne UNIQUEMENT du JSON valide:
+{
+  "cartes": [
+    {
+      "origine": "${origines[0]}",
+      "titre": "Ce que les élèves ${origines[0]} voient dans ${sujet}",
+      "perspective": [
+        "Paragraphe 1 — le rapport historique ou culturel de cette société à ce sujet",
+        "Paragraphe 2 — exemples concrets, figures, événements, savoirs propres à cette culture",
+        "Paragraphe 3 — ce que cette lecture révèle que les autres cultures ne voient pas"
+      ],
+      "revelation": "En une phrase : l'apport spécifique de cette perspective au sujet",
+      "tension": "Si pertinent : en quoi ce sujet est vécu différemment ou douloureusement dans ce contexte culturel (omettre si non pertinent)"
+    }
+  ],
+  "questionsDialogue": [
+    "Question 1 sans bonne réponse — provoque un dialogue entre perspectives",
+    "Question 2 sans bonne réponse",
+    "Question 3 sans bonne réponse",
+    "Question 4 sans bonne réponse",
+    "Question 5 sans bonne réponse"
+  ],
+  "anglesMortsProgramme": [
+    "Ce que le programme standard de ${niveau} ne couvre généralement pas sur ${sujet}",
+    "Deuxième angle mort du programme",
+    "Troisième angle mort du programme"
+  ]
+}
+
+IMPORTANT: génère une carte pour CHACUNE de ces ${origines.length} origines: ${origines.join(', ')}.
+Les cartes doivent apparaître dans le même ordre que cette liste.`
+}
+
 // ─── BACKWARD COMPAT ──────────────────────────────────────────────────────────
 
 export { buildNiveau2CrossingPrompt as buildCrossPrompt }

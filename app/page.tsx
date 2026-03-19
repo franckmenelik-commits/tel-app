@@ -39,6 +39,13 @@ const LOADING_MESSAGES = [
   'Génération de la question inexposée…',
 ]
 
+const DISCOVERY_MESSAGES = [
+  'Analyse de votre source…',
+  'Exploration de 194 pays…',
+  'Détection d\'une connexion improbable…',
+  'Un croisement inattendu émerge…',
+]
+
 // ── Source type display labels ───────────────────────────────────────────────
 const SOURCE_LABELS: Record<string, string> = {
   youtube: 'YouTube', wikipedia: 'Wikipedia', article: 'Article',
@@ -80,6 +87,8 @@ export default function TELPage() {
   const [sessionHistory, setSessionHistory] = useState<SessionCrossing[]>([])
   const [showingSidebar, setShowingSidebar] = useState(false)
   const [currentResonances, setCurrentResonances] = useState<Resonance[]>([])
+  const [isDiscoveryMode, setIsDiscoveryMode] = useState(false)
+  const [discoveryInfo, setDiscoveryInfo] = useState<{ titre: string; pourquoi: string } | null>(null)
   const [enrichissementProposal, setEnrichissementProposal] = useState<EnrichissementProposal | null>(null)
   const [pendingInputs, setPendingInputs] = useState<string[]>([])
   const [pendingContexte, setPendingContexte] = useState<SouffleContexte>('exploration')
@@ -117,22 +126,69 @@ export default function TELPage() {
   // ── Loading message rotation ───────────────────────────────────────────────
   useEffect(() => {
     if (appState !== 'loading' && appState !== 'analysing') return
+    const msgs = isDiscoveryMode ? DISCOVERY_MESSAGES : LOADING_MESSAGES
     setLoadingMsgIndex(0)
     setLoadingMsgVisible(true)
     const interval = setInterval(() => {
       setLoadingMsgVisible(false)
       setTimeout(() => {
-        setLoadingMsgIndex(i => (i + 1) % LOADING_MESSAGES.length)
+        setLoadingMsgIndex(i => (i + 1) % msgs.length)
         setLoadingMsgVisible(true)
       }, 300)
     }, 2000)
     return () => clearInterval(interval)
-  }, [appState])
+  }, [appState, isDiscoveryMode])
+
+  // ── Discovery mode (single source) ────────────────────────────────────────
+  const runDiscovery = useCallback(async (source: string) => {
+    setAppState('loading')
+    setIsDiscoveryMode(true)
+    setDiscoveryInfo(null)
+    setCurrentCard(null)
+    setCurrentResonances([])
+    try {
+      const res = await fetch('/api/discover', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ source }),
+      })
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}))
+        throw new Error(body.error || `HTTP ${res.status}`)
+      }
+      const data = await res.json()
+      const card: InsightCardType = data.insight
+      if (!card) throw new Error('Aucun insight reçu')
+      if (data.discovery) {
+        setDiscoveryInfo({ titre: data.discovery.titre, pourquoi: data.discovery.pourquoi })
+      }
+      setCurrentCard(card)
+      const newCrossing: SessionCrossing = {
+        id: card.id, theme: card.theme, sourceCount: card.sources.length,
+        souffleNiveaux: [1], createdAt: Date.now(), card,
+      }
+      const newHistory = [newCrossing, ...sessionHistoryRef.current.slice(0, 19)]
+      setSessionHistory(newHistory)
+      sauvegarderSession(newHistory)
+      setAppState('result')
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erreur inconnue')
+      setAppState('error')
+    } finally {
+      setIsDiscoveryMode(false)
+    }
+  }, [])
 
   // ── Step 1: analyse + enrichissement ──────────────────────────────────────
   const handleCross = useCallback(
     async (inputs: string[], contexte: SouffleContexte) => {
+      // Single source → Discovery Mode
+      if (inputs.length === 1) {
+        await runDiscovery(inputs[0])
+        return
+      }
       setAppState('analysing')
+      setDiscoveryInfo(null)
       setError(null)
       setCurrentCard(null)
       setCurrentResonances([])
@@ -156,7 +212,7 @@ export default function TELPage() {
       await runCrossing(inputs, contexte)
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    []
+    [runDiscovery]
   )
 
   // ── Step 2: SOUFFLE crossing ───────────────────────────────────────────────
@@ -312,6 +368,7 @@ export default function TELPage() {
     setError(null)
     setCurrentResonances([])
     setEnrichissementProposal(null)
+    setDiscoveryInfo(null)
   }, [])
 
   const handleLoadFromHistory = useCallback((item: SessionCrossing) => {
@@ -408,9 +465,7 @@ export default function TELPage() {
                   className="text-base md:text-lg mb-10 leading-relaxed"
                   style={{ color: '#555', fontFamily: 'Georgia, serif', lineHeight: 1.85 }}
                 >
-                  Entrez une vidéo YouTube, un article ou un concept. Ajoutez une deuxième source.
-                  TEL identifie ce qu&apos;elles ont en commun, là où elles divergent — et pose
-                  la question que personne n&apos;avait encore formulée.
+                  Entrez deux sources pour les croiser — ou une seule, et laissez TEL vous surprendre.
                 </p>
                 <button
                   onClick={() => formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })}
@@ -558,7 +613,7 @@ export default function TELPage() {
                   minHeight: '1.4em',
                   marginBottom: '1.5rem',
                 }}>
-                  {LOADING_MESSAGES[loadingMsgIndex]}
+                  {(isDiscoveryMode ? DISCOVERY_MESSAGES : LOADING_MESSAGES)[loadingMsgIndex]}
                 </p>
 
                 {/* SOUFFLE indicator */}
@@ -615,6 +670,18 @@ export default function TELPage() {
           {appState === 'result' && currentCard && (
             <div className="flex items-center justify-center px-4 py-8" style={{ minHeight: '70vh' }}>
               <div style={{ width: '100%', maxWidth: '680px' }}>
+                {/* Discovery banner */}
+                {discoveryInfo && (
+                  <div className="mb-4 px-4 py-3 rounded-xl" style={{ background: 'rgba(201,168,76,0.04)', border: '1px solid rgba(201,168,76,0.12)' }}>
+                    <p className="text-xs mb-1" style={{ color: '#C9A84C', fontFamily: 'ui-monospace, monospace', letterSpacing: '0.15em' }}>
+                      LOGOS A DÉCOUVERT
+                    </p>
+                    <p className="text-xs" style={{ color: '#888', fontFamily: 'Georgia, serif', fontStyle: 'italic', lineHeight: 1.6 }}>
+                      <span style={{ color: '#F5ECD7' }}>{discoveryInfo.titre}</span>
+                      {' — '}{discoveryInfo.pourquoi}
+                    </p>
+                  </div>
+                )}
                 <InsightCard
                   card={currentCard}
                   onClose={handleReset}
@@ -631,9 +698,17 @@ export default function TELPage() {
 
         {/* ─── Footer ──────────────────────────────────────────────────── */}
         <footer className="flex-shrink-0 px-6 py-4 text-center" style={{ borderTop: '1px solid rgba(255,255,255,0.025)' }}>
-          <p className="text-xs" style={{ color: '#111', fontFamily: 'ui-monospace, monospace', letterSpacing: '0.08em' }}>
+          <p className="text-xs mb-2" style={{ color: '#111', fontFamily: 'ui-monospace, monospace', letterSpacing: '0.08em' }}>
             theexperiencelayer.org · Babel a dispersé les langages. TEL rassemble les vécus.
           </p>
+          <a
+            href="/education"
+            style={{ color: '#2a2a2a', fontFamily: 'ui-monospace, monospace', fontSize: '0.65rem', letterSpacing: '0.12em', textDecoration: 'none', transition: 'color 0.2s' }}
+            onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.color = '#C9A84C' }}
+            onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.color = '#2a2a2a' }}
+          >
+            Pour les enseignants — TEL Éducation →
+          </a>
         </footer>
       </div>
 

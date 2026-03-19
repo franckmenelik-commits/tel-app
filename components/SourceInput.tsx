@@ -413,7 +413,7 @@ export default function SourceInput({ onCross, isLoading }: SourceInputProps) {
           e.currentTarget.style.boxShadow = 'none'
         }}
       >
-        {isLoading ? '— LOGOS travaille —' : 'Croiser les vécus'}
+        {isLoading ? '— LOGOS travaille —' : nonEmptyCount === 1 ? 'Laisser TEL vous surprendre' : 'Croiser les vécus'}
       </button>
 
       {/* ── Status ── */}
