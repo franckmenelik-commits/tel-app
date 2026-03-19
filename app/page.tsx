@@ -5,6 +5,7 @@ import dynamic from 'next/dynamic'
 import SourceInput from '@/components/SourceInput'
 import InsightCard from '@/components/InsightCard'
 import EnrichissementPanel from '@/components/EnrichissementPanel'
+import AuthModal from '@/components/AuthModal'
 import { ALL_DEMO_CROSSINGS } from '@/lib/demo-crossings'
 import type {
   InsightCard as InsightCardType,
@@ -93,6 +94,11 @@ export default function TELPage() {
   const [pendingInputs, setPendingInputs] = useState<string[]>([])
   const [pendingContexte, setPendingContexte] = useState<SouffleContexte>('exploration')
 
+  // ── Auth state ─────────────────────────────────────────────────────────────
+  const [user, setUser] = useState<string | null>(null)
+  const [showAuthModal, setShowAuthModal] = useState(false)
+  const [showUserMenu, setShowUserMenu] = useState(false)
+
   // ── Demo carousel ──────────────────────────────────────────────────────────
   const [demoIndex, setDemoIndex] = useState(0)
   const [demoVisible, setDemoVisible] = useState(true)
@@ -105,10 +111,14 @@ export default function TELPage() {
   const sessionHistoryRef = useRef<SessionCrossing[]>([])
   sessionHistoryRef.current = sessionHistory
 
-  // ── Load session from localStorage on mount ────────────────────────────────
+  // ── Load session + auth from localStorage on mount ─────────────────────────
   useEffect(() => {
     const saved = chargerSession()
     if (saved.length > 0) setSessionHistory(saved)
+    try {
+      const savedUser = localStorage.getItem('tel:user:email')
+      if (savedUser) setUser(savedUser)
+    } catch { /* ok */ }
   }, [])
 
   // ── Demo carousel auto-rotation ────────────────────────────────────────────
@@ -118,7 +128,7 @@ export default function TELPage() {
       setTimeout(() => {
         setDemoIndex(i => (i + 1) % ALL_DEMO_CROSSINGS.length)
         setDemoVisible(true)
-      }, 400)
+      }, 300)
     }, 8000)
     return () => clearInterval(timer)
   }, [])
@@ -135,9 +145,22 @@ export default function TELPage() {
         setLoadingMsgIndex(i => (i + 1) % msgs.length)
         setLoadingMsgVisible(true)
       }, 300)
-    }, 2000)
+    }, 2200)
     return () => clearInterval(interval)
   }, [appState, isDiscoveryMode])
+
+  // ── Auth handlers ──────────────────────────────────────────────────────────
+  const handleLogin = useCallback((email: string) => {
+    setUser(email)
+    setShowAuthModal(false)
+    try { localStorage.setItem('tel:user:email', email) } catch { /* ok */ }
+  }, [])
+
+  const handleLogout = useCallback(() => {
+    setUser(null)
+    setShowUserMenu(false)
+    try { localStorage.removeItem('tel:user:email') } catch { /* ok */ }
+  }, [])
 
   // ── Discovery mode (single source) ────────────────────────────────────────
   const runDiscovery = useCallback(async (source: string) => {
@@ -182,7 +205,6 @@ export default function TELPage() {
   // ── Step 1: analyse + enrichissement ──────────────────────────────────────
   const handleCross = useCallback(
     async (inputs: string[], contexte: SouffleContexte) => {
-      // Single source → Discovery Mode
       if (inputs.length === 1) {
         await runDiscovery(inputs[0])
         return
@@ -279,7 +301,6 @@ export default function TELPage() {
         if (result.souffleNiveaux) setSouffleNiveaux(result.souffleNiveaux)
         setCurrentCard(card)
 
-        // Session + resonances
         const newCrossing: SessionCrossing = {
           id: card.id, theme: card.theme, sourceCount: card.sources.length,
           souffleNiveaux: result.souffleNiveaux || [1], createdAt: Date.now(), card,
@@ -379,68 +400,143 @@ export default function TELPage() {
     setShowingSidebar(false)
   }, [])
 
-  const crossingCount = mapPoints.filter(p => p.type === 'crossing').length
   const souffleIndicator = '•'.repeat(Math.min(3, Math.max(1, souffleNiveaux.length)))
   const demo = ALL_DEMO_CROSSINGS[demoIndex]
   const demoSourceA = demo.sources[0]
   const demoSourceB = demo.sources[1]
 
   return (
-    <main className="relative min-h-screen" style={{ background: '#0A0A0F', overflowX: 'hidden' }}>
+    <main className="relative min-h-screen" style={{ background: '#09090b', overflowX: 'hidden' }}>
 
-      {/* ── Living Map ── */}
-      <LiveMap points={mapPoints} arcs={mapArcs} />
+      {/* ── Living Map — reduced opacity ── */}
+      <div style={{ opacity: 0.15, position: 'fixed', inset: 0, pointerEvents: 'none' }}>
+        <LiveMap points={mapPoints} arcs={mapArcs} />
+      </div>
 
-      {/* ── Vignette ── */}
-      <div className="fixed inset-0 pointer-events-none" style={{ background: 'radial-gradient(ellipse at center, transparent 30%, rgba(10,10,15,0.75) 100%)', zIndex: 5 }} />
-
-      {/* ── Session sidebar ── */}
+      {/* ── Session sidebar — RIGHT side ── */}
       {showingSidebar && (
-        <div className="fixed left-0 top-0 bottom-0 z-30 flex flex-col" style={{ width: '280px', background: 'rgba(10,10,15,0.96)', borderRight: '1px solid rgba(201,168,76,0.1)', backdropFilter: 'blur(20px)' }}>
-          <div className="flex items-center justify-between p-4 border-b" style={{ borderColor: 'rgba(201,168,76,0.08)' }}>
-            <span className="text-xs uppercase tracking-widest" style={{ color: '#C9A84C', fontFamily: 'ui-monospace, monospace' }}>Session</span>
-            <button onClick={() => setShowingSidebar(false)} style={{ color: '#333', cursor: 'pointer', background: 'none', border: 'none', fontSize: '1rem' }}>×</button>
+        <div
+          className="fixed right-0 top-0 bottom-0 z-30 flex flex-col animate-slide-in-right"
+          style={{ width: '360px', background: '#111113', borderLeft: '1px solid rgba(255,255,255,0.047)' }}
+        >
+          <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: '1px solid rgba(255,255,255,0.047)' }}>
+            <span className="tel-label">Session</span>
+            <button
+              onClick={() => setShowingSidebar(false)}
+              style={{ color: '#555', cursor: 'pointer', background: 'none', border: 'none', fontSize: '1.2rem', lineHeight: 1 }}
+            >×</button>
           </div>
-          <div className="flex-1 overflow-y-auto p-3 flex flex-col gap-2">
+          <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-2">
             {sessionHistory.length === 0 && (
-              <p className="text-xs text-center mt-4" style={{ color: '#222', fontFamily: 'Georgia, serif', fontStyle: 'italic' }}>Aucun croisement dans cette session.</p>
+              <p className="text-xs text-center mt-8" style={{ color: '#333', fontStyle: 'italic' }}>
+                Aucun croisement dans cette session.
+              </p>
             )}
             {sessionHistory.map(item => (
-              <button key={item.id} onClick={() => handleLoadFromHistory(item)}
+              <button
+                key={item.id}
+                onClick={() => handleLoadFromHistory(item)}
                 className="text-left p-3 rounded-lg"
-                style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.05)', cursor: 'pointer', transition: 'border-color 0.2s' }}
-                onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(201,168,76,0.2)' }}
-                onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.05)' }}
+                style={{
+                  background: 'transparent',
+                  border: '1px solid rgba(255,255,255,0.047)',
+                  cursor: 'pointer',
+                  transition: 'border-color 200ms ease',
+                  borderRadius: '8px',
+                }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.12)' }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.047)' }}
               >
-                <p className="text-xs mb-1" style={{ color: '#C9A84C', fontFamily: 'Georgia, serif', fontStyle: 'italic', lineHeight: 1.4 }}>{item.theme}</p>
-                <p className="text-xs" style={{ color: '#222', fontFamily: 'ui-monospace, monospace' }}>{item.sourceCount} sources · {'•'.repeat(item.souffleNiveaux.length)} · {new Date(item.createdAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}</p>
+                <p className="text-sm mb-1 leading-snug tel-serif" style={{ color: '#e0e0e0', fontStyle: 'italic' }}>{item.theme}</p>
+                <p className="text-xs" style={{ color: '#444' }}>
+                  {item.sourceCount} sources · {'•'.repeat(item.souffleNiveaux.length)} · {new Date(item.createdAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
+                </p>
               </button>
             ))}
           </div>
         </div>
       )}
 
+      {/* ── Auth Modal ── */}
+      {showAuthModal && (
+        <AuthModal onLogin={handleLogin} onClose={() => setShowAuthModal(false)} />
+      )}
+
       {/* ── Main layout ── */}
       <div className="relative z-10 min-h-screen flex flex-col">
 
         {/* ─── Header ──────────────────────────────────────────────────── */}
-        <header className="flex-shrink-0 px-6 py-5 md:px-10 md:py-6">
+        <header className="flex-shrink-0 px-6 py-4 md:px-10 md:py-5">
           <div className="flex items-center justify-between">
-            <button onClick={handleReset} style={{ background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', padding: 0 }}>
-              <h1 className="text-xl md:text-2xl tracking-widest uppercase" style={{ fontFamily: 'Georgia, serif', background: 'linear-gradient(135deg, #C9A84C 0%, #F5ECD7 55%, #C9A84C 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text', letterSpacing: '0.3em' }}>TEL</h1>
-              <p className="text-xs mt-0.5" style={{ color: 'rgba(201,168,76,0.3)', fontFamily: 'ui-monospace, monospace', letterSpacing: '0.18em' }}>The Experience Layer</p>
+            <button
+              onClick={handleReset}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', padding: 0 }}
+            >
+              <span
+                style={{
+                  fontWeight: 500,
+                  fontSize: '15px',
+                  letterSpacing: '0.2em',
+                  color: '#ffffff',
+                  textTransform: 'uppercase',
+                }}
+              >
+                TEL
+              </span>
             </button>
-            <div className="flex items-center gap-3">
-              <button onClick={() => setShowingSidebar(!showingSidebar)}
-                className="px-2 py-1 rounded"
-                style={{ border: '1px solid rgba(201,168,76,0.15)', color: '#333', background: 'transparent', fontFamily: 'ui-monospace, monospace', fontSize: '0.65rem', cursor: 'pointer', transition: 'all 0.2s' }}
-                onMouseEnter={e => { e.currentTarget.style.color = '#C9A84C'; e.currentTarget.style.borderColor = 'rgba(201,168,76,0.3)' }}
-                onMouseLeave={e => { e.currentTarget.style.color = '#333'; e.currentTarget.style.borderColor = 'rgba(201,168,76,0.15)' }}
+
+            <div className="flex items-center gap-2">
+              {/* Session history */}
+              <button
+                onClick={() => setShowingSidebar(!showingSidebar)}
+                className="tel-ghost-btn"
+                style={{ fontSize: '12px' }}
               >
                 Mes croisements{sessionHistory.length > 0 ? ` (${sessionHistory.length})` : ''}
               </button>
-              {crossingCount > 0 && (
-                <div className="w-1.5 h-1.5 rounded-full" style={{ background: '#C9A84C', boxShadow: '0 0 5px #C9A84C', animation: 'pulse 2.5s infinite' }} />
+
+              {/* Auth */}
+              {user ? (
+                <div style={{ position: 'relative' }}>
+                  <button
+                    onClick={() => setShowUserMenu(v => !v)}
+                    className="tel-ghost-btn"
+                    style={{ fontSize: '12px', maxWidth: '160px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+                  >
+                    {user}
+                  </button>
+                  {showUserMenu && (
+                    <div
+                      style={{
+                        position: 'absolute', right: 0, top: 'calc(100% + 6px)',
+                        background: '#111113', border: '1px solid rgba(255,255,255,0.047)',
+                        borderRadius: '8px', padding: '4px', minWidth: '140px', zIndex: 50,
+                      }}
+                    >
+                      <button
+                        onClick={handleLogout}
+                        style={{
+                          width: '100%', textAlign: 'left', padding: '8px 12px',
+                          background: 'none', border: 'none', cursor: 'pointer',
+                          color: '#888', fontSize: '12px', borderRadius: '6px',
+                          transition: 'background 200ms ease',
+                        }}
+                        onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.031)' }}
+                        onMouseLeave={e => { e.currentTarget.style.background = 'none' }}
+                      >
+                        Se déconnecter
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <button
+                  onClick={() => setShowAuthModal(true)}
+                  className="tel-ghost-btn"
+                  style={{ fontSize: '12px' }}
+                >
+                  Se connecter
+                </button>
               )}
             </div>
           </div>
@@ -454,82 +550,94 @@ export default function TELPage() {
             <div>
 
               {/* HERO */}
-              <section className="px-6 pt-10 pb-14 md:px-10 md:pt-16 md:pb-20 text-center" style={{ maxWidth: '760px', margin: '0 auto' }}>
+              <section className="px-6 pt-12 pb-16 md:px-10 md:pt-20 md:pb-24 text-center" style={{ maxWidth: '760px', margin: '0 auto' }}>
                 <h2
-                  className="text-3xl md:text-5xl mb-6"
-                  style={{ color: '#F5ECD7', fontFamily: 'Georgia, serif', lineHeight: 1.25, fontStyle: 'italic' }}
+                  style={{
+                    fontWeight: 300,
+                    fontSize: 'clamp(2rem, 5vw, 3rem)',
+                    lineHeight: 1.2,
+                    letterSpacing: '-0.02em',
+                    color: '#ffffff',
+                    marginBottom: '1.25rem',
+                  }}
                 >
                   Croisez deux sources.<br />Voyez ce qu&apos;elles cachent ensemble.
                 </h2>
                 <p
-                  className="text-base md:text-lg mb-10 leading-relaxed"
-                  style={{ color: '#555', fontFamily: 'Georgia, serif', lineHeight: 1.85 }}
+                  style={{
+                    fontSize: '16px',
+                    lineHeight: 1.7,
+                    color: '#666666',
+                    maxWidth: '480px',
+                    margin: '0 auto 2.5rem',
+                  }}
                 >
                   Entrez deux sources pour les croiser — ou une seule, et laissez TEL vous surprendre.
                 </p>
                 <button
                   onClick={() => formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })}
-                  style={{
-                    display: 'inline-flex', alignItems: 'center', gap: '8px',
-                    padding: '14px 36px', borderRadius: '12px',
-                    background: 'rgba(201,168,76,0.10)', border: '1px solid rgba(201,168,76,0.35)',
-                    color: '#C9A84C', fontFamily: 'ui-monospace, monospace', fontSize: '0.82rem',
-                    letterSpacing: '0.08em', cursor: 'pointer', transition: 'all 0.25s',
-                  }}
-                  onMouseEnter={e => { e.currentTarget.style.background = 'rgba(201,168,76,0.18)'; e.currentTarget.style.borderColor = 'rgba(201,168,76,0.6)' }}
-                  onMouseLeave={e => { e.currentTarget.style.background = 'rgba(201,168,76,0.10)'; e.currentTarget.style.borderColor = 'rgba(201,168,76,0.35)' }}
+                  className="tel-gold-btn"
+                  style={{ padding: '12px 32px', fontSize: '14px' }}
                 >
-                  Essayer maintenant →
+                  Essayer maintenant
                 </button>
               </section>
 
               {/* DEMO CAROUSEL */}
               <section className="px-6 pb-12 md:px-10" style={{ maxWidth: '680px', margin: '0 auto' }}>
-                <p className="text-xs uppercase tracking-widest text-center mb-7" style={{ color: '#252525', fontFamily: 'ui-monospace, monospace', letterSpacing: '0.22em' }}>
+                <p className="tel-label text-center mb-6">
                   Ce que TEL a déjà trouvé
                 </p>
 
-                {/* Card */}
                 <div
                   style={{
-                    background: 'rgba(10,10,15,0.88)', border: '1px solid rgba(201,168,76,0.1)',
-                    borderRadius: '16px', padding: '1.75rem 2rem', backdropFilter: 'blur(20px)',
-                    opacity: demoVisible ? 1 : 0, transition: 'opacity 0.4s ease',
-                    minHeight: '180px',
+                    background: '#111113',
+                    border: '1px solid rgba(255,255,255,0.047)',
+                    borderRadius: '12px',
+                    padding: '28px 32px',
+                    opacity: demoVisible ? 1 : 0,
+                    transition: 'opacity 300ms ease',
+                    minHeight: '160px',
                   }}
                 >
-                  {/* Source badges */}
                   <div className="flex items-center gap-3 flex-wrap mb-5">
                     {[demoSourceA, demoSourceB].map((src, i) => (
-                      <span key={i} className="text-xs px-3 py-1.5 rounded-full" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', color: '#777', fontFamily: 'ui-monospace, monospace', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-                        <span style={{ color: '#C9A84C', fontSize: '0.55rem' }}>●</span>
-                        <span style={{ color: '#444', fontSize: '0.6rem', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{SOURCE_LABELS[src.type] || src.type}</span>
+                      <span
+                        key={i}
+                        style={{
+                          display: 'inline-flex', alignItems: 'center', gap: '6px',
+                          fontSize: '12px', padding: '4px 10px', borderRadius: '4px',
+                          background: 'rgba(255,255,255,0.031)',
+                          border: '1px solid rgba(255,255,255,0.047)',
+                          color: '#666',
+                        }}
+                      >
+                        <span style={{ color: '#C9A84C', fontSize: '8px' }}>●</span>
+                        <span style={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.06em', color: '#444' }}>{SOURCE_LABELS[src.type] || src.type}</span>
                         {(src.title || src.url).slice(0, 42)}{(src.title || src.url).length > 42 ? '…' : ''}
                       </span>
                     ))}
-                    <span style={{ color: '#222', fontFamily: 'Georgia, serif', fontSize: '1rem', flexShrink: 0 }}>×</span>
+                    <span style={{ color: '#333', fontSize: '1rem', flexShrink: 0 }}>×</span>
                   </div>
 
-                  {/* Question révélée */}
-                  <p style={{ color: '#F5ECD7', fontFamily: 'Georgia, serif', fontStyle: 'italic', fontSize: '1.05rem', lineHeight: 1.75 }}>
+                  <p className="tel-italic" style={{ color: '#e0e0e0', fontSize: '15px', lineHeight: 1.75 }}>
                     &ldquo;{demo.questionNoOneHasAsked}&rdquo;
                   </p>
-                  <p className="text-xs mt-3" style={{ color: '#222', fontFamily: 'ui-monospace, monospace', letterSpacing: '0.04em' }}>
+                  <p style={{ fontSize: '11px', marginTop: '12px', color: '#333' }}>
                     — {demo.theme}
                   </p>
                 </div>
 
-                {/* Dot navigation */}
-                <div className="flex items-center justify-center gap-2 mt-5">
+                <div className="flex items-center justify-center gap-2 mt-4">
                   {ALL_DEMO_CROSSINGS.map((_, i) => (
                     <button
                       key={i}
                       onClick={() => { setDemoVisible(false); setTimeout(() => { setDemoIndex(i); setDemoVisible(true) }, 200) }}
                       style={{
-                        width: i === demoIndex ? '22px' : '6px', height: '6px',
+                        width: i === demoIndex ? '20px' : '5px', height: '5px',
                         borderRadius: '3px', border: 'none', cursor: 'pointer', padding: 0,
-                        background: i === demoIndex ? '#C9A84C' : 'rgba(201,168,76,0.18)',
-                        transition: 'all 0.3s ease',
+                        background: i === demoIndex ? '#C9A84C' : 'rgba(255,255,255,0.12)',
+                        transition: 'all 300ms ease',
                       }}
                     />
                   ))}
@@ -538,31 +646,29 @@ export default function TELPage() {
 
               {/* HOW IT WORKS */}
               <section className="px-6 pb-12 md:px-10" style={{ maxWidth: '760px', margin: '0 auto' }}>
-                <p className="text-xs uppercase tracking-widest text-center mb-8" style={{ color: '#252525', fontFamily: 'ui-monospace, monospace', letterSpacing: '0.22em' }}>
-                  Comment ça fonctionne
-                </p>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                <p className="tel-label text-center mb-8">Comment ça fonctionne</p>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   {[
                     {
-                      num: '①',
+                      num: '01',
                       title: 'Entrez vos sources',
-                      desc: 'URL YouTube ou article web, texte libre, mot-clé, ou deux concepts à croiser directement. TEL accepte tout.',
+                      desc: 'URL YouTube ou article web, texte libre, mot-clé, ou deux concepts à croiser directement.',
                     },
                     {
-                      num: '②',
+                      num: '02',
                       title: 'LOGOS analyse et croise',
-                      desc: 'Contextes culturels, arcs narratifs, angles morts géographiques. Trois niveaux d\'analyse selon la complexité.',
+                      desc: 'Contextes culturels, arcs narratifs, angles morts géographiques. Trois niveaux d\'analyse.',
                     },
                     {
-                      num: '③',
+                      num: '03',
                       title: 'Un insight émerge',
                       desc: 'Convergences, divergences irréductibles — et la question que personne n\'avait encore osé formuler.',
                     },
                   ].map(step => (
-                    <div key={step.num} className="p-5 rounded-xl" style={{ background: 'rgba(10,10,15,0.72)', border: '1px solid rgba(255,255,255,0.045)', backdropFilter: 'blur(12px)' }}>
-                      <p className="text-2xl mb-3" style={{ color: '#C9A84C', fontFamily: 'Georgia, serif' }}>{step.num}</p>
-                      <p className="text-sm mb-2" style={{ color: '#DDD', fontFamily: 'Georgia, serif', fontWeight: 500 }}>{step.title}</p>
-                      <p className="text-xs leading-relaxed" style={{ color: '#444', fontFamily: 'Georgia, serif', lineHeight: 1.8 }}>{step.desc}</p>
+                    <div key={step.num} style={{ background: '#111113', border: '1px solid rgba(255,255,255,0.047)', borderRadius: '12px', padding: '24px' }}>
+                      <p style={{ fontSize: '11px', color: '#C9A84C', letterSpacing: '0.15em', marginBottom: '12px', opacity: 0.7 }}>{step.num}</p>
+                      <p style={{ fontSize: '14px', color: '#e0e0e0', marginBottom: '8px', fontWeight: 500 }}>{step.title}</p>
+                      <p style={{ fontSize: '13px', color: '#555', lineHeight: 1.7 }}>{step.desc}</p>
                     </div>
                   ))}
                 </div>
@@ -570,19 +676,17 @@ export default function TELPage() {
 
               {/* INPUT FORM */}
               <section ref={formRef} className="px-6 pb-20 md:px-10" style={{ maxWidth: '680px', margin: '0 auto' }}>
-                <div className="p-6 md:p-8 rounded-2xl" style={{ background: 'rgba(10,10,15,0.92)', border: '1px solid rgba(201,168,76,0.12)', backdropFilter: 'blur(28px)' }}>
-                  <p className="text-xs uppercase tracking-widest mb-6 text-center" style={{ color: '#2a2a2a', fontFamily: 'ui-monospace, monospace', letterSpacing: '0.2em' }}>
-                    Nouveau croisement
-                  </p>
+                <div style={{ background: '#111113', border: '1px solid rgba(255,255,255,0.047)', borderRadius: '12px', padding: '32px' }}>
+                  <p className="tel-label text-center mb-6">Nouveau croisement</p>
                   <SourceInput onCross={handleCross} isLoading={false} />
                 </div>
                 {sessionHistory.length > 0 && (
                   <div className="text-center mt-4">
                     <button
                       onClick={() => setShowingSidebar(true)}
-                      style={{ color: '#252525', fontFamily: 'ui-monospace, monospace', fontSize: '0.7rem', background: 'none', border: 'none', cursor: 'pointer', letterSpacing: '0.06em', transition: 'color 0.2s' }}
-                      onMouseEnter={e => { e.currentTarget.style.color = '#C9A84C' }}
-                      onMouseLeave={e => { e.currentTarget.style.color = '#252525' }}
+                      style={{ color: '#333', fontSize: '12px', background: 'none', border: 'none', cursor: 'pointer', transition: 'color 200ms ease' }}
+                      onMouseEnter={e => { e.currentTarget.style.color = '#888' }}
+                      onMouseLeave={e => { e.currentTarget.style.color = '#333' }}
                     >
                       Revoir vos {sessionHistory.length} croisement{sessionHistory.length > 1 ? 's' : ''} →
                     </button>
@@ -592,32 +696,30 @@ export default function TELPage() {
             </div>
           )}
 
-          {/* ══ ANALYSING + LOADING — rotating messages ══════════════════ */}
+          {/* ══ ANALYSING + LOADING ═══════════════════════════════════════ */}
           {(appState === 'analysing' || appState === 'loading') && (
             <div className="flex items-center justify-center" style={{ minHeight: '70vh', padding: '2rem' }}>
-              <div className="text-center" style={{ maxWidth: '420px' }}>
-                {/* Spinner */}
-                <div style={{
-                  width: '36px', height: '36px', borderRadius: '50%', margin: '0 auto 2.5rem',
-                  border: '1px solid rgba(201,168,76,0.15)',
-                  borderTopColor: 'rgba(201,168,76,0.55)',
-                  animation: 'spin 1.2s linear infinite',
-                }} />
+              <div className="text-center" style={{ maxWidth: '400px' }}>
 
-                {/* Rotating message */}
+                {/* Pulsing dot */}
+                <div
+                  className="tel-loading-dot"
+                  style={{ margin: '0 auto 2rem' }}
+                />
+
+                {/* Message */}
                 <p style={{
-                  color: '#C9A84C', fontFamily: 'ui-monospace, monospace',
-                  fontSize: '0.8rem', letterSpacing: '0.06em',
+                  color: '#555',
+                  fontSize: '13px',
                   opacity: loadingMsgVisible ? 1 : 0,
-                  transition: 'opacity 0.3s ease',
+                  transition: 'opacity 300ms ease',
                   minHeight: '1.4em',
                   marginBottom: '1.5rem',
                 }}>
                   {(isDiscoveryMode ? DISCOVERY_MESSAGES : LOADING_MESSAGES)[loadingMsgIndex]}
                 </p>
 
-                {/* SOUFFLE indicator */}
-                <p style={{ color: '#1e1e1e', fontFamily: 'ui-monospace, monospace', fontSize: '0.65rem', letterSpacing: '0.3em' }}>
+                <p style={{ color: '#222', fontSize: '11px', letterSpacing: '0.3em' }}>
                   SOUFFLE&nbsp;{souffleIndicator}
                 </p>
               </div>
@@ -629,8 +731,8 @@ export default function TELPage() {
             <div className="flex items-center justify-center px-4 py-10" style={{ minHeight: '70vh' }}>
               <div style={{ width: '100%', maxWidth: '680px' }}>
                 <div className="text-center mb-5">
-                  <p className="text-xs uppercase tracking-widest" style={{ color: '#C9A84C', fontFamily: 'ui-monospace, monospace', letterSpacing: '0.2em' }}>Enrichissement automatique</p>
-                  <p className="text-xs mt-1" style={{ color: '#333', fontFamily: 'Georgia, serif', fontStyle: 'italic' }}>TEL a trouvé des sources complémentaires</p>
+                  <p className="tel-label mb-1">Enrichissement automatique</p>
+                  <p style={{ fontSize: '13px', color: '#555', fontStyle: 'italic' }}>TEL a trouvé des sources complémentaires</p>
                 </div>
                 <EnrichissementPanel
                   proposal={enrichissementProposal}
@@ -645,20 +747,17 @@ export default function TELPage() {
           {/* ══ ERROR ════════════════════════════════════════════════════ */}
           {appState === 'error' && (
             <div className="flex items-center justify-center px-4" style={{ minHeight: '70vh' }}>
-              <div className="text-center" style={{ maxWidth: '480px', background: 'rgba(10,10,15,0.92)', backdropFilter: 'blur(28px)', border: '1px solid rgba(139,58,58,0.2)', borderRadius: '20px', padding: '2.5rem' }}>
-                <p className="text-lg mb-3" style={{ color: '#8B3A3A', fontFamily: 'Georgia, serif', fontStyle: 'italic' }}>
+              <div className="text-center" style={{ maxWidth: '480px', background: '#111113', border: '1px solid rgba(139,58,58,0.2)', borderRadius: '12px', padding: '40px 32px' }}>
+                <p style={{ fontSize: '16px', color: '#8B3A3A', marginBottom: '12px', fontStyle: 'italic' }}>
                   Le croisement n&apos;a pas pu avoir lieu.
                 </p>
-                <p className="text-sm mb-6 leading-relaxed" style={{ color: '#aaa', fontFamily: 'Georgia, serif', lineHeight: 1.7 }}>
+                <p style={{ fontSize: '14px', color: '#555', lineHeight: 1.7, marginBottom: '24px' }}>
                   {error}
                 </p>
-                <p className="text-xs mb-6" style={{ color: '#555', fontFamily: 'ui-monospace, monospace' }}>
-                  Exécutez <code style={{ color: '#C9A84C' }}>npm run check-souffle</code> pour diagnostiquer.
-                </p>
-                <button onClick={handleReset}
-                  style={{ padding: '10px 28px', border: '1px solid rgba(201,168,76,0.25)', color: '#C9A84C', background: 'transparent', fontFamily: 'ui-monospace, monospace', fontSize: '0.75rem', letterSpacing: '0.15em', cursor: 'pointer', borderRadius: '8px', transition: 'all 0.25s' }}
-                  onMouseEnter={e => { e.currentTarget.style.background = 'rgba(201,168,76,0.08)'; e.currentTarget.style.borderColor = 'rgba(201,168,76,0.5)' }}
-                  onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.borderColor = 'rgba(201,168,76,0.25)' }}
+                <button
+                  onClick={handleReset}
+                  className="tel-ghost-btn"
+                  style={{ padding: '10px 28px' }}
                 >
                   Réessayer
                 </button>
@@ -670,14 +769,11 @@ export default function TELPage() {
           {appState === 'result' && currentCard && (
             <div className="flex items-center justify-center px-4 py-8" style={{ minHeight: '70vh' }}>
               <div style={{ width: '100%', maxWidth: '680px' }}>
-                {/* Discovery banner */}
                 {discoveryInfo && (
-                  <div className="mb-4 px-4 py-3 rounded-xl" style={{ background: 'rgba(201,168,76,0.04)', border: '1px solid rgba(201,168,76,0.12)' }}>
-                    <p className="text-xs mb-1" style={{ color: '#C9A84C', fontFamily: 'ui-monospace, monospace', letterSpacing: '0.15em' }}>
-                      LOGOS A DÉCOUVERT
-                    </p>
-                    <p className="text-xs" style={{ color: '#888', fontFamily: 'Georgia, serif', fontStyle: 'italic', lineHeight: 1.6 }}>
-                      <span style={{ color: '#F5ECD7' }}>{discoveryInfo.titre}</span>
+                  <div className="mb-4 px-4 py-3 rounded-lg" style={{ background: 'rgba(201,168,76,0.04)', border: '1px solid rgba(201,168,76,0.1)' }}>
+                    <p className="tel-label mb-1">LOGOS a découvert</p>
+                    <p style={{ fontSize: '13px', color: '#666', fontStyle: 'italic', lineHeight: 1.6 }}>
+                      <span style={{ color: '#e0e0e0' }}>{discoveryInfo.titre}</span>
                       {' — '}{discoveryInfo.pourquoi}
                     </p>
                   </div>
@@ -697,24 +793,21 @@ export default function TELPage() {
         </div>
 
         {/* ─── Footer ──────────────────────────────────────────────────── */}
-        <footer className="flex-shrink-0 px-6 py-4 text-center" style={{ borderTop: '1px solid rgba(255,255,255,0.025)' }}>
-          <p className="text-xs mb-2" style={{ color: '#111', fontFamily: 'ui-monospace, monospace', letterSpacing: '0.08em' }}>
-            theexperiencelayer.org · Babel a dispersé les langages. TEL rassemble les vécus.
-          </p>
-          <a
-            href="/education"
-            style={{ color: '#2a2a2a', fontFamily: 'ui-monospace, monospace', fontSize: '0.65rem', letterSpacing: '0.12em', textDecoration: 'none', transition: 'color 0.2s' }}
-            onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.color = '#C9A84C' }}
-            onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.color = '#2a2a2a' }}
-          >
-            Pour les enseignants — TEL Éducation →
-          </a>
+        <footer className="flex-shrink-0 px-6 py-5 text-center" style={{ borderTop: '1px solid rgba(255,255,255,0.031)' }}>
+          <div className="flex items-center justify-center gap-4 flex-wrap">
+            <span style={{ color: '#222', fontSize: '12px' }}>theexperiencelayer.org</span>
+            <span style={{ color: '#1a1a1a', fontSize: '10px' }}>·</span>
+            <a
+              href="/education"
+              style={{ color: '#333', fontSize: '12px', textDecoration: 'none', transition: 'color 200ms ease' }}
+              onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.color = '#888' }}
+              onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.color = '#333' }}
+            >
+              TEL Éducation →
+            </a>
+          </div>
         </footer>
       </div>
-
-      <style>{`
-        @keyframes spin { to { transform: rotate(360deg); } }
-      `}</style>
     </main>
   )
 }

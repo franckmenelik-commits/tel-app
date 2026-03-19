@@ -15,7 +15,6 @@ export default function ConfidenceBar({
 }: ConfidenceBarProps) {
   const clamped = Math.min(100, Math.max(0, value))
 
-  // Color: low = amber-red, mid = gold, high = green
   const getColor = (v: number) => {
     if (v >= 75) return '#1A6B3C'
     if (v >= 50) return '#C9A84C'
@@ -23,40 +22,34 @@ export default function ConfidenceBar({
     return '#8B3A3A'
   }
 
-  const heightClass = size === 'sm' ? 'h-1' : size === 'lg' ? 'h-3' : 'h-2'
+  // All bars: 2px height (flat, minimal)
+  const height = size === 'sm' ? '1px' : '2px'
 
   return (
     <div className="w-full">
       {(label || showValue) && (
-        <div className="flex justify-between items-center mb-1">
+        <div className="flex justify-between items-center mb-2">
           {label && (
-            <span
-              className="text-xs uppercase tracking-widest"
-              style={{ color: '#555555', fontFamily: 'ui-monospace, monospace' }}
-            >
+            <span style={{ fontSize: '10px', letterSpacing: '0.15em', textTransform: 'uppercase', color: '#e0e0e0', opacity: 0.4 }}>
               {label}
             </span>
           )}
           {showValue && (
-            <span
-              className="text-xs font-mono ml-auto"
-              style={{ color: getColor(clamped) }}
-            >
+            <span style={{ fontSize: '11px', fontFamily: 'ui-monospace, monospace', color: getColor(clamped), marginLeft: 'auto' }}>
               {clamped}%
             </span>
           )}
         </div>
       )}
       <div
-        className={`w-full ${heightClass} rounded-full overflow-hidden`}
-        style={{ background: 'rgba(255,255,255,0.06)' }}
+        style={{ width: '100%', height, background: 'rgba(255,255,255,0.06)', borderRadius: '1px', overflow: 'hidden' }}
       >
         <div
-          className="h-full rounded-full transition-all duration-1000 ease-out"
           style={{
+            height: '100%',
             width: `${clamped}%`,
-            background: `linear-gradient(90deg, ${getColor(clamped)}88, ${getColor(clamped)})`,
-            boxShadow: `0 0 8px ${getColor(clamped)}66`,
+            background: getColor(clamped),
+            transition: 'width 800ms ease-out',
           }}
         />
       </div>

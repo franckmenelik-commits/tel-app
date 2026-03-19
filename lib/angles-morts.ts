@@ -1,19 +1,18 @@
 // TEL — The Experience Layer
 // lib/angles-morts.ts
-// Niveau 3 — Détection des angles morts, silences et biais
+// Analyse des angles morts via LOGOS — spécifique aux sources fournies
+// Remplace la détection par mots-clés hardcodés par un appel LLM ciblé
 
 import type {
   ExtractedSource,
   InsightCard,
-  AngleMort,
   AnglesMortsAnalyse,
-  SourceRegion,
 } from './types'
 
-// ─── Labels des régions ───────────────────────────────────────────────────────
+// ─── Labels des régions (kept for compat) ─────────────────────────────────────
 
-export function labelRegion(r: SourceRegion): string {
-  const labels: Record<SourceRegion, string> = {
+export function labelRegion(r: string): string {
+  const labels: Record<string, string> = {
     afrique: 'Afrique subsaharienne',
     asie: 'Asie du Sud / Sud-Est',
     amerique_latine: 'Amérique latine',
@@ -27,255 +26,128 @@ export function labelRegion(r: SourceRegion): string {
   return labels[r] || r
 }
 
-// ─── Détection de région par source ──────────────────────────────────────────
+// ─── Prompt builder ───────────────────────────────────────────────────────────
 
-function detecterRegionSource(source: ExtractedSource): SourceRegion {
-  const t = `${source.geographicContext} ${source.title} ${source.content.slice(0, 400)}`.toLowerCase()
-  if (/afrique|africa|sahel|subsahar|congo|nigeria|ghana|kenya|sénégal|cameroun|mali|rwanda|éthiopie|côte d'ivoire|mozambique|angola/.test(t)) return 'afrique'
-  if (/asie|inde|india|chine|china|japon|japan|corée|vietnam|indonesia|bangladesh|pakistan|myanmar|thaïlande/.test(t)) return 'asie'
-  if (/amérique latine|brésil|brazil|mexique|mexico|colombia|argentina|cuba|pérou|chile|venezuela/.test(t)) return 'amerique_latine'
-  if (/moyen.orient|monde arabe|iran|iraq|syrie|palestine|liban|yémen|arabie|égypte|maroc|tunisie/.test(t)) return 'moyen_orient'
-  if (/europe|france|allemagne|royaume.uni|italie|espagne|pologne|suède|belgique|suisse/.test(t)) return 'europe'
-  if (/états.unis|usa|canada|north america|amérique du nord/.test(t)) return 'amerique_nord'
-  if (/australie|océanie|pacific|polynesia|melanesia/.test(t)) return 'oceanie'
-  return 'global'
-}
+function buildAnglesMotsPrompt(sources: ExtractedSource[], insight: InsightCard): string {
+  const sourcesDesc = sources
+    .map(s => `- "${s.title}" (${s.geographicContext}, type: ${s.type})`)
+    .join('\n')
 
-// ─── Analyse géographique ─────────────────────────────────────────────────────
+  return `Tu es LOGOS — analyseur d'angles morts pour TEL, The Experience Layer.
 
-const ALL_REGIONS: SourceRegion[] = [
-  'afrique', 'asie', 'amerique_latine', 'moyen_orient',
-  'europe', 'amerique_nord', 'oceanie',
-]
+SOURCES CROISÉES:
+${sourcesDesc}
 
-function analyserGeographie(sources: ExtractedSource[]): AngleMort[] {
-  if (sources.length === 0) return []
-  const angles: AngleMort[] = []
+THÈME: ${insight.theme}
+PATTERN: ${insight.revealedPattern.slice(0, 300)}
 
-  const regionCounts = new Map<SourceRegion, number>()
-  for (const s of sources) {
-    const r = detecterRegionSource(s)
-    regionCounts.set(r, (regionCounts.get(r) || 0) + 1)
-  }
+MISSION: Identifie les angles morts SPÉCIFIQUES à CES sources précises.
+Ne génère PAS de réponses génériques (ex: "perspectives des femmes", "perspectives de la jeunesse") SAUF si c'est réellement absent ET pertinent pour CE croisement particulier.
+Analyse le contenu réel de CES sources et identifie ce qui manque vraiment dans CE contexte précis.
+Si le croisement est déjà équilibré, retourne un score élevé et peu d'angles.
 
-  const total = sources.length
-  regionCounts.forEach((count, region) => {
-    const pct = (count / total) * 100
-    if (pct > 60 && region !== 'global') {
-      const manquantes = ALL_REGIONS.filter(r => r !== region && r !== 'global' && !regionCounts.has(r))
-      angles.push({
-        type: 'geographique',
-        description: `Ce croisement est dominé par des sources ${labelRegion(region)} (${Math.round(pct)}% des sources). D'autres perspectives mondiales sont absentes.`,
-        regions: manquantes,
-        suggestion: manquantes.length > 0
-          ? `Perspectives manquantes : ${manquantes.map(labelRegion).join(', ')}.`
-          : undefined,
-      })
+Retourne UNIQUEMENT du JSON valide:
+{
+  "anglesDetectes": [
+    {
+      "type": "geographique",
+      "description": "Angle mort spécifique à ces sources — 1 phrase concrète ancrée dans leur contenu réel",
+      "suggestion": "Quelle source ou perspective comblerait cet angle mort"
     }
-  })
-
-  // Bonus: note if Global South is significantly underrepresented
-  const southRegions: SourceRegion[] = ['afrique', 'asie', 'amerique_latine', 'moyen_orient']
-  const southCount = southRegions.reduce((acc, r) => acc + (regionCounts.get(r) || 0), 0)
-  const southPct = (southCount / total) * 100
-  if (southPct === 0 && total >= 2) {
-    angles.push({
-      type: 'geographique',
-      description: `Aucune source du Sud global (Afrique, Asie, Amérique latine, Monde arabe). Ce croisement reflète principalement des perspectives du Nord.`,
-      regions: southRegions,
-      suggestion: 'Enrichir avec des sources africaines, asiatiques ou latino-américaines ?',
-    })
-  }
-
-  return angles
+  ],
+  "scoreEquilibre": 75,
+  "perspectivesManquantes": ["Perspective manquante spécifique 1"],
+  "questionsEvitees": ["Question spécifique évitée par ces sources"]
 }
 
-// ─── Analyse temporelle ───────────────────────────────────────────────────────
-
-function detecterAnnee(source: ExtractedSource): number | null {
-  const yearMatch = `${source.title} ${source.content.slice(0, 600)}`.match(/\b(19|20)\d{2}\b/g)
-  if (!yearMatch) return null
-  const years = yearMatch.map(Number).filter(y => y >= 1900 && y <= new Date().getFullYear())
-  return years.sort((a, b) => b - a)[0] || null
+Règles absolues:
+- Maximum 2 anglesDetectes — préfère 0 ou 1 si le croisement est équilibré
+- type: "geographique" | "temporel" | "genre_posture" | "silence"
+- scoreEquilibre: 0-100 (80+ = très équilibré)
+- Sois spécifique aux sources fournies, pas générique`
 }
 
-function analyserTemporalite(sources: ExtractedSource[]): AngleMort[] {
-  const angles: AngleMort[] = []
-  const currentYear = new Date().getFullYear()
-  const annees = sources.map(detecterAnnee).filter((a): a is number => a !== null)
-  if (annees.length < 2) return angles
+// ─── Lightweight LLM call ─────────────────────────────────────────────────────
 
-  const plusRecente = Math.max(...annees)
-  const plusAncienne = Math.min(...annees)
-  const age = currentYear - plusRecente
-
-  if (age > 20) {
-    angles.push({
-      type: 'temporel',
-      description: `Ce croisement manque de vécus contemporains. La source la plus récente date de ${plusRecente} (${age} ans).`,
-      suggestion: 'Rechercher des témoignages ou analyses post-2020 sur ce sujet ?',
-    })
-  } else if ((currentYear - plusAncienne) < 5) {
-    angles.push({
-      type: 'temporel',
-      description: `Ce croisement manque de profondeur historique. Toutes les sources semblent récentes (après ${plusAncienne}).`,
-      suggestion: 'Rechercher des sources historiques pour ancrer ce croisement dans le temps long ?',
-    })
-  }
-
-  return angles
-}
-
-// ─── Analyse de posture ───────────────────────────────────────────────────────
-
-function detecterPosture(source: ExtractedSource): 'institutionnelle' | 'populaire' | 'academique' | 'inconnue' {
-  if (source.type === 'wikipedia') return 'academique'
-  if (source.type === 'youtube' || source.type === 'instagram' || source.type === 'podcast') return 'populaire'
-  if (source.type === 'free_text') return 'populaire'
-  if (source.type === 'article') {
-    const titre = source.title.toLowerCase()
-    if (/journal|review|research|study|université|académie|rapport annuel|working paper/.test(titre)) return 'academique'
-    if (/ministère|government|official|rapport|agence|onu|unicef|banque mondiale/.test(titre)) return 'institutionnelle'
-    return 'inconnue'
-  }
-  return 'inconnue'
-}
-
-function analyserPosture(sources: ExtractedSource[]): AngleMort[] {
-  const angles: AngleMort[] = []
-  const postures = sources.map(detecterPosture).filter(p => p !== 'inconnue')
-  if (postures.length < 2) return angles
-
-  const postureCount = new Map<string, number>()
-  for (const p of postures) postureCount.set(p, (postureCount.get(p) || 0) + 1)
-
-  const total = postures.length
-  postureCount.forEach((count, posture) => {
-    const pct = (count / total) * 100
-    if (pct >= 75) {
-      const labels: Record<string, string> = {
-        academique: 'académiques / encyclopédiques',
-        institutionnelle: 'institutionnelles / officielles',
-        populaire: 'populaires / témoignages directs',
+async function callLLMForAngles(prompt: string): Promise<string> {
+  // N2 — Mistral small (fast + cheap pour une analyse légère)
+  if (process.env.MISTRAL_API_KEY) {
+    try {
+      const res = await fetch('https://api.mistral.ai/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${process.env.MISTRAL_API_KEY}`,
+        },
+        body: JSON.stringify({
+          model: 'mistral-small-latest',
+          messages: [{ role: 'user', content: prompt }],
+          temperature: 0.3,
+          max_tokens: 500,
+          response_format: { type: 'json_object' },
+        }),
+        signal: AbortSignal.timeout(18000),
+      })
+      if (res.ok) {
+        const data = await res.json()
+        const text: string = data.choices?.[0]?.message?.content ?? ''
+        if (text.trim()) return text
       }
-      const manquantes = ['academique', 'institutionnelle', 'populaire']
-        .filter(p => p !== posture)
-        .map(p => labels[p])
-      angles.push({
-        type: 'genre_posture',
-        description: `Toutes les sources sont ${labels[posture]} (${Math.round(pct)}%). Une perspective unique domine.`,
-        suggestion: `Les voix ${manquantes.join(' et ')} enrichiraient ce croisement.`,
-      })
+    } catch { /* fallback to Ollama */ }
+  }
+
+  // N1 — Ollama (local fallback)
+  const ollamaUrl = process.env.OLLAMA_URL || 'http://localhost:11434'
+  const ollamaModel = process.env.OLLAMA_MODEL || 'mistral'
+  try {
+    const res = await fetch(`${ollamaUrl}/api/chat`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: ollamaModel,
+        messages: [{ role: 'user', content: prompt }],
+        stream: false,
+        options: { temperature: 0.3, num_predict: 450 },
+      }),
+      signal: AbortSignal.timeout(25000),
+    })
+    if (res.ok) {
+      const data = await res.json()
+      const text: string = data.message?.content ?? ''
+      if (text.trim()) return text
     }
-  })
+  } catch { /* no model available */ }
 
-  return angles
+  throw new Error('Aucun LLM disponible pour les angles morts')
 }
 
-// ─── Détection des silences ───────────────────────────────────────────────────
+// ─── Main function (now async — LLM-based) ────────────────────────────────────
 
-const THEMES_SILENCES = [
-  {
-    theme: "l'impact sur les femmes et les filles",
-    keywords: /femm|femmes|genre|gender|woman|women|féminin|maternité|patriarcat|fille|girls|sexe|féminisme|parité|égalité femme|violence conjugale|droits des femmes|matriarcat/,
-  },
-  {
-    theme: 'les perspectives de la jeunesse',
-    keywords: /enfant|jeune|jeunes|youth|child|children|génération|adolescent|teen|mineur|étudiant|student|scolaire|école|jeunesse|futur générat|nés après/,
-  },
-  {
-    theme: 'les communautés rurales et paysannes',
-    keywords: /rural|campagne|village|paysan|agriculteur|fermier|agriculture|terres|subsistan|rural|paysannerie/,
-  },
-  {
-    theme: 'les populations déplacées et réfugiées',
-    keywords: /réfugié|déplacé|migrant|diaspora|refugee|displaced|exil|asile|frontière|camps de|déplacement/,
-  },
-  {
-    theme: 'la dimension économique des plus vulnérables',
-    keywords: /pauvre|poverty|poor|misère|vulnérable|inégalité|chômage|précarité|accès aux ressources|économie informelle|survie|sans ressources/,
-  },
-  {
-    theme: 'les savoirs et langues autochtones',
-    keywords: /autochtone|indigenous|native|langue locale|savoir traditionnel|oral|ancestral|peuple premier|first nations|tradition orale|savoir paysan/,
-  },
-  {
-    theme: 'la mémoire traumatique non dite',
-    keywords: /trauma|deuil|blessure|honte|indicible|non.dit|stigma|guérison|cicatrice|résilience|survivant|témoignage douloureux/,
-  },
-  {
-    theme: 'les héritages coloniaux dans la situation actuelle',
-    keywords: /coloni|néocoloni|postcoloni|exploitation|indépendance|dette|impérialisme|esclavage|réparations|décoloni/,
-  },
-]
-
-function detecterSilences(sources: ExtractedSource[], insight: InsightCard): AngleMort[] {
-  // Check substantially more content per source, include titles/URLs and the insight theme
-  const texteComplet = [
-    insight.theme,
-    ...sources.map(s => `${s.title} ${s.url} ${s.content.slice(0, 1500)}`),
-    insight.revealedPattern,
-    ...insight.convergenceZones,
-    ...insight.divergenceZones,
-    insight.theUnspeakable,
-  ].join(' ').toLowerCase()
-
-  const silences = THEMES_SILENCES.filter(t => !t.keywords.test(texteComplet))
-
-  // Only flag if sources are quite narrow (5+ themes absent) — avoids generic results
-  if (silences.length < 5) return []
-
-  // Report at most 2 silences, the ones most plausibly absent
-  const silencesList = silences.slice(0, 3).map(s => s.theme)
-
-  return [{
-    type: 'silence',
-    description: `Ces sources n'abordent pas : ${silencesList.join(', ')}.`,
-    suggestion: 'L\'absence d\'une perspective révèle souvent autant que sa présence.',
-  }]
-}
-
-// ─── Calcul du score d'équilibre ─────────────────────────────────────────────
-
-function calcScoreEquilibre(angles: AngleMort[], sourceCount: number): number {
-  let score = 100
-  score -= angles.filter(a => a.type === 'geographique').length * 25
-  score -= angles.filter(a => a.type === 'temporel').length * 15
-  score -= angles.filter(a => a.type === 'genre_posture').length * 15
-  score -= angles.filter(a => a.type === 'silence').length * 10
-  score += Math.min(20, (sourceCount - 2) * 5) // Bonus for more sources
-  return Math.max(0, Math.min(100, score))
-}
-
-// ─── Orchestrateur ────────────────────────────────────────────────────────────
-
-export function analyserAnglesMorts(
+export async function analyserAnglesMorts(
   sources: ExtractedSource[],
   insight: InsightCard
-): AnglesMortsAnalyse {
-  const geo = analyserGeographie(sources)
-  const temp = analyserTemporalite(sources)
-  const posture = analyserPosture(sources)
-  const silences = detecterSilences(sources, insight)
+): Promise<AnglesMortsAnalyse> {
+  const prompt = buildAnglesMotsPrompt(sources, insight)
 
-  const anglesDetectes = [...geo, ...temp, ...posture, ...silences]
+  try {
+    const raw = await callLLMForAngles(prompt)
+    const match = raw.match(/\{[\s\S]*\}/)
+    if (!match) throw new Error('JSON invalide')
+    const data = JSON.parse(match[0])
 
-  const perspectivesManquantes = [
-    ...geo.flatMap(a => (a.regions || []).map(labelRegion)),
-    ...posture.flatMap(a => a.suggestion ? [a.suggestion] : []),
-  ].slice(0, 5)
-
-  const questionsEvitees = silences.length > 0
-    ? THEMES_SILENCES
-        .filter(t => !t.keywords.test(sources.map(s => s.content).join(' ').toLowerCase()))
-        .map(t => t.theme)
-        .slice(0, 4)
-    : []
-
-  return {
-    anglesDetectes,
-    scoreEquilibre: calcScoreEquilibre(anglesDetectes, sources.length),
-    perspectivesManquantes,
-    questionsEvitees,
+    return {
+      anglesDetectes: (data.anglesDetectes || []).slice(0, 2),
+      scoreEquilibre: Math.max(0, Math.min(100, Number(data.scoreEquilibre) || 70)),
+      perspectivesManquantes: (data.perspectivesManquantes || []).slice(0, 3),
+      questionsEvitees: (data.questionsEvitees || []).slice(0, 2),
+    }
+  } catch {
+    // Graceful fallback — neutral result, non-blocking
+    return {
+      anglesDetectes: [],
+      scoreEquilibre: 75,
+      perspectivesManquantes: [],
+      questionsEvitees: [],
+    }
   }
 }

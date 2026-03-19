@@ -172,7 +172,7 @@ export async function crossNarratives(
       sourceCoordinates: parsed.sourceCoordinates || [],
       createdAt: new Date(),
     }
-    anglesMorts = analyserAnglesMorts(sourcesEnrichies, insightTemp)
+    anglesMorts = await analyserAnglesMorts(sourcesEnrichies, insightTemp)
     callbacks?.onAnglesMorts?.(anglesMorts)
   } catch {
     // Angles morts analysis is non-critical — continue without it
