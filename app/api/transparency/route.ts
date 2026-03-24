@@ -1,8 +1,7 @@
 // TEL — The Experience Layer
 // /api/transparency — Audit algorithmique de textes institutionnels
 //
-// Reçoit un texte à auditer + des IDs de textes de référence
-// Retourne une analyse structurée en 5 sections
+// SOUFFLE : Mistral d'abord → Claude fallback → Ollama dernier recours
 
 import Anthropic from '@anthropic-ai/sdk'
 import { buildTransparencyPrompt } from '@/lib/prompt'
@@ -10,16 +9,12 @@ import { getReferencesByIds } from '@/lib/reference-texts'
 
 export const maxDuration = 120
 
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY,
-})
-
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 interface TransparencyPayload {
   textToAudit: string
-  referenceIds: string[]       // IDs from REFERENCE_TEXTS
-  freeReference?: string       // optional custom reference text
+  referenceIds: string[]
+  freeReference?: string
 }
 
 export interface TransparencyReport {
@@ -31,6 +26,84 @@ export interface TransparencyReport {
   questionNoOneHasAsked: string
   riskLevel: 'faible' | 'modéré' | 'élevé' | 'critique'
   riskSummary: string
+}
+
+// ─── SOUFFLE LLM call — Mistral → Claude → Ollama ─────────────────────────────
+
+async function callLLM(prompt: string): Promise<string> {
+  // N2 — Mistral API (preferred)
+  if (process.env.MISTRAL_API_KEY) {
+    try {
+      console.log('[transparency] Essai N2 Mistral...')
+      const res = await fetch('https://api.mistral.ai/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${process.env.MISTRAL_API_KEY}`,
+        },
+        body: JSON.stringify({
+          model: 'mistral-large-latest',
+          messages: [{ role: 'user', content: prompt }],
+          temperature: 0.3,
+          max_tokens: 4096,
+        }),
+        signal: AbortSignal.timeout(90000),
+      })
+      if (res.ok) {
+        const data = await res.json()
+        const text: string = data.choices?.[0]?.message?.content ?? ''
+        if (text.trim()) {
+          console.log('[transparency] N2 Mistral OK')
+          return text
+        }
+      } else {
+        console.warn('[transparency] N2 HTTP', res.status, await res.text().then(t => t.slice(0, 200)))
+      }
+    } catch (err) {
+      console.warn('[transparency] N2 indisponible:', err instanceof Error ? err.message : err)
+    }
+  }
+
+  // N3 — Anthropic Claude (fallback)
+  if (process.env.ANTHROPIC_API_KEY) {
+    try {
+      console.log('[transparency] Fallback N3 Claude...')
+      const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
+      const response = await client.messages.create({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 4096,
+        messages: [{ role: 'user', content: prompt }],
+      })
+      const text = response.content[0].type === 'text' ? response.content[0].text : ''
+      if (text.trim()) {
+        console.log('[transparency] N3 Claude OK')
+        return text
+      }
+    } catch (err) {
+      console.warn('[transparency] N3 indisponible:', err instanceof Error ? err.message : err)
+    }
+  }
+
+  // N1 — Ollama (dernier recours)
+  const ollamaUrl = process.env.OLLAMA_URL || 'http://localhost:11434'
+  const ollamaModel = process.env.OLLAMA_MODEL || 'mistral'
+  console.log('[transparency] Fallback N1 Ollama...')
+  const res = await fetch(`${ollamaUrl}/api/chat`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: ollamaModel,
+      messages: [{ role: 'user', content: prompt }],
+      stream: false,
+      options: { temperature: 0.3, num_predict: 3000 },
+    }),
+    signal: AbortSignal.timeout(120000),
+  })
+  if (!res.ok) throw new Error(`Ollama ${res.status}: aucun modèle disponible`)
+  const data = await res.json()
+  const text: string = data.message?.content ?? ''
+  if (!text.trim()) throw new Error('Réponse vide de tous les modèles SOUFFLE')
+  return text
 }
 
 // ─── POST handler ─────────────────────────────────────────────────────────────
@@ -48,7 +121,6 @@ export async function POST(request: Request) {
 
   const { textToAudit, referenceIds = [], freeReference } = body
 
-  // Validate
   if (!textToAudit || textToAudit.trim().length < 50) {
     return new Response(
       JSON.stringify({ error: 'Le texte à auditer est trop court (minimum 50 caractères)' }),
@@ -63,17 +135,13 @@ export async function POST(request: Request) {
     )
   }
 
-  // Build references list
   const references = getReferencesByIds(referenceIds).map(r => ({
     label: r.label,
     content: r.content,
   }))
 
-  if (freeReference && freeReference.trim()) {
-    references.push({
-      label: 'Référence personnalisée',
-      content: freeReference.trim(),
-    })
+  if (freeReference?.trim()) {
+    references.push({ label: 'Référence personnalisée', content: freeReference.trim() })
   }
 
   if (references.length === 0) {
@@ -83,36 +151,26 @@ export async function POST(request: Request) {
     )
   }
 
-  // Check Anthropic key
-  if (!process.env.ANTHROPIC_API_KEY) {
-    return new Response(
-      JSON.stringify({ error: 'ANTHROPIC_API_KEY non configuré' }),
-      { status: 503, headers: { 'Content-Type': 'application/json' } }
-    )
+  // Vérifier qu'au moins un modèle est disponible
+  if (!process.env.MISTRAL_API_KEY && !process.env.ANTHROPIC_API_KEY) {
+    const ollamaUrl = process.env.OLLAMA_URL || 'http://localhost:11434'
+    try {
+      const health = await fetch(`${ollamaUrl}/api/tags`, { signal: AbortSignal.timeout(3000) })
+      if (!health.ok) throw new Error()
+    } catch {
+      return new Response(
+        JSON.stringify({ error: 'Aucun modèle disponible — configurez MISTRAL_API_KEY, ANTHROPIC_API_KEY, ou Ollama' }),
+        { status: 503, headers: { 'Content-Type': 'application/json' } }
+      )
+    }
   }
 
-  // Build prompt
   const prompt = buildTransparencyPrompt(textToAudit, references)
 
   try {
-    const message = await anthropic.messages.create({
-      model: 'claude-opus-4-6',
-      max_tokens: 4096,
-      messages: [{ role: 'user', content: prompt }],
-    })
-
-    const content = message.content[0]
-    if (content.type !== 'text') {
-      throw new Error('Réponse inattendue du modèle')
-    }
-
-    // Parse JSON
-    const text = content.text.trim()
-    const jsonMatch = text.match(/\{[\s\S]*\}/)
-    if (!jsonMatch) {
-      throw new Error('Réponse sans JSON valide')
-    }
-
+    const raw = await callLLM(prompt)
+    const jsonMatch = raw.match(/\{[\s\S]*\}/)
+    if (!jsonMatch) throw new Error('Réponse sans JSON valide')
     const report: TransparencyReport = JSON.parse(jsonMatch[0])
 
     return new Response(JSON.stringify({ success: true, report }), {
@@ -122,9 +180,7 @@ export async function POST(request: Request) {
   } catch (err) {
     console.error('[/api/transparency] Erreur:', err)
     return new Response(
-      JSON.stringify({
-        error: err instanceof Error ? err.message : 'Erreur lors de l\'analyse',
-      }),
+      JSON.stringify({ error: err instanceof Error ? err.message : 'Erreur lors de l\'analyse' }),
       { status: 500, headers: { 'Content-Type': 'application/json' } }
     )
   }

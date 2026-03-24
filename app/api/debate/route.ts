@@ -8,23 +8,7 @@ import type { InsightCard } from '@/lib/types'
 export const dynamic = 'force-dynamic'
 
 async function callLLM(prompt: string): Promise<string> {
-  // N3 — Anthropic Claude (best for structured narrative writing)
-  if (process.env.ANTHROPIC_API_KEY) {
-    try {
-      const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
-      const response = await client.messages.create({
-        model: 'claude-sonnet-4-6',
-        max_tokens: 2500,
-        messages: [{ role: 'user', content: prompt }],
-      })
-      const text = response.content[0].type === 'text' ? response.content[0].text : ''
-      if (text.trim()) return text
-    } catch (err) {
-      console.warn('[debate] N3 indisponible:', err instanceof Error ? err.message : err)
-    }
-  }
-
-  // N2 — Mistral API
+  // N2 — Mistral API (preferred)
   if (process.env.MISTRAL_API_KEY) {
     try {
       const res = await fetch('https://api.mistral.ai/v1/chat/completions', {
@@ -45,9 +29,27 @@ async function callLLM(prompt: string): Promise<string> {
         const data = await res.json()
         const text: string = data.choices?.[0]?.message?.content ?? ''
         if (text.trim()) return text
+      } else {
+        console.warn('[debate] N2 HTTP', res.status)
       }
     } catch (err) {
       console.warn('[debate] N2 indisponible:', err instanceof Error ? err.message : err)
+    }
+  }
+
+  // N3 — Anthropic Claude (fallback)
+  if (process.env.ANTHROPIC_API_KEY) {
+    try {
+      const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
+      const response = await client.messages.create({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 2500,
+        messages: [{ role: 'user', content: prompt }],
+      })
+      const text = response.content[0].type === 'text' ? response.content[0].text : ''
+      if (text.trim()) return text
+    } catch (err) {
+      console.warn('[debate] N3 indisponible:', err instanceof Error ? err.message : err)
     }
   }
 
