@@ -491,6 +491,7 @@ export default function TELPage() {
                 {[
                   { href: '/legends', label: 'Légendes' },
                   { href: '/education', label: 'Éducation' },
+                  { href: '/transparency', label: 'Transparence' },
                   { href: '/manifesto', label: 'Manifeste' },
                 ].map(link => (
                   <a

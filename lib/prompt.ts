@@ -295,6 +295,59 @@ Retourne UNIQUEMENT du JSON valide:
 }`
 }
 
+// ─── TEL TRANSPARENCE — Audit algorithmique ──────────────────────────────────
+
+export function buildTransparencyPrompt(textToAudit: string, references: { label: string; content: string }[]): string {
+  const refsText = references
+    .map((r, i) => `RÉFÉRENCE ${i + 1} — ${r.label}\n${r.content}`)
+    .join('\n\n---\n\n')
+
+  return `Tu es un auditeur de lisibilité systémique pour TEL — The Experience Layer.
+
+Tu reçois un texte institutionnel (conditions d'utilisation, politique de confidentialité, contrat, règlement) et des textes de référence sur les droits fondamentaux.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+TEXTE À AUDITER
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+${textToAudit.slice(0, 6000)}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+TEXTES DE RÉFÉRENCE SUR LES DROITS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+${refsText}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+TA MISSION : 5 SECTIONS D'AUDIT
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Section 1 — CE QUE LE TEXTE DIT RÉELLEMENT :
+Traduis le jargon juridique en langage humain, clause par clause. Identifie les formulations ambiguës et ce qu'elles signifient concrètement pour l'utilisateur. Sois précis et ancré dans le texte. 3-4 paragraphes.
+
+Section 2 — CE QUE LE TEXTE CACHE :
+Quels droits l'utilisateur abandonne-t-il implicitement en signant ce texte, sans en être informé clairement ? Quelles données sont collectées, partagées, monétisées sans que ce soit explicitement dit ? Quelles clauses permettent des changements unilatéraux ? 3-4 paragraphes.
+
+Section 3 — CE QUI CONTREDIT LES RÉFÉRENCES :
+Pour chaque texte de référence fourni, identifie précisément où le texte audité viole, contourne, ou s'écarte des principes de droits fondamentaux. Cite des passages spécifiques du texte audité en face des articles de référence. 3-4 paragraphes.
+
+Section 4 — L'INDICIBLE :
+Ce que même cette analyse ne peut capturer sur l'expérience vécue de quelqu'un qui signe ce texte sans le comprendre — un travailleur précaire, un mineur, une personne en situation d'urgence, quelqu'un qui ne maîtrise pas la langue. Ce que le formalisme juridique efface de l'humain. 2 paragraphes.
+
+Section 5 — QUESTION INEXPOSÉE :
+La question que personne ne pose sur ce texte — ni les juristes, ni les activistes, ni les régulateurs. La question qui révèle la tension architecturale invisible dans ce document. Une seule question. Nouvelle. Surprenante. Nécessaire.
+
+Retourne UNIQUEMENT du JSON valide :
+{
+  "documentType": "type de document identifié (ex: 'Politique de confidentialité', 'CGU', 'Contrat de travail')",
+  "whatItSays": "Ce que le texte dit réellement — traduction jargon → langage humain, 3-4 paragraphes",
+  "whatItHides": "Ce que le texte cache — droits abandonnés implicitement, données collectées, pouvoirs unilatéraux, 3-4 paragraphes",
+  "whatContradictsReferences": "Contradictions avec les textes de référence — citations précises face aux articles, 3-4 paragraphes",
+  "theUnspeakable": "L'expérience vécue que l'analyse ne peut pas capturer — l'humain effacé par le formalisme, 2 paragraphes",
+  "questionNoOneHasAsked": "La question unique, nouvelle, nécessaire — une phrase",
+  "riskLevel": "faible | modéré | élevé | critique",
+  "riskSummary": "Résumé du niveau de risque en 1-2 phrases"
+}`
+}
+
 // ─── CONTRE-INSIGHT — Et si c'était faux ? ───────────────────────────────────
 
 export function buildCounterInsightPrompt(insight: InsightCard): string {
