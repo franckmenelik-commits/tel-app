@@ -75,6 +75,7 @@ Retourne UNIQUEMENT du JSON valide:
     {"lat": 0.0, "lng": 0.0, "region": "Région source 1"},
     {"lat": 0.0, "lng": 0.0, "region": "Région source 2"}
   ],
+  "irreconcilable": "En une phrase directe : ce qui NE PEUT PAS et NE DOIT PAS être harmonisé dans ce croisement — la tension qui doit rester tension",
   "actionables": {
     "individu": "ce qu'une personne ordinaire peut faire avec cet insight — concret et accessible en 1-2 phrases",
     "chercheur": "ce qu'un chercheur, journaliste ou praticien peut explorer — piste concrète et originale",
@@ -175,6 +176,7 @@ Retourne UNIQUEMENT du JSON valide (pas de markdown, pas de texte hors JSON):
     {"lat": 48.8566, "lng": 2.3522, "region": "Paris, France"},
     {"lat": 35.6762, "lng": 139.6503, "region": "Tokyo, Japon"}
   ],
+  "irreconcilable": "En une phrase directe : ce qui NE PEUT PAS et NE DOIT PAS être harmonisé dans ce croisement — la tension qui doit rester tension",
   "actionables": {
     "individu": "ce qu'une personne ordinaire peut faire avec cet insight — concret et accessible en 1-2 phrases",
     "chercheur": "ce qu'un chercheur, journaliste ou praticien peut explorer — piste concrète et originale",
@@ -230,6 +232,7 @@ Retourne UNIQUEMENT du JSON valide:
     {"lat": 0.0, "lng": 0.0, "region": "Origine principale du concept ${termA}"},
     {"lat": 0.0, "lng": 0.0, "region": "Origine principale du concept ${termB}"}
   ],
+  "irreconcilable": "En une phrase directe : ce qui NE PEUT PAS et NE DOIT PAS être harmonisé dans ce croisement — la tension qui doit rester tension",
   "actionables": {
     "individu": "ce qu'une personne ordinaire peut faire avec cet insight — concret et accessible en 1-2 phrases",
     "chercheur": "ce qu'un chercheur, journaliste ou praticien peut explorer — piste concrète et originale",

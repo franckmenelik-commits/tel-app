@@ -486,6 +486,25 @@ export default function TELPage() {
             </button>
 
             <div className="flex items-center gap-2">
+              {/* Nav links — desktop */}
+              <nav className="hidden md:flex items-center" style={{ marginRight: '8px', gap: '20px' }}>
+                {[
+                  { href: '/legends', label: 'Légendes' },
+                  { href: '/education', label: 'Éducation' },
+                  { href: '/manifesto', label: 'Manifeste' },
+                ].map(link => (
+                  <a
+                    key={link.href}
+                    href={link.href}
+                    style={{ fontSize: '12px', color: '#666666', textDecoration: 'none', transition: 'color 200ms ease' }}
+                    onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.color = '#888' }}
+                    onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.color = '#666666' }}
+                  >
+                    {link.label}
+                  </a>
+                ))}
+              </nav>
+
               {/* Session history */}
               <button
                 onClick={() => setShowingSidebar(!showingSidebar)}
@@ -797,13 +816,22 @@ export default function TELPage() {
           <div className="flex items-center justify-center gap-4 flex-wrap">
             <span style={{ color: '#222', fontSize: '12px' }}>theexperiencelayer.org</span>
             <span style={{ color: '#1a1a1a', fontSize: '10px' }}>·</span>
-            <a
-              href="/education"
-              style={{ color: '#333', fontSize: '12px', textDecoration: 'none', transition: 'color 200ms ease' }}
+            <a href="/legends" style={{ color: '#333', fontSize: '12px', textDecoration: 'none', transition: 'color 200ms ease' }}
               onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.color = '#888' }}
-              onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.color = '#333' }}
-            >
+              onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.color = '#333' }}>
+              Les Croisements Fondateurs →
+            </a>
+            <span style={{ color: '#1a1a1a', fontSize: '10px' }}>·</span>
+            <a href="/education" style={{ color: '#333', fontSize: '12px', textDecoration: 'none', transition: 'color 200ms ease' }}
+              onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.color = '#888' }}
+              onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.color = '#333' }}>
               TEL Éducation →
+            </a>
+            <span style={{ color: '#1a1a1a', fontSize: '10px' }}>·</span>
+            <a href="/manifesto" style={{ color: '#333', fontSize: '12px', textDecoration: 'none', transition: 'color 200ms ease' }}
+              onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.color = '#888' }}
+              onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.color = '#333' }}>
+              Manifeste
             </a>
           </div>
         </footer>

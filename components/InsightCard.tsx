@@ -593,6 +593,26 @@ export default function InsightCard({
                 </li>
               ))}
             </ul>
+
+            {/* CE QUE TEL REFUSE DE RÉCONCILIER */}
+            {card.irreconcilable && (
+              <div
+                style={{
+                  marginTop: '20px',
+                  padding: '16px 20px',
+                  borderLeft: `2px solid ${GOLD}`,
+                  background: 'rgba(201,168,76,0.03)',
+                  borderRadius: '0 8px 8px 0',
+                }}
+              >
+                <p style={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.15em', color: GOLD, opacity: 0.7, marginBottom: '8px' }}>
+                  Ce que TEL refuse de réconcilier
+                </p>
+                <p className="tel-serif" style={{ fontSize: '14px', lineHeight: 1.75, color: TEXT_PRIMARY }}>
+                  {card.irreconcilable}
+                </p>
+              </div>
+            )}
           </Section>
 
           <Divider />
@@ -766,6 +786,9 @@ export default function InsightCard({
                       </div>
                     ))}
                   </div>
+                  <p style={{ fontSize: '11px', color: '#444444', marginTop: '16px', lineHeight: 1.6 }}>
+                    Cette Insight Card est une version publique. Les versions institutionnelles incluent scénarios d&apos;action et recommandations ciblées.
+                  </p>
                 </div>
               </Section>
             </>

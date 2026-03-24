@@ -198,6 +198,7 @@ export async function crossNarratives(
     questionNoOneHasAsked: parsed.questionNoOneHasAsked || '',
     sourceCoordinates: parsed.sourceCoordinates || [],
     createdAt: new Date(),
+    irreconcilable: parsed.irreconcilable,
     anglesMorts,
     actionables: parsed.actionables,
   }

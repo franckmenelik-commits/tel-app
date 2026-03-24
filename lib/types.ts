@@ -164,6 +164,7 @@ export interface InsightCard {
   questionNoOneHasAsked: string
   sourceCoordinates: MapCoordinate[]
   createdAt: Date
+  irreconcilable?: string             // Ce que TEL refuse de réconcilier
   anglesMorts?: AnglesMortsAnalyse    // Niveau 3 — added after crossing
   actionables?: Actionables           // Ce que ça permet — generated with insight
 }
@@ -208,6 +209,7 @@ export interface LogosInsightResponse {
   theUnspeakable: string
   questionNoOneHasAsked: string
   sourceCoordinates: MapCoordinate[]
+  irreconcilable?: string             // Ce que TEL refuse de réconcilier
   actionables?: Actionables           // Ce que ça permet
 }
 // Backward compat alias
