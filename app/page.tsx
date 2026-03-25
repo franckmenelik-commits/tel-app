@@ -21,6 +21,7 @@ import type {
   EnrichissementProposal,
 } from '@/lib/types'
 import { detecterResonances, sauvegarderSession, chargerSession } from '@/lib/memoire'
+import { useLanguage, t } from '@/lib/i18n'
 
 // Canvas — no SSR
 const LiveMap = dynamic(() => import('@/components/LiveMap'), { ssr: false })
@@ -78,6 +79,9 @@ async function readSSEStream(
 }
 
 export default function TELPage() {
+  // ── Language ────────────────────────────────────────────────────────────────
+  const [lang, setLang] = useLanguage()
+
   // ── App state ──────────────────────────────────────────────────────────────
   const [appState, setAppState] = useState<AppState>('idle')
   const [currentCard, setCurrentCard] = useState<InsightCardType | null>(null)
@@ -507,13 +511,29 @@ export default function TELPage() {
                 ))}
               </nav>
 
+              {/* Lang toggle FR / EN */}
+              <button
+                onClick={() => setLang(lang === 'fr' ? 'en' : 'fr')}
+                style={{
+                  fontSize: '11px', padding: '3px 8px', borderRadius: '4px',
+                  background: 'transparent', border: '1px solid rgba(255,255,255,0.08)',
+                  color: '#444', cursor: 'pointer', letterSpacing: '0.08em',
+                  transition: 'all 200ms ease', fontFamily: 'ui-monospace, monospace',
+                }}
+                onMouseEnter={e => { e.currentTarget.style.color = '#888'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.15)' }}
+                onMouseLeave={e => { e.currentTarget.style.color = '#444'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)' }}
+                title={lang === 'fr' ? 'Switch to English' : 'Passer en français'}
+              >
+                {lang === 'fr' ? 'EN' : 'FR'}
+              </button>
+
               {/* Session history */}
               <button
                 onClick={() => setShowingSidebar(!showingSidebar)}
                 className="tel-ghost-btn"
                 style={{ fontSize: '12px' }}
               >
-                Mes croisements{sessionHistory.length > 0 ? ` (${sessionHistory.length})` : ''}
+                {t('nav.history', lang)}{sessionHistory.length > 0 ? ` (${sessionHistory.length})` : ''}
               </button>
 
               {/* Auth */}
@@ -582,7 +602,7 @@ export default function TELPage() {
                     marginBottom: '1.25rem',
                   }}
                 >
-                  Croisez deux sources.<br />Voyez ce qu&apos;elles cachent ensemble.
+                  {t('hero.line1', lang)}<br />{t('hero.line2', lang)}
                 </h2>
                 <p
                   style={{
@@ -593,21 +613,21 @@ export default function TELPage() {
                     margin: '0 auto 2.5rem',
                   }}
                 >
-                  Entrez deux sources pour les croiser — ou une seule, et laissez TEL vous surprendre.
+                  {t('hero.desc', lang)}
                 </p>
                 <button
                   onClick={() => formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })}
                   className="tel-gold-btn"
                   style={{ padding: '12px 32px', fontSize: '14px' }}
                 >
-                  Essayer maintenant
+                  {t('hero.cta', lang)}
                 </button>
               </section>
 
               {/* DEMO CAROUSEL */}
               <section className="px-6 pb-12 md:px-10" style={{ maxWidth: '680px', margin: '0 auto' }}>
                 <p className="tel-label text-center mb-6">
-                  Ce que TEL a déjà trouvé
+                  {t('hero.discovery', lang)}
                 </p>
 
                 <div

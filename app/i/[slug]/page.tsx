@@ -366,6 +366,15 @@ export default function LivingInsightPage() {
     if (decoded) {
       setInsight(decoded)
       document.title = `${decoded.theme} — TEL`
+      // OG meta tags pour le partage social
+      const setMeta = (prop: string, content: string) => {
+        let el = document.querySelector(`meta[property="${prop}"]`) as HTMLMetaElement | null
+        if (!el) { el = document.createElement('meta'); el.setAttribute('property', prop); document.head.appendChild(el) }
+        el.setAttribute('content', content)
+      }
+      setMeta('og:title', decoded.questionNoOneHasAsked || decoded.theme)
+      setMeta('og:description', decoded.revealedPattern?.slice(0, 200) || '')
+      setMeta('og:type', 'article')
     } else {
       setError(true)
     }

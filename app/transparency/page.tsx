@@ -84,6 +84,7 @@ export default function TransparencyPage() {
   const [loadingVisible, setLoadingVisible] = useState(true)
   const [report, setReport] = useState<TransparencyReport | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [shareToast, setShareToast] = useState(false)
 
   // Loading message rotation
   useEffect(() => {
@@ -146,33 +147,21 @@ export default function TransparencyPage() {
     }
   }
 
-  // Copy to clipboard
-  function handleShare() {
+  // Partager — génère un ID court, stocke dans localStorage, copie l'URL
+  async function handleShare() {
     if (!report) return
-    const text = [
-      `TEL Transparence — Audit institutionnel`,
-      `Type : ${report.documentType}`,
-      `Risque : ${report.riskSummary}`,
-      ``,
-      `CE QUE LE TEXTE DIT RÉELLEMENT`,
-      report.whatItSays,
-      ``,
-      `CE QUE LE TEXTE CACHE`,
-      report.whatItHides,
-      ``,
-      `CE QUI CONTREDIT LES RÉFÉRENCES`,
-      report.whatContradictsReferences,
-      ``,
-      `L'INDICIBLE`,
-      report.theUnspeakable,
-      ``,
-      `QUESTION INEXPOSÉE`,
-      report.questionNoOneHasAsked,
-      ``,
-      `— theexperiencelayer.org`,
-    ].join('\n')
-
-    navigator.clipboard.writeText(text).catch(() => {})
+    const id = Math.random().toString(36).slice(2, 10)
+    try {
+      localStorage.setItem(`tel:shared:transparency:${id}`, JSON.stringify(report))
+    } catch { /* localStorage plein */ }
+    const url = `${window.location.origin}/transparency/${id}`
+    try {
+      await navigator.clipboard.writeText(url)
+      setShareToast(true)
+      setTimeout(() => setShareToast(false), 3000)
+    } catch {
+      window.prompt('Copiez ce lien :', url)
+    }
   }
 
   function handlePrint() {
@@ -737,17 +726,17 @@ export default function TransparencyPage() {
                     onClick={handleShare}
                     style={{
                       padding: '10px 20px',
-                      background: 'rgba(255,255,255,0.04)',
-                      border: `1px solid ${BORDER}`,
+                      background: shareToast ? 'rgba(26,107,60,0.08)' : 'rgba(255,255,255,0.04)',
+                      border: shareToast ? '1px solid rgba(26,107,60,0.3)' : `1px solid ${BORDER}`,
                       borderRadius: '8px',
-                      color: TEXT_PRIMARY,
+                      color: shareToast ? '#1A6B3C' : TEXT_PRIMARY,
                       fontSize: '12px',
                       fontFamily: 'system-ui',
                       cursor: 'pointer',
-                      transition: 'background 150ms ease',
+                      transition: 'all 150ms ease',
                     }}
                   >
-                    Partager
+                    {shareToast ? '✓ Lien copié' : 'Partager'}
                   </button>
                 </div>
               </div>

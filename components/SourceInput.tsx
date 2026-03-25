@@ -52,6 +52,18 @@ const CONTEXTES: { value: SouffleContexte; label: string; niveaux: string; descr
 ]
 
 export default function SourceInput({ onCross, isLoading }: SourceInputProps) {
+  const [mode, setMode] = useState<'cross' | 'resonate'>('cross')
+  const [vecu, setVecu] = useState('')
+  const [resonanceResult, setResonanceResult] = useState<null | {
+    structureProfonde: string
+    resonances: { titre: string; contexte: string; lienStructurel: string; difference: string }[]
+    revelationCroisee: string
+    questionInexposee: string
+    indicible: string
+  }>(null)
+  const [resonanceLoading, setResonanceLoading] = useState(false)
+  const [resonanceError, setResonanceError] = useState<string | null>(null)
+
   const [inputs, setInputs] = useState<string[]>(['', ''])
   const [contexte, setContexte] = useState<SouffleContexte>('exploration')
 
@@ -111,8 +123,177 @@ export default function SourceInput({ onCross, isLoading }: SourceInputProps) {
   const contexteChoisi = CONTEXTES.find((c) => c.value === contexte)!
   const nonEmptyCount = inputs.filter(i => i.trim().length > 0).length
 
+  async function handleResonate() {
+    if (vecu.trim().length < 30) {
+      setResonanceError('Décrivez votre vécu en au moins 30 caractères.')
+      return
+    }
+    setResonanceError(null)
+    setResonanceResult(null)
+    setResonanceLoading(true)
+    try {
+      const res = await fetch('/api/resonate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ vecu: vecu.trim() }),
+      })
+      const data = await res.json()
+      if (!res.ok || !data.success) throw new Error(data.error || 'Erreur')
+      setResonanceResult(data.result)
+    } catch (err) {
+      setResonanceError(err instanceof Error ? err.message : 'Erreur réseau')
+    } finally {
+      setResonanceLoading(false)
+    }
+  }
+
+  const GOLD = '#C9A84C'
+  const BORDER = 'rgba(255,255,255,0.071)'
+  const SURFACE = 'rgba(255,255,255,0.025)'
+
   return (
     <div className="w-full max-w-2xl mx-auto">
+
+      {/* ── Mode tabs ── */}
+      <div className="flex gap-1 mb-5" style={{ borderBottom: '1px solid rgba(255,255,255,0.047)', paddingBottom: '0' }}>
+        {([
+          { key: 'cross', label: 'Croiser des sources' },
+          { key: 'resonate', label: '◎ Mon vécu' },
+        ] as const).map(tab => (
+          <button
+            key={tab.key}
+            onClick={() => { setMode(tab.key); setResonanceResult(null); setResonanceError(null) }}
+            style={{
+              padding: '8px 16px',
+              fontSize: '12px',
+              background: 'none',
+              border: 'none',
+              borderBottom: mode === tab.key ? `2px solid ${GOLD}` : '2px solid transparent',
+              color: mode === tab.key ? GOLD : '#444',
+              cursor: 'pointer',
+              transition: 'all 200ms ease',
+              marginBottom: '-1px',
+            }}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      {/* ── Mode Croise-moi ── */}
+      {mode === 'resonate' && (
+        <div>
+          <p style={{ fontSize: '12px', color: '#444', lineHeight: 1.6, marginBottom: '16px', fontStyle: 'italic' }}>
+            Décrivez votre situation, votre expérience, ou ce que vous traversez. TEL trouvera des résonances dans la mémoire du monde.
+          </p>
+          <textarea
+            value={vecu}
+            onChange={e => { setVecu(e.target.value); setResonanceError(null) }}
+            rows={5}
+            placeholder="Décrivez votre situation, votre expérience, ou ce que vous traversez…"
+            disabled={resonanceLoading}
+            style={{
+              width: '100%',
+              padding: '14px 16px',
+              fontSize: '14px',
+              background: SURFACE,
+              border: `1px solid ${vecu.trim() ? 'rgba(201,168,76,0.25)' : BORDER}`,
+              borderRadius: '8px',
+              color: '#e0e0e0',
+              lineHeight: 1.7,
+              resize: 'vertical' as const,
+              outline: 'none',
+              fontFamily: 'Georgia, Times New Roman, serif',
+              marginBottom: '12px',
+            }}
+            onFocus={e => { e.currentTarget.style.borderColor = 'rgba(201,168,76,0.4)' }}
+            onBlur={e => { e.currentTarget.style.borderColor = vecu.trim() ? 'rgba(201,168,76,0.25)' : BORDER }}
+          />
+          {resonanceError && (
+            <p style={{ fontSize: '12px', color: '#8B3A3A', fontStyle: 'italic', marginBottom: '10px' }}>{resonanceError}</p>
+          )}
+          <button
+            onClick={handleResonate}
+            disabled={resonanceLoading}
+            style={{
+              width: '100%',
+              padding: '12px',
+              background: resonanceLoading ? 'rgba(201,168,76,0.04)' : GOLD,
+              border: resonanceLoading ? '1px solid rgba(201,168,76,0.15)' : 'none',
+              color: resonanceLoading ? 'rgba(201,168,76,0.3)' : '#09090b',
+              borderRadius: '6px',
+              fontSize: '14px',
+              fontWeight: 500,
+              cursor: resonanceLoading ? 'not-allowed' : 'pointer',
+              transition: 'all 200ms ease',
+              marginBottom: '24px',
+            }}
+          >
+            {resonanceLoading ? 'Recherche de résonances dans le monde…' : 'Trouver des résonances'}
+          </button>
+
+          {/* Résultat */}
+          {resonanceResult && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+              {/* Structure profonde */}
+              <div style={{ padding: '20px', borderRadius: '8px', background: SURFACE, border: '1px solid rgba(201,168,76,0.12)' }}>
+                <p style={{ fontSize: '10px', letterSpacing: '0.15em', textTransform: 'uppercase' as const, color: GOLD, opacity: 0.7, marginBottom: '10px' }}>
+                  Structure profonde de votre vécu
+                </p>
+                <p style={{ fontSize: '14px', lineHeight: 1.75, color: '#e0e0e0', fontFamily: 'Georgia, serif', fontStyle: 'italic' }}>
+                  {resonanceResult.structureProfonde}
+                </p>
+              </div>
+
+              {/* Résonances */}
+              {resonanceResult.resonances.map((r, i) => (
+                <div key={i} style={{ padding: '20px', borderRadius: '8px', background: SURFACE, border: `1px solid ${BORDER}` }}>
+                  <p style={{ fontSize: '10px', letterSpacing: '0.12em', textTransform: 'uppercase' as const, color: '#666', marginBottom: '6px' }}>
+                    Résonance {i + 1} — {r.contexte}
+                  </p>
+                  <p style={{ fontSize: '15px', color: '#e0e0e0', fontWeight: 500, marginBottom: '10px' }}>{r.titre}</p>
+                  <p style={{ fontSize: '13px', lineHeight: 1.7, color: '#aaa', marginBottom: '8px' }}>
+                    <span style={{ color: GOLD, opacity: 0.7, marginRight: '6px' }}>Ce qui résonne :</span>
+                    {r.lienStructurel}
+                  </p>
+                  <p style={{ fontSize: '13px', lineHeight: 1.7, color: '#666', fontStyle: 'italic' }}>
+                    <span style={{ opacity: 0.7, marginRight: '6px' }}>Ce qui diffère :</span>
+                    {r.difference}
+                  </p>
+                </div>
+              ))}
+
+              {/* Révélation */}
+              <div style={{ padding: '20px', borderRadius: '8px', background: 'rgba(201,168,76,0.03)', border: '1px solid rgba(201,168,76,0.12)' }}>
+                <p style={{ fontSize: '10px', letterSpacing: '0.15em', textTransform: 'uppercase' as const, color: GOLD, opacity: 0.7, marginBottom: '10px' }}>
+                  Ce que ce croisement révèle
+                </p>
+                <p style={{ fontSize: '14px', lineHeight: 1.75, color: '#e0e0e0', fontFamily: 'Georgia, serif' }}>
+                  {resonanceResult.revelationCroisee}
+                </p>
+              </div>
+
+              {/* Question */}
+              <div style={{ padding: '20px', borderRadius: '8px', background: 'rgba(255,255,255,0.015)', border: `1px solid ${BORDER}` }}>
+                <p style={{ fontSize: '10px', letterSpacing: '0.15em', textTransform: 'uppercase' as const, color: GOLD, opacity: 0.7, marginBottom: '10px' }}>
+                  Question inexposée
+                </p>
+                <p style={{ fontSize: '15px', lineHeight: 1.75, color: '#f0f0f0', fontFamily: 'Georgia, serif', fontStyle: 'italic' }}>
+                  {resonanceResult.questionInexposee}
+                </p>
+              </div>
+
+              {/* Indicible */}
+              <p style={{ fontSize: '12px', color: '#444', fontStyle: 'italic', lineHeight: 1.6, textAlign: 'center' as const, padding: '0 16px' }}>
+                {resonanceResult.indicible}
+              </p>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── Mode croisement (normal) ── */}
+      {mode === 'cross' && <>
 
       {/* ── Mode hints ── */}
       <div className="flex flex-wrap gap-3 mb-5" style={{ fontSize: '11px', color: '#333' }}>
@@ -367,6 +548,8 @@ export default function SourceInput({ onCross, isLoading }: SourceInputProps) {
           <span style={{ color: '#1a1a1a' }}> · {inputs.length - nonEmptyCount} en attente</span>
         )}
       </p>
+
+      </> /* end mode === 'cross' */}
     </div>
   )
 }

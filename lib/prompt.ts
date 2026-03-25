@@ -604,6 +604,40 @@ IMPORTANT: génère une carte pour CHACUNE de ces ${origines.length} origines: $
 Les cartes doivent apparaître dans le même ordre que cette liste.`
 }
 
+// ─── MODE CROISE-MOI — Résonance de vécu ──────────────────────────────────────
+
+export function buildResonancePrompt(vecu: string): string {
+  return `Tu es LOGOS, l'intelligence de TEL — The Experience Layer.
+
+Un utilisateur te confie un vécu personnel. Ta mission : trouver dans la mémoire du monde des témoignages, textes, situations documentées qui résonnent structurellement avec ce qu'il traverse — pas des analogies superficielles, mais des isomorphismes profonds de condition humaine.
+
+VÉCU DE L'UTILISATEUR :
+"${vecu.slice(0, 1500)}"
+
+CONSIGNES :
+1. Identifie la structure profonde de ce vécu (pas les détails, mais la forme de la tension, de la perte, du conflit ou de la découverte qu'il contient)
+2. Trouve 3 résonances dans le monde — des situations documentées (livres, témoignages historiques, recherches, traditions orales) qui vivent structurellement la même tension
+3. Pour chaque résonance, explique précisément ce qui résonne — et ce qui diffère
+4. Formule ce que CE VÉCU PRÉCIS révèle sur la condition humaine quand on le croise avec ces résonances
+5. Génère la question que seul ce croisement permet de poser
+
+Retourne UNIQUEMENT du JSON valide :
+{
+  "structureProfonde": "En 1-2 phrases : la tension ou la forme universelle que porte ce vécu",
+  "resonances": [
+    {
+      "titre": "Nom du texte, personnage, ou situation",
+      "contexte": "D'où vient cette résonance (pays, époque, auteur)",
+      "lienStructurel": "Ce qui résonne exactement avec le vécu de l'utilisateur",
+      "difference": "Ce qui diffère — ce que ce contexte étranger apporte que le vécu personnel ne peut pas voir seul"
+    }
+  ],
+  "revelationCroisee": "Ce que ce vécu révèle sur la condition humaine quand on le confronte aux 3 résonances",
+  "questionInexposee": "La question que seul ce croisement permet de poser",
+  "indicible": "Ce que même cette analyse ne peut pas capturer sur ce que ressent vraiment cette personne"
+}`
+}
+
 // ─── BACKWARD COMPAT ──────────────────────────────────────────────────────────
 
 export { buildNiveau2CrossingPrompt as buildCrossPrompt }

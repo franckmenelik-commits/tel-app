@@ -289,6 +289,7 @@ export default function InsightCard({
   const [debateMsgVisible, setDebateMsgVisible] = useState(true)
 
   const [shareToast, setShareToast] = useState(false)
+  const [feedbackState, setFeedbackState] = useState<'idle' | 'resonates' | 'inaccurate'>('idle')
 
   useEffect(() => {
     if (!streaming) {
@@ -846,6 +847,40 @@ export default function InsightCard({
               >
                 {shareToast ? 'Lien copié' : 'Partager — copier le lien'}
               </button>
+
+              {/* Feedback */}
+              <div className="flex gap-2 mt-3 no-print">
+                {feedbackState === 'idle' ? (
+                  <>
+                    <button
+                      onClick={() => {
+                        setFeedbackState('resonates')
+                        try { localStorage.setItem(`tel:feedback:${card.id}`, JSON.stringify({ verdict: 'resonates', theme: card.theme, ts: Date.now() })) } catch { /* ok */ }
+                      }}
+                      style={{ flex: 1, padding: '7px', fontSize: '11px', background: 'transparent', border: `1px solid ${BORDER}`, borderRadius: '6px', color: TEXT_FAINT, cursor: 'pointer', transition: 'all 200ms ease' }}
+                      onMouseEnter={e => { e.currentTarget.style.color = '#1A6B3C'; e.currentTarget.style.borderColor = 'rgba(26,107,60,0.3)' }}
+                      onMouseLeave={e => { e.currentTarget.style.color = TEXT_FAINT; e.currentTarget.style.borderColor = BORDER }}
+                    >
+                      ◎ Cet insight résonne
+                    </button>
+                    <button
+                      onClick={() => {
+                        setFeedbackState('inaccurate')
+                        try { localStorage.setItem(`tel:feedback:${card.id}`, JSON.stringify({ verdict: 'inaccurate', theme: card.theme, ts: Date.now() })) } catch { /* ok */ }
+                      }}
+                      style={{ flex: 1, padding: '7px', fontSize: '11px', background: 'transparent', border: `1px solid ${BORDER}`, borderRadius: '6px', color: TEXT_FAINT, cursor: 'pointer', transition: 'all 200ms ease' }}
+                      onMouseEnter={e => { e.currentTarget.style.color = '#8B3A3A'; e.currentTarget.style.borderColor = 'rgba(139,58,58,0.3)' }}
+                      onMouseLeave={e => { e.currentTarget.style.color = TEXT_FAINT; e.currentTarget.style.borderColor = BORDER }}
+                    >
+                      ◌ Cet insight est inexact
+                    </button>
+                  </>
+                ) : (
+                  <p style={{ flex: 1, textAlign: 'center', fontSize: '11px', color: feedbackState === 'resonates' ? '#1A6B3C' : '#8B5A2B', fontStyle: 'italic', padding: '7px' }}>
+                    Merci — votre retour contribue à l&apos;intelligence de TEL.
+                  </p>
+                )}
+              </div>
 
               {/* Counter-insight panel */}
               {(isGeneratingCounter || counterInsight) && (
