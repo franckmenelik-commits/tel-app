@@ -8,6 +8,7 @@ import type {
   InsightCard,
   AnglesMortsAnalyse,
 } from './types'
+import { parseLLMJson } from './parse-llm'
 
 // ─── Labels des régions (kept for compat) ─────────────────────────────────────
 
@@ -131,9 +132,8 @@ export async function analyserAnglesMorts(
 
   try {
     const raw = await callLLMForAngles(prompt)
-    const match = raw.match(/\{[\s\S]*\}/)
-    if (!match) throw new Error('JSON invalide')
-    const data = JSON.parse(match[0])
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const data = parseLLMJson<any>(raw)
 
     return {
       anglesDetectes: (data.anglesDetectes || []).slice(0, 2),

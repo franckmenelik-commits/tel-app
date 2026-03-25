@@ -6,6 +6,7 @@
 import Anthropic from '@anthropic-ai/sdk'
 import { buildTransparencyPrompt } from '@/lib/prompt'
 import { getReferencesByIds } from '@/lib/reference-texts'
+import { parseLLMJson } from '@/lib/parse-llm'
 
 export const maxDuration = 120
 
@@ -169,9 +170,7 @@ export async function POST(request: Request) {
 
   try {
     const raw = await callLLM(prompt)
-    const jsonMatch = raw.match(/\{[\s\S]*\}/)
-    if (!jsonMatch) throw new Error('Réponse sans JSON valide')
-    const report: TransparencyReport = JSON.parse(jsonMatch[0])
+    const report = parseLLMJson<TransparencyReport>(raw)
 
     return new Response(JSON.stringify({ success: true, report }), {
       status: 200,

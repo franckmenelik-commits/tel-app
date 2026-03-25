@@ -8,6 +8,7 @@
 //  NIVEAU 3 — LA RÉVÉLATION: Claude Anthropic (l'indicible, cas premium)
 
 import Anthropic from '@anthropic-ai/sdk'
+import { parseLLMJson } from './parse-llm'
 import type {
   ExtractedSource,
   SouffleNiveau,
@@ -233,7 +234,7 @@ async function enrichirSource(
     const jsonMatch = texte.match(/\{[\s\S]*?\}/)
     if (!jsonMatch) return source
 
-    const meta = JSON.parse(jsonMatch[0])
+    const meta = parseLLMJson<{ title?: string; geographicContext?: string; geographicConfidence?: number }>(texte)
     return {
       ...source,
       title: meta.title || source.title,
@@ -300,7 +301,7 @@ async function croiserNarratives(
     )
   }
 
-  const result = JSON.parse(jsonMatch[0]) as LogosInsightResponse
+  const result = parseLLMJson<LogosInsightResponse>(texte)
 
   // Emit section-ready callbacks for streaming
   if (callbacks?.onSectionReady) {
@@ -330,7 +331,7 @@ async function approfondirRevelation(
     const jsonMatch = texte.match(/\{[\s\S]*\}/)
     if (!jsonMatch) return insight
 
-    const revelation = JSON.parse(jsonMatch[0])
+    const revelation = parseLLMJson<{ theUnspeakable?: string; questionNoOneHasAsked?: string }>(texte)
     return {
       ...insight,
       theUnspeakable: revelation.theUnspeakable || insight.theUnspeakable,
