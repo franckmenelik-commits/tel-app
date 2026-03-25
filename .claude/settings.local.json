@@ -37,7 +37,10 @@
       "Bash(git -C /Users/franckmenelikafaneeko/Desktop/tel-app status)",
       "Bash(git -C /Users/franckmenelikafaneeko/Desktop/tel-app log --oneline -2)",
       "Bash(git -C:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git push:*)",
+      "mcp__Claude_Preview__preview_start",
+      "Bash(npx tsx:*)"
     ]
   }
 }
