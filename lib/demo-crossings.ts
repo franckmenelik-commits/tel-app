@@ -278,6 +278,245 @@ export const DEMO_WITTGENSTEIN_PIRAHA: InsightCard = {
   createdAt: new Date('2024-10-18T00:00:00Z'),
 }
 
+// ─── CROISEMENT 6 — COMPAS Algorithm × Témoignage condamné ──────────────────
+// L'algorithme COMPAS prédit un 'risque de récidive' en 137 variables — toutes des marqueurs de pauvreté.
+
+export const DEMO_COMPAS_JUSTICE: InsightCard = {
+  id: 'demo-compas-justice',
+  theme: 'L\'algorithme COMPAS prédit-il la récidive — ou fabrique-t-il l\'incarcération ?',
+  sources: [
+    {
+      url: 'https://en.wikipedia.org/wiki/COMPAS_(software)',
+      type: 'wikipedia',
+      title: 'COMPAS Algorithm — Wikipedia EN',
+      geographicContext: 'États-Unis (système judiciaire fédéral)',
+      geographicConfidence: 86,
+    },
+    {
+      url: 'https://fr.wikipedia.org/wiki/Mass_incarceration',
+      type: 'wikipedia',
+      title: 'Mass incarceration — Wikipedia',
+      geographicContext: 'États-Unis (prisons fédérales et d\'État)',
+      geographicConfidence: 88,
+    },
+  ],
+  revealedPattern:
+    'COMPAS prédit un \'risque de récidive\' en 137 variables — dont le code postal, l\'emploi du père, les dettes. Aucune de ces variables n\'est un acte criminel. Elles sont toutes des marqueurs de pauvreté structurelle. Le pattern révèle que COMPAS ne prédit pas ce que va faire une personne — il reproduit ce que le système lui a déjà fait.',
+  convergenceZones: [
+    'La pauvreté structurelle prédit le score de risque mieux que le comportement individuel',
+    'Les biais raciaux des données d\'entraînement se transmettent directement aux décisions judiciaires',
+    'L\'algorithme neutralise politiquement une décision qui reste politiquement chargée',
+  ],
+  divergenceZones: [
+    'Les concepteurs de COMPAS croient sincèrement améliorer l\'objectivité — les résultats montrent l\'inverse',
+    'Les juges qui utilisent COMPAS pensent garder leur autonomie — les études montrent une dépendance croissante',
+  ],
+  globalConfidence: 82,
+  geographicRepresentativity:
+    'États-Unis uniquement. L\'absence de données de pays sans incarcération de masse crée un biais systémique dans l\'analyse.',
+  theUnspeakable:
+    'Ce croisement ne peut pas rendre ce que ressent un homme de 23 ans qui apprend qu\'un algorithme a recommandé 10 ans de prison en 0.3 secondes.',
+  questionNoOneHasAsked:
+    'Si COMPAS avait été entraîné sur des données de Norvège plutôt que des États-Unis, quelles décisions aurait-il recommandées — et que révèle cette différence sur ce que nous appelons \'justice\' ?',
+  sourceCoordinates: [
+    { lat: 38.9072, lng: -77.0369, region: 'Washington DC (système judiciaire)' },
+    { lat: 29.9511, lng: -90.0715, region: 'Louisiane (État le plus incarcérant)' },
+  ],
+  createdAt: new Date('2024-11-01T00:00:00Z'),
+}
+
+// ─── CROISEMENT 7 — Révolution française × Haïti 1804 ────────────────────────
+// La Révolution française proclame les droits universels en 1789. Haïti prend ces mots au pied de la lettre en 1791.
+
+export const DEMO_REVOLUTION_HAITI: InsightCard = {
+  id: 'demo-revolution-haiti',
+  theme: 'La Révolution française a-t-elle libéré tout le monde ?',
+  sources: [
+    {
+      url: 'https://fr.wikipedia.org/wiki/R%C3%A9volution_fran%C3%A7aise',
+      type: 'wikipedia',
+      title: 'Révolution française — Wikipedia FR',
+      geographicContext: 'France (Europe)',
+      geographicConfidence: 92,
+    },
+    {
+      url: 'https://fr.wikipedia.org/wiki/R%C3%A9volution_ha%C3%AFtienne',
+      type: 'wikipedia',
+      title: 'Révolution haïtienne — Wikipedia FR',
+      geographicContext: 'Saint-Domingue / Haïti (Caraïbes)',
+      geographicConfidence: 89,
+    },
+  ],
+  revealedPattern:
+    'La Révolution française proclame en 1789 : \'Tous les hommes naissent libres et égaux.\' En 1791, Haïti — alors Saint-Domingue, première colonie productrice de sucre mondiale — prend ces mots au pied de la lettre. La France envoie des armées pour écraser cette interprétation. Le pattern : les révolutions d\'idées universelles ont systématiquement une clause d\'exception non-écrite pour les colonisés.',
+  convergenceZones: [
+    'La rhétorique des droits universels mobilisée par les deux révolutions',
+    'La violence comme sage-femme du changement institutionnel',
+    'L\'invention d\'un nouvel ordre politique sans précédent historique',
+  ],
+  divergenceZones: [
+    'La France libère des citoyens blancs — Haïti libère des esclaves noirs',
+    'La France est reconnue diplomatiquement en 1802 — Haïti paie 150 ans de \'dette de la liberté\' à la France',
+    'La révolution française est au programme scolaire mondial — la révolution haïtienne est absente de la plupart des curriculums',
+  ],
+  globalConfidence: 90,
+  geographicRepresentativity:
+    'France et Haïti. Le silence sur les 500 000 esclaves qui ont rendu possible la Révolution française (le sucre finançait Versailles) est le vrai angle mort de ce croisement.',
+  theUnspeakable:
+    'Ce croisement ne peut pas rendre l\'humiliation d\'enseigner les droits de l\'homme à des élèves dont les ancêtres ont été exclus de ces droits par ceux qui les ont formulés.',
+  questionNoOneHasAsked:
+    'Si la révolution haïtienne avait réussi à être reconnue immédiatement par la France, qu\'est-ce que cela aurait changé à la définition des droits universels — et pourquoi la France a-t-elle préféré payer pour effacer cette question ?',
+  sourceCoordinates: [
+    { lat: 48.8566, lng: 2.3522, region: 'Paris (France)' },
+    { lat: 18.5944, lng: -72.3074, region: 'Port-au-Prince (Haïti)' },
+  ],
+  createdAt: new Date('2024-11-15T00:00:00Z'),
+}
+
+// ─── CROISEMENT 8 — Burn-out × Méditation zen ────────────────────────────────
+// Le burn-out : maladie individuelle ou réponse saine à un système pathologique ?
+
+export const DEMO_BURNOUT_ZEN: InsightCard = {
+  id: 'demo-burnout-zen',
+  theme: 'Le burn-out est-il une maladie — ou la réponse saine à un système pathologique ?',
+  sources: [
+    {
+      url: 'https://en.wikipedia.org/wiki/Occupational_burnout',
+      type: 'wikipedia',
+      title: 'Occupational burnout — Wikipedia EN',
+      geographicContext: 'Occident (contexte professionnel mondial)',
+      geographicConfidence: 80,
+    },
+    {
+      url: 'https://en.wikipedia.org/wiki/Zen',
+      type: 'wikipedia',
+      title: 'Zen Buddhism — Wikipedia EN',
+      geographicContext: 'Japon / Asie orientale',
+      geographicConfidence: 77,
+    },
+  ],
+  revealedPattern:
+    'La médecine occidentale classe le burn-out comme \'syndrome d\'épuisement professionnel\' — implicitement, une défaillance individuelle à gérer le stress. Le zen identifie depuis 14 siècles que la souffrance émerge de l\'attachement aux résultats et à l\'ego productif. Le pattern : le burn-out est diagnostiqué là où il devrait être condamné. Ce que la médecine traite comme une maladie de l\'individu, le zen reconnaît comme la réponse lucide d\'un être humain à une demande qui viole sa nature.',
+  convergenceZones: [
+    'L\'épuisement comme signal d\'alarme d\'un dépassement de limite',
+    'La nécessité d\'un retrait temporaire du monde productif pour se reconstituer',
+    'La connexion corps-esprit comme unité indissociable',
+  ],
+  divergenceZones: [
+    'Le burn-out cherche un retour à la productivité — le zen cherche la dissolution du moi productif',
+    'La médecine traite l\'individu — le zen interroge le monde qui épuise',
+    'Le burn-out est un diagnostic médical récent (1974) — le zen pratique l\'impermanence depuis 600 ans',
+  ],
+  globalConfidence: 73,
+  geographicRepresentativity:
+    'Europe/Amérique du Nord + Asie orientale. Absence totale de perspectives du Sud Global sur le travail, le repos, et la productivité.',
+  theUnspeakable:
+    'Ce croisement ne peut pas rendre ce que ressent quelqu\'un qui \'guérit\' de son burn-out pour retourner exactement dans le système qui l\'a produit.',
+  questionNoOneHasAsked:
+    'Si les entreprises adoptaient la pratique zen de zazen — l\'assise silencieuse sans but productif — combien disparaîtraient en 6 mois, et que révèle cette fragilité sur leur modèle économique ?',
+  sourceCoordinates: [
+    { lat: 51.5074, lng: -0.1278, region: 'Londres (culture du travail occidental)' },
+    { lat: 35.0116, lng: 135.7681, region: 'Kyoto (Japon — centres zen)' },
+  ],
+  createdAt: new Date('2024-12-01T00:00:00Z'),
+}
+
+// ─── CROISEMENT 9 — CGU Instagram × DUDH ─────────────────────────────────────
+// En signant les CGU Instagram, 2,3 milliards d'utilisateurs cèdent des droits que la DUDH juge inaliénables.
+
+export const DEMO_INSTAGRAM_DUDH: InsightCard = {
+  id: 'demo-instagram-dudh',
+  theme: 'En signant les CGU Instagram, abandonnez-vous vos droits fondamentaux ?',
+  sources: [
+    {
+      url: 'https://en.wikipedia.org/wiki/Instagram',
+      type: 'wikipedia',
+      title: 'Instagram Terms of Service',
+      geographicContext: 'États-Unis (Silicon Valley)',
+      geographicConfidence: 91,
+    },
+    {
+      url: 'https://en.wikipedia.org/wiki/Universal_Declaration_of_Human_Rights',
+      type: 'wikipedia',
+      title: 'DUDH — Wikipedia EN',
+      geographicContext: 'International (ONU)',
+      geographicConfidence: 95,
+    },
+  ],
+  revealedPattern:
+    'Instagram dispose d\'une licence perpétuelle, mondiale et non-exclusive sur tout contenu publié. Vous pouvez supprimer votre compte — Instagram conserve le droit d\'utiliser vos données. La DUDH Art. 12 protège explicitement la \'vie privée, la famille, le domicile et la correspondance\'. Le pattern : 2,3 milliards d\'utilisateurs ont signé un document qui restreint des droits que la DUDH juge inaliénables — sans que cela soit présenté comme un choix.',
+  convergenceZones: [
+    'Les deux documents traitent de l\'information personnelle comme enjeu fondamental',
+    'La notion de consentement est centrale dans les deux textes',
+    'La protection des mineurs est un enjeu explicite dans les deux',
+  ],
+  divergenceZones: [
+    'La DUDH est non-contraignante juridiquement — les CGU sont un contrat légalement opposable',
+    'La DUDH protège l\'individu contre les États — les CGU lient l\'individu à une entreprise privée',
+    'La DUDH est permanente — les CGU peuvent changer unilatéralement sans préavis réel',
+  ],
+  globalConfidence: 85,
+  geographicRepresentativity:
+    'Mondial — Instagram opère dans 200+ pays. Mais la régulation varie : les utilisateurs européens bénéficient du RGPD, les autres non.',
+  theUnspeakable:
+    'Ce croisement ne peut pas rendre ce que ressent un adolescent haïtien qui découvre que ses photos d\'enfance sont la propriété d\'une entreprise californienne.',
+  questionNoOneHasAsked:
+    'Si la DUDH avait été rédigée en 2024 en anticipant les plateformes numériques, quels articles auraient rendu les CGU actuelles illégales — et pourquoi cette question n\'est-elle pas débattue dans les parlements ?',
+  sourceCoordinates: [
+    { lat: 37.3382, lng: -121.8863, region: 'San Jose (Meta headquarters)' },
+    { lat: 46.2044, lng: 6.1432, region: 'Genève (ONU — droits humains)' },
+  ],
+  createdAt: new Date('2024-12-15T00:00:00Z'),
+}
+
+// ─── CROISEMENT 10 — Psychology of Money × Dette du Sud Global ───────────────
+// La dette du Sud Global : question économique ou construction narrative ?
+
+export const DEMO_MONEY_DETTE: InsightCard = {
+  id: 'demo-money-dette',
+  theme: 'La dette du Sud Global est-elle économique — ou psychologique ?',
+  sources: [
+    {
+      url: 'https://en.wikipedia.org/wiki/The_Psychology_of_Money',
+      type: 'wikipedia',
+      title: 'The Psychology of Money — Morgan Housel',
+      geographicContext: 'États-Unis (culture financière occidentale)',
+      geographicConfidence: 82,
+    },
+    {
+      url: 'https://en.wikipedia.org/wiki/Debt_relief',
+      type: 'wikipedia',
+      title: 'Debt relief — Wikipedia EN',
+      geographicContext: 'Afrique / Asie du Sud / Amérique latine',
+      geographicConfidence: 80,
+    },
+  ],
+  revealedPattern:
+    'Morgan Housel démontre que les décisions financières sont gouvernées par l\'histoire personnelle et la psychologie, pas la rationalité. Le Zambie rembourse depuis 60 ans des dettes contractées par des gouvernements coloniaux non-élus. Le pattern : la distinction entre \'dette légitime\' et \'dette illégitime\' n\'est pas économique — elle est une construction narrative qui détermine qui souffre et qui prospère.',
+  convergenceZones: [
+    'La psychologie de la dette crée des comportements auto-destructeurs chez les individus comme chez les États',
+    'L\'histoire personnelle/nationale détermine l\'attitude envers la dette plus que les chiffres',
+    'La culpabilité liée à la dette est un mécanisme de contrôle plus qu\'un reflet de la réalité économique',
+  ],
+  divergenceZones: [
+    'Housel parle de choix individuels — la dette du Sud Global est une imposition structurelle non-choisie',
+    'L\'individu endetté peut refaire sa psychologie — l\'État endetté est contraint par des institutions internationales',
+    'Housel conseille la patience et la durée — les plans d\'ajustement structurel du FMI ont détruit des services publics en 5 ans',
+  ],
+  globalConfidence: 78,
+  geographicRepresentativity:
+    'Nord Global (culture financière) + Sud Global (dette). Ce croisement manque la voix directe des populations affectées par les plans d\'ajustement structurel.',
+  theUnspeakable:
+    'Ce croisement ne peut pas rendre ce que ressent une infirmière zambienne dont le salaire a été coupé pour \'rembourser\' une dette contractée par un dictateur avant sa naissance.',
+  questionNoOneHasAsked:
+    'Si les manuels d\'économie enseignaient la psychologie de la dette du Sud Global avec la même rigueur que la crise des subprimes, quelle révision de la notion de \'croissance\' cela imposerait-il ?',
+  sourceCoordinates: [
+    { lat: 40.7128, lng: -74.0060, region: 'New York (marchés financiers)' },
+    { lat: -15.4167, lng: 28.2833, region: 'Lusaka (Zambie)' },
+  ],
+  createdAt: new Date('2025-01-10T00:00:00Z'),
+}
+
 // ─── Collection complète ───────────────────────────────────────────────────────
 
 export const ALL_DEMO_CROSSINGS: InsightCard[] = [
@@ -286,6 +525,11 @@ export const ALL_DEMO_CROSSINGS: InsightCard[] = [
   DEMO_MPESA_SILICON,
   DEMO_RECONCILIATION,
   DEMO_WITTGENSTEIN_PIRAHA,
+  DEMO_COMPAS_JUSTICE,
+  DEMO_REVOLUTION_HAITI,
+  DEMO_BURNOUT_ZEN,
+  DEMO_INSTAGRAM_DUDH,
+  DEMO_MONEY_DETTE,
 ]
 
 // ─── Generate MapPoints + MapArcs from a demo crossing ────────────────────────

@@ -40,7 +40,10 @@
       "Bash(git add:*)",
       "Bash(git push:*)",
       "mcp__Claude_Preview__preview_start",
-      "Bash(npx tsx:*)"
+      "Bash(npx tsx:*)",
+      "Bash(python3 -c \":*)",
+      "Bash(python3 -:*)",
+      "Bash(npx tsc:*)"
     ]
   }
 }

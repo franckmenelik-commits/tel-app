@@ -16,6 +16,7 @@ export const TRANSLATIONS = {
   'hero.desc':       { fr: "Entrez deux sources pour les croiser — ou une seule, et laissez TEL vous surprendre.", en: 'Enter two sources to cross them — or just one, and let TEL surprise you.' },
   'hero.cta':        { fr: 'Essayer maintenant', en: 'Try now' },
   'hero.discovery':  { fr: 'CE QUE TEL A DÉJÀ TROUVÉ', en: 'WHAT TEL HAS ALREADY FOUND' },
+  'carousel.title':  { fr: 'CE QUE TEL RÉVÈLE', en: 'WHAT TEL REVEALS' },
 
   // ── Nav ──────────────────────────────────────────────────────────────────────
   'nav.legends':      { fr: 'Légendes',      en: 'Legends' },
@@ -25,6 +26,7 @@ export const TRANSLATIONS = {
   'nav.careers':      { fr: 'Métiers',       en: 'Careers' },
   'nav.history':      { fr: 'Mes croisements', en: 'My crossings' },
   'nav.signin':       { fr: 'Se connecter',  en: 'Sign in' },
+  'nav.explore':      { fr: 'Explorer',      en: 'Explore' },
 
   // ── Source input ─────────────────────────────────────────────────────────────
   'input.cross':       { fr: 'Croiser les vécus',            en: 'Cross the experiences' },
@@ -74,6 +76,19 @@ export const TRANSLATIONS = {
   'discovery.detect':    { fr: "Détection d'une connexion improbable…", en: 'Detecting an improbable connection…' },
   'discovery.emerge':    { fr: 'Un croisement inattendu émerge…',    en: 'An unexpected crossing emerges…' },
 
+  // ── How it works ─────────────────────────────────────────────────────────────
+  'how.title':       { fr: 'Comment ça fonctionne', en: 'How it works' },
+  'how.step1.title': { fr: 'Entrez vos sources', en: 'Enter your sources' },
+  'how.step1.desc':  { fr: "URL YouTube ou article web, texte libre, mot-clé, ou deux concepts à croiser directement.", en: 'YouTube URL or web article, free text, keyword, or two concepts to cross directly.' },
+  'how.step2.title': { fr: 'LOGOS analyse et croise', en: 'LOGOS analyses and crosses' },
+  'how.step2.desc':  { fr: "Contextes culturels, arcs narratifs, angles morts géographiques. Trois niveaux d'analyse.", en: 'Cultural contexts, narrative arcs, geographic blind spots. Three levels of analysis.' },
+  'how.step3.title': { fr: 'Un insight émerge', en: 'An insight emerges' },
+  'how.step3.desc':  { fr: "Convergences, divergences irréductibles — et la question que personne n'avait encore osé formuler.", en: "Convergences, irreducible divergences — and the question no one had yet dared to ask." },
+
+  // ── Card ─────────────────────────────────────────────────────────────────────
+  'card.expand':   { fr: 'Voir l\'analyse complète →', en: 'See full analysis →' },
+  'card.collapse': { fr: '← Réduire', en: '← Collapse' },
+
   // ── Actions ──────────────────────────────────────────────────────────────────
   'action.share':       { fr: 'Partager — copier le lien',  en: 'Share — copy link' },
   'action.copied':      { fr: 'Lien copié',                 en: 'Link copied' },
@@ -104,7 +119,13 @@ export function useLanguage(): [Lang, (l: Lang) => void] {
   useEffect(() => {
     try {
       const stored = localStorage.getItem('tel:lang') as Lang | null
-      if (stored === 'fr' || stored === 'en') setLang(stored)
+      if (stored === 'fr' || stored === 'en') {
+        setLang(stored)
+        return
+      }
+      // Auto-detect from browser
+      const browser = navigator.language || ''
+      setLang(browser.toLowerCase().startsWith('fr') ? 'fr' : 'en')
     } catch { /* localStorage indisponible */ }
   }, [])
 

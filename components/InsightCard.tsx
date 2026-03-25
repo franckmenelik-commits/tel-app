@@ -290,6 +290,7 @@ export default function InsightCard({
 
   const [shareToast, setShareToast] = useState(false)
   const [feedbackState, setFeedbackState] = useState<'idle' | 'resonates' | 'inaccurate'>('idle')
+  const [expanded, setExpanded] = useState(false)
 
   useEffect(() => {
     if (!streaming) {
@@ -558,8 +559,32 @@ export default function InsightCard({
 
           <Divider />
 
-          {/* LE PATTERN RÉVÉLÉ */}
+          {/* LA QUESTION — affichée en premier, en or, grande */}
           <Section index={1} visible={isVisible(1)}>
+            <div style={{ padding: '20px', borderRadius: '8px', background: 'rgba(201,168,76,0.04)', border: '1px solid rgba(201,168,76,0.15)', marginBottom: '8px' }}>
+              <p style={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.15em', color: GOLD, opacity: 0.7, marginBottom: '12px', fontFamily: '-apple-system, sans-serif' }}>
+                Question que personne n&apos;a encore posée
+              </p>
+              <p className="tel-italic" style={{ fontSize: '20px', lineHeight: 1.7, color: GOLD, fontFamily: 'Georgia, serif' }}>
+                {card.questionNoOneHasAsked}
+              </p>
+            </div>
+            <button
+              onClick={() => setExpanded(v => !v)}
+              style={{ marginTop: '12px', background: 'none', border: 'none', cursor: 'pointer', color: '#555', fontSize: '12px', letterSpacing: '0.06em', padding: 0, transition: 'color 200ms ease' }}
+              onMouseEnter={e => { e.currentTarget.style.color = '#888' }}
+              onMouseLeave={e => { e.currentTarget.style.color = '#555' }}
+            >
+              {expanded ? '← Réduire' : 'Voir l\'analyse complète →'}
+            </button>
+          </Section>
+
+          {/* LE PATTERN RÉVÉLÉ — et toute la suite — visible seulement si expanded */}
+          {expanded && <>
+          <Divider />
+
+          {/* LE PATTERN RÉVÉLÉ */}
+          <Section index={1} visible={true}>
             <SectionLabel>Le pattern révélé</SectionLabel>
             <p className="tel-serif" style={{ fontSize: '15px', lineHeight: 1.75, color: TEXT_PRIMARY, whiteSpace: 'pre-wrap' }}>
               {card.revealedPattern}
@@ -645,18 +670,6 @@ export default function InsightCard({
               </p>
               <p style={{ fontSize: '11px', marginTop: '10px', color: TEXT_FAINT }}>
                 — Ce que ce croisement ne peut pas capturer
-              </p>
-            </div>
-          </Section>
-
-          <Divider />
-
-          {/* LA QUESTION */}
-          <Section index={7} visible={isVisible(7)}>
-            <div style={{ padding: '20px', borderRadius: '8px', background: 'rgba(201,168,76,0.03)', border: '1px solid rgba(201,168,76,0.12)' }}>
-              <SectionLabel>Question que personne n&apos;a encore posée</SectionLabel>
-              <p className="tel-italic" style={{ fontSize: '15px', lineHeight: 1.85, color: '#e8e8e8' }}>
-                {card.questionNoOneHasAsked}
               </p>
             </div>
           </Section>
@@ -794,6 +807,9 @@ export default function InsightCard({
               </Section>
             </>
           )}
+
+          {/* end of expanded analysis */}
+          </>}
 
           {/* UTILISER CET INSIGHT */}
           <Section index={11} visible={isVisible(11)}>

@@ -103,9 +103,16 @@ export default function TELPage() {
   const [showAuthModal, setShowAuthModal] = useState(false)
   const [showUserMenu, setShowUserMenu] = useState(false)
 
-  // ── Demo carousel ──────────────────────────────────────────────────────────
+  // ── Demo carousel — 3 random crossings per session ─────────────────────────
+  const [demoCards, setDemoCards] = useState<typeof ALL_DEMO_CROSSINGS>([])
   const [demoIndex, setDemoIndex] = useState(0)
   const [demoVisible, setDemoVisible] = useState(true)
+
+  // ── Hero typewriter ─────────────────────────────────────────────────────────
+  const [heroText, setHeroText] = useState('')
+  const [heroLine2Visible, setHeroLine2Visible] = useState(false)
+  const [heroCtaVisible, setHeroCtaVisible] = useState(false)
+  const heroPlayed = useRef(false)
 
   // ── Loading message rotation ───────────────────────────────────────────────
   const [loadingMsgIndex, setLoadingMsgIndex] = useState(0)
@@ -125,17 +132,55 @@ export default function TELPage() {
     } catch { /* ok */ }
   }, [])
 
-  // ── Demo carousel auto-rotation ────────────────────────────────────────────
+  // ── Pick 3 random crossings on mount ───────────────────────────────────────
   useEffect(() => {
+    const shuffled = [...ALL_DEMO_CROSSINGS].sort(() => Math.random() - 0.5)
+    setDemoCards(shuffled.slice(0, 3))
+  }, [])
+
+  // ── Demo carousel auto-rotation (cycles through the 3 random) ──────────────
+  useEffect(() => {
+    if (demoCards.length === 0) return
     const timer = setInterval(() => {
       setDemoVisible(false)
       setTimeout(() => {
-        setDemoIndex(i => (i + 1) % ALL_DEMO_CROSSINGS.length)
+        setDemoIndex(i => (i + 1) % demoCards.length)
         setDemoVisible(true)
       }, 300)
     }, 8000)
     return () => clearInterval(timer)
-  }, [])
+  }, [demoCards])
+
+  // ── Hero typewriter — once per session ─────────────────────────────────────
+  useEffect(() => {
+    if (heroPlayed.current) return
+    try {
+      if (sessionStorage.getItem('tel:hero-played')) {
+        // Already played — show full text immediately
+        setHeroText(t('hero.line1', lang))
+        setHeroLine2Visible(true)
+        setHeroCtaVisible(true)
+        return
+      }
+    } catch { /* ok */ }
+    heroPlayed.current = true
+    const fullText = t('hero.line1', lang)
+    let i = 0
+    const type = () => {
+      if (i <= fullText.length) {
+        setHeroText(fullText.slice(0, i))
+        i++
+        setTimeout(type, 30)
+      } else {
+        // Title done — fade in line2 after 800ms, CTA after 1200ms
+        setTimeout(() => setHeroLine2Visible(true), 800)
+        setTimeout(() => setHeroCtaVisible(true), 1200)
+        try { sessionStorage.setItem('tel:hero-played', '1') } catch { /* ok */ }
+      }
+    }
+    setTimeout(type, 400)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lang])
 
   // ── Loading message rotation ───────────────────────────────────────────────
   useEffect(() => {
@@ -405,9 +450,11 @@ export default function TELPage() {
   }, [])
 
   const souffleIndicator = '•'.repeat(Math.min(3, Math.max(1, souffleNiveaux.length)))
-  const demo = ALL_DEMO_CROSSINGS[demoIndex]
+  const demo = demoCards[demoIndex] ?? ALL_DEMO_CROSSINGS[0]
   const demoSourceA = demo.sources[0]
   const demoSourceB = demo.sources[1]
+  const [showExplorer, setShowExplorer] = useState(false)
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
   return (
     <main className="relative min-h-screen" style={{ background: '#09090b', overflowX: 'hidden' }}>
@@ -490,41 +537,67 @@ export default function TELPage() {
             </button>
 
             <div className="flex items-center gap-2">
-              {/* Nav links — desktop */}
+              {/* Nav — desktop: Explorer dropdown + Manifeste */}
               <nav className="hidden md:flex items-center" style={{ marginRight: '8px', gap: '20px' }}>
-                {[
-                  { href: '/legends', label: 'Légendes' },
-                  { href: '/education', label: 'Éducation' },
-                  { href: '/transparency', label: 'Transparence' },
-                  { href: '/manifesto', label: 'Manifeste' },
-                  { href: '/careers', label: 'Métiers' },
-                ].map(link => (
-                  <a
-                    key={link.href}
-                    href={link.href}
-                    style={{ fontSize: '12px', color: '#666666', textDecoration: 'none', transition: 'color 200ms ease' }}
-                    onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.color = '#888' }}
-                    onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.color = '#666666' }}
+                {/* Explorer dropdown */}
+                <div
+                  style={{ position: 'relative' }}
+                  onMouseEnter={() => setShowExplorer(true)}
+                  onMouseLeave={() => setShowExplorer(false)}
+                >
+                  <button
+                    style={{ fontSize: '12px', color: '#666666', background: 'none', border: 'none', cursor: 'pointer', transition: 'color 200ms ease', padding: 0 }}
+                    onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = '#888' }}
+                    onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = '#666666' }}
                   >
-                    {link.label}
-                  </a>
-                ))}
+                    {t('nav.explore', lang)} ▾
+                  </button>
+                  {showExplorer && (
+                    <div style={{
+                      position: 'absolute', top: 'calc(100% + 8px)', left: '-12px',
+                      background: '#111113', border: '1px solid rgba(255,255,255,0.071)',
+                      borderRadius: '8px', padding: '6px', minWidth: '160px', zIndex: 50,
+                    }}>
+                      {[
+                        { href: '/legends', label: t('nav.legends', lang) },
+                        { href: '/education', label: t('nav.education', lang) },
+                        { href: '/transparency', label: t('nav.transparency', lang) },
+                        { href: '/careers', label: t('nav.careers', lang) },
+                      ].map(link => (
+                        <a
+                          key={link.href}
+                          href={link.href}
+                          style={{
+                            display: 'block', padding: '8px 12px', fontSize: '12px',
+                            color: '#666', textDecoration: 'none', borderRadius: '6px',
+                            transition: 'all 200ms ease',
+                          }}
+                          onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.031)'; e.currentTarget.style.color = '#e0e0e0' }}
+                          onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#666' }}
+                        >
+                          {link.label}
+                        </a>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <a
+                  href="/manifesto"
+                  style={{ fontSize: '12px', color: '#666666', textDecoration: 'none', transition: 'color 200ms ease' }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.color = '#888' }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.color = '#666666' }}
+                >
+                  {t('nav.manifesto', lang)}
+                </a>
               </nav>
 
-              {/* Lang toggle FR / EN */}
+              {/* Mobile hamburger */}
               <button
-                onClick={() => setLang(lang === 'fr' ? 'en' : 'fr')}
-                style={{
-                  fontSize: '11px', padding: '3px 8px', borderRadius: '4px',
-                  background: 'transparent', border: '1px solid rgba(255,255,255,0.08)',
-                  color: '#444', cursor: 'pointer', letterSpacing: '0.08em',
-                  transition: 'all 200ms ease', fontFamily: 'ui-monospace, monospace',
-                }}
-                onMouseEnter={e => { e.currentTarget.style.color = '#888'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.15)' }}
-                onMouseLeave={e => { e.currentTarget.style.color = '#444'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)' }}
-                title={lang === 'fr' ? 'Switch to English' : 'Passer en français'}
+                className="md:hidden"
+                onClick={() => setMobileMenuOpen(v => !v)}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#666', fontSize: '1.2rem', padding: '4px' }}
               >
-                {lang === 'fr' ? 'EN' : 'FR'}
+                {mobileMenuOpen ? '✕' : '☰'}
               </button>
 
               {/* Session history */}
@@ -583,6 +656,23 @@ export default function TELPage() {
           </div>
         </header>
 
+        {/* Mobile nav menu */}
+        {mobileMenuOpen && (
+          <div className="md:hidden" style={{ background: '#111113', borderBottom: '1px solid rgba(255,255,255,0.047)', padding: '12px 24px 16px' }}>
+            {[
+              { href: '/legends', label: t('nav.legends', lang) },
+              { href: '/education', label: t('nav.education', lang) },
+              { href: '/transparency', label: t('nav.transparency', lang) },
+              { href: '/careers', label: t('nav.careers', lang) },
+              { href: '/manifesto', label: t('nav.manifesto', lang) },
+            ].map(link => (
+              <a key={link.href} href={link.href} style={{ display: 'block', padding: '10px 0', fontSize: '13px', color: '#888', textDecoration: 'none', borderBottom: '1px solid rgba(255,255,255,0.031)' }}>
+                {link.label}
+              </a>
+            ))}
+          </div>
+        )}
+
         {/* ─── Central content ──────────────────────────────────────────── */}
         <div className="flex-1">
 
@@ -600,9 +690,17 @@ export default function TELPage() {
                     letterSpacing: '-0.02em',
                     color: '#ffffff',
                     marginBottom: '1.25rem',
+                    minHeight: '1.2em',
                   }}
                 >
-                  {t('hero.line1', lang)}<br />{t('hero.line2', lang)}
+                  <span>{heroText || '\u00A0'}</span>
+                  {heroText && heroText.length < t('hero.line1', lang).length && (
+                    <span style={{ borderRight: '2px solid #C9A84C', marginLeft: '2px', animation: 'blink 0.7s step-end infinite' }} />
+                  )}
+                  <br />
+                  <span style={{ opacity: heroLine2Visible ? 1 : 0, transition: 'opacity 600ms ease' }}>
+                    {t('hero.line2', lang)}
+                  </span>
                 </h2>
                 <p
                   style={{
@@ -611,23 +709,27 @@ export default function TELPage() {
                     color: '#666666',
                     maxWidth: '480px',
                     margin: '0 auto 2.5rem',
+                    opacity: heroLine2Visible ? 1 : 0,
+                    transition: 'opacity 600ms ease 200ms',
                   }}
                 >
                   {t('hero.desc', lang)}
                 </p>
-                <button
-                  onClick={() => formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })}
-                  className="tel-gold-btn"
-                  style={{ padding: '12px 32px', fontSize: '14px' }}
-                >
-                  {t('hero.cta', lang)}
-                </button>
+                <div style={{ opacity: heroCtaVisible ? 1 : 0, transition: 'opacity 400ms ease' }}>
+                  <button
+                    onClick={() => formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })}
+                    className="tel-gold-btn"
+                    style={{ padding: '12px 32px', fontSize: '14px' }}
+                  >
+                    {t('hero.cta', lang)}
+                  </button>
+                </div>
               </section>
 
               {/* DEMO CAROUSEL */}
               <section className="px-6 pb-12 md:px-10" style={{ maxWidth: '680px', margin: '0 auto' }}>
                 <p className="tel-label text-center mb-6">
-                  {t('hero.discovery', lang)}
+                  {t('carousel.title', lang)}
                 </p>
 
                 <div
@@ -670,7 +772,7 @@ export default function TELPage() {
                 </div>
 
                 <div className="flex items-center justify-center gap-2 mt-4">
-                  {ALL_DEMO_CROSSINGS.map((_, i) => (
+                  {demoCards.map((_, i) => (
                     <button
                       key={i}
                       onClick={() => { setDemoVisible(false); setTimeout(() => { setDemoIndex(i); setDemoVisible(true) }, 200) }}
@@ -687,23 +789,23 @@ export default function TELPage() {
 
               {/* HOW IT WORKS */}
               <section className="px-6 pb-12 md:px-10" style={{ maxWidth: '760px', margin: '0 auto' }}>
-                <p className="tel-label text-center mb-8">Comment ça fonctionne</p>
+                <p className="tel-label text-center mb-8">{t('how.title', lang)}</p>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   {[
                     {
                       num: '01',
-                      title: 'Entrez vos sources',
-                      desc: 'URL YouTube ou article web, texte libre, mot-clé, ou deux concepts à croiser directement.',
+                      title: t('how.step1.title', lang),
+                      desc: t('how.step1.desc', lang),
                     },
                     {
                       num: '02',
-                      title: 'LOGOS analyse et croise',
-                      desc: 'Contextes culturels, arcs narratifs, angles morts géographiques. Trois niveaux d\'analyse.',
+                      title: t('how.step2.title', lang),
+                      desc: t('how.step2.desc', lang),
                     },
                     {
                       num: '03',
-                      title: 'Un insight émerge',
-                      desc: 'Convergences, divergences irréductibles — et la question que personne n\'avait encore osé formuler.',
+                      title: t('how.step3.title', lang),
+                      desc: t('how.step3.desc', lang),
                     },
                   ].map(step => (
                     <div key={step.num} style={{ background: '#111113', border: '1px solid rgba(255,255,255,0.047)', borderRadius: '12px', padding: '24px' }}>
@@ -718,7 +820,7 @@ export default function TELPage() {
               {/* INPUT FORM */}
               <section ref={formRef} className="px-6 pb-20 md:px-10" style={{ maxWidth: '680px', margin: '0 auto' }}>
                 <div style={{ background: '#111113', border: '1px solid rgba(255,255,255,0.047)', borderRadius: '12px', padding: '32px' }}>
-                  <p className="tel-label text-center mb-6">Nouveau croisement</p>
+                  <p className="tel-label text-center mb-6">{t('action.newcrossing', lang)}</p>
                   <SourceInput onCross={handleCross} isLoading={false} />
                 </div>
                 {sessionHistory.length > 0 && (

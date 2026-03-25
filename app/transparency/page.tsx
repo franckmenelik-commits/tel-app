@@ -5,6 +5,7 @@
 
 import { useState, useEffect } from 'react'
 import { REFERENCE_TEXTS } from '@/lib/reference-texts'
+import { PRELOADED_AUDITS } from '@/lib/preloaded-audits'
 import type { TransparencyReport } from '@/app/api/transparency/route'
 
 const GOLD = '#C9A84C'
@@ -247,6 +248,53 @@ export default function TransparencyPage() {
             Rendez lisible ce que les systèmes rendent invisible.
           </p>
         </div>
+
+        {/* ── Audits pré-chargés ── */}
+        {!report && (
+          <div style={{ marginBottom: '56px' }}>
+            <p style={{
+              fontSize: '10px', fontWeight: 600, letterSpacing: '0.15em',
+              textTransform: 'uppercase' as const, color: TEXT_MUTED,
+              marginBottom: '20px', fontFamily: '-apple-system, sans-serif',
+            }}>
+              Audits récents
+            </p>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '16px' }}>
+              {PRELOADED_AUDITS.map(audit => {
+                const risk = { faible: '#4CAF50', modéré: '#FF9800', élevé: '#FF5722', critique: '#F44336' }[audit.report.riskLevel] || '#FF9800'
+                return (
+                  <button
+                    key={audit.id}
+                    onClick={() => setReport(audit.report)}
+                    style={{
+                      background: SURFACE, border: `1px solid ${BORDER}`, borderRadius: '12px',
+                      padding: '20px', textAlign: 'left' as const, cursor: 'pointer',
+                      transition: 'all 200ms ease',
+                    }}
+                    onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.12)' }}
+                    onMouseLeave={e => { e.currentTarget.style.borderColor = BORDER }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
+                      <span style={{ fontSize: '18px', color: GOLD }}>{audit.icon}</span>
+                      <span style={{
+                        fontSize: '10px', padding: '2px 8px', borderRadius: '20px',
+                        background: `${risk}18`, border: `1px solid ${risk}44`,
+                        color: risk, letterSpacing: '0.08em', fontFamily: 'system-ui',
+                      }}>
+                        {audit.report.riskLevel.toUpperCase()}
+                      </span>
+                    </div>
+                    <p style={{ fontSize: '15px', color: '#e0e0e0', fontWeight: 500, marginBottom: '4px' }}>{audit.name}</p>
+                    <p style={{ fontSize: '12px', color: TEXT_MUTED, lineHeight: 1.5 }}>{audit.subtitle}</p>
+                    <p style={{ fontSize: '12px', color: '#444', marginTop: '10px', lineHeight: 1.5, fontStyle: 'italic' }}>
+                      &ldquo;{audit.report.questionNoOneHasAsked.slice(0, 80)}&hellip;&rdquo;
+                    </p>
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+        )}
 
         {/* ── Form ── */}
         {!report && (
