@@ -280,6 +280,30 @@ button {
   }
 }
 
+/* ── CrossingSpheres keyframes ── */
+@keyframes spherePulseA {
+  0%, 100% { transform: scale(0.9); }
+  50% { transform: scale(1.1); }
+}
+@keyframes spherePulseB {
+  0%, 100% { transform: scale(1.1); }
+  50% { transform: scale(0.9); }
+}
+@keyframes sphereOrbitA {
+  0%   { transform: translate(0px, -40px) scale(1); }
+  25%  { transform: translate(40px, 0px) scale(1); }
+  50%  { transform: translate(0px, 40px) scale(1); }
+  75%  { transform: translate(-40px, 0px) scale(1); }
+  100% { transform: translate(0px, -40px) scale(1); }
+}
+@keyframes sphereOrbitB {
+  0%   { transform: translate(0px, 40px) scale(1); }
+  25%  { transform: translate(-40px, 0px) scale(1); }
+  50%  { transform: translate(0px, -40px) scale(1); }
+  75%  { transform: translate(40px, 0px) scale(1); }
+  100% { transform: translate(0px, 40px) scale(1); }
+}
+
 /* ── Reduced motion ── */
 @media (prefers-reduced-motion: reduce) {
   *,

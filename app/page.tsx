@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useEffect, useRef } from 'react'
 import dynamic from 'next/dynamic'
+import CrossingSpheres from '@/components/CrossingSpheres'
 import SourceInput from '@/components/SourceInput'
 import InsightCard from '@/components/InsightCard'
 import EnrichissementPanel from '@/components/EnrichissementPanel'
@@ -473,6 +474,10 @@ export default function TELPage() {
 
   return (
     <main className="relative min-h-screen" style={{ background: '#09090b', overflowX: 'hidden' }}>
+      <CrossingSpheres
+        isLoading={appState === 'loading' || appState === 'analysing'}
+        hasResult={appState === 'result'}
+      />
 
       {/* ── Living Map — reduced opacity ── */}
       <div style={{ opacity: 0.15, position: 'fixed', inset: 0, pointerEvents: 'none' }}>
@@ -697,14 +702,6 @@ export default function TELPage() {
 
               {/* HERO */}
               <section className="px-6 pt-12 pb-16 md:px-10 md:pt-20 md:pb-24 text-center" style={{ maxWidth: '760px', margin: '0 auto', position: 'relative' }}>
-                {/* Gold glow behind title */}
-                <div style={{
-                  position: 'absolute', top: '30%', left: '50%',
-                  width: '560px', height: '260px', borderRadius: '50%',
-                  background: 'radial-gradient(ellipse at center, #C9A84C 0%, transparent 70%)',
-                  animation: 'heroGlow 4s ease-in-out infinite',
-                  pointerEvents: 'none', zIndex: 0,
-                }} />
                 <h2
                   style={{
                     position: 'relative', zIndex: 1,
@@ -741,14 +738,6 @@ export default function TELPage() {
                   {t('hero.desc', lang)}
                 </p>
                 <div style={{ position: 'relative', zIndex: 1, display: 'inline-block', opacity: heroCtaVisible ? 1 : 0, transition: 'opacity 400ms ease' }}>
-                  {/* CTA glow */}
-                  <div style={{
-                    position: 'absolute', top: '50%', left: '50%',
-                    width: '180px', height: '60px', borderRadius: '50%',
-                    background: 'radial-gradient(ellipse at center, #C9A84C 0%, transparent 70%)',
-                    animation: 'ctaGlow 3s ease-in-out infinite',
-                    pointerEvents: 'none', zIndex: 0,
-                  }} />
                   <button
                     onClick={() => formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })}
                     className="tel-gold-btn"
