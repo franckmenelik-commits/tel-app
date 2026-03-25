@@ -69,16 +69,16 @@ function buildGammaOutline(card: InsightCardType): string {
   lines.push(`# ${card.theme}`)
   lines.push('')
   lines.push('## Sources croisées')
-  card.sources.forEach(s => lines.push(`- **${s.title}** — ${s.geographicContext}`))
+  ;(card.sources ?? []).forEach(s => lines.push(`- **${s.title}** — ${s.geographicContext}`))
   lines.push('')
   lines.push('## Le pattern révélé')
   lines.push(card.revealedPattern)
   lines.push('')
   lines.push('## Convergences')
-  card.convergenceZones.forEach(z => lines.push(`- ${z}`))
+  ;(card.convergenceZones ?? []).forEach(z => lines.push(`- ${z}`))
   lines.push('')
   lines.push('## Divergences irréductibles')
-  card.divergenceZones.forEach(z => lines.push(`- ${z}`))
+  ;(card.divergenceZones ?? []).forEach(z => lines.push(`- ${z}`))
   lines.push('')
   if (card.actionables) {
     lines.push('## Ce que ça permet')
@@ -445,7 +445,7 @@ export default function InsightCard({
   }
 
   const handleApprofondir = () => {
-    const urls = card.sources.map(s => s.url).filter(Boolean)
+    const urls = (card.sources ?? []).map(s => s.url).filter(Boolean)
     try { sessionStorage.setItem('tel:approfondir', JSON.stringify(urls)) } catch { /* ok */ }
     onClose()
   }
@@ -535,7 +535,7 @@ export default function InsightCard({
           <Section index={0} visible={isVisible(0)}>
             <SectionLabel>Sources croisées</SectionLabel>
             <div className="flex flex-col gap-2">
-              {card.sources.map((source, i) => (
+              {(card.sources ?? []).map((source, i) => (
                 <div key={i} className="flex items-start gap-3 p-3 rounded-lg" style={{ background: 'rgba(255,255,255,0.02)', border: `1px solid ${BORDER}` }}>
                   <span style={{ flexShrink: 0, fontSize: '10px', padding: '2px 8px', borderRadius: '4px', background: 'rgba(255,255,255,0.025)', color: '#666', border: `1px solid ${BORDER}`, whiteSpace: 'nowrap', letterSpacing: '0.06em' }}>
                     {SOURCE_TYPE_LABELS[source.type] || source.type}
@@ -571,7 +571,7 @@ export default function InsightCard({
           <Section index={2} visible={isVisible(2)}>
             <SectionLabel>Zones de convergence</SectionLabel>
             <ul className="flex flex-col gap-2.5">
-              {card.convergenceZones.map((zone, i) => (
+              {(card.convergenceZones ?? []).map((zone, i) => (
                 <li key={i} className="flex gap-3" style={{ fontSize: '14px', lineHeight: 1.7, color: TEXT_PRIMARY }}>
                   <span style={{ color: GOLD, flexShrink: 0, marginTop: '3px', fontSize: '8px' }}>◆</span>
                   <span className="tel-serif">{zone}</span>
@@ -586,7 +586,7 @@ export default function InsightCard({
           <Section index={3} visible={isVisible(3)}>
             <SectionLabel>Zones de divergence irréductible</SectionLabel>
             <ul className="flex flex-col gap-2.5">
-              {card.divergenceZones.map((zone, i) => (
+              {(card.divergenceZones ?? []).map((zone, i) => (
                 <li key={i} className="flex gap-3" style={{ fontSize: '14px', lineHeight: 1.7, color: TEXT_PRIMARY }}>
                   <span style={{ color: '#6B4226', flexShrink: 0, marginTop: '3px', fontSize: '8px' }}>◇</span>
                   <span className="tel-serif">{zone}</span>
