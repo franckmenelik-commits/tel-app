@@ -32,6 +32,8 @@ export default function ManifestoPage() {
             {[
               { href: '/legends', label: 'Légendes' },
               { href: '/education', label: 'Éducation' },
+              { href: '/transparency', label: 'Transparence' },
+              { href: '/careers', label: 'Métiers' },
             ].map(link => (
               <Link
                 key={link.href}

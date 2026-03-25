@@ -209,6 +209,7 @@ export default function TransparencyPage() {
               { href: '/legends', label: 'Légendes' },
               { href: '/education', label: 'Éducation' },
               { href: '/manifesto', label: 'Manifeste' },
+              { href: '/careers', label: 'Métiers' },
             ].map(link => (
               <a
                 key={link.href}

@@ -493,6 +493,7 @@ export default function TELPage() {
                   { href: '/education', label: 'Éducation' },
                   { href: '/transparency', label: 'Transparence' },
                   { href: '/manifesto', label: 'Manifeste' },
+                  { href: '/careers', label: 'Métiers' },
                 ].map(link => (
                   <a
                     key={link.href}
@@ -833,6 +834,12 @@ export default function TELPage() {
               onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.color = '#888' }}
               onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.color = '#333' }}>
               Manifeste
+            </a>
+            <span style={{ color: '#1a1a1a', fontSize: '10px' }}>·</span>
+            <a href="/careers" style={{ color: '#333', fontSize: '12px', textDecoration: 'none', transition: 'color 200ms ease' }}
+              onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.color = '#888' }}
+              onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.color = '#333' }}>
+              Métiers
             </a>
           </div>
         </footer>
