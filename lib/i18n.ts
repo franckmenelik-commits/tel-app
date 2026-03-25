@@ -113,26 +113,28 @@ export function t(key: TranslationKey, lang: Lang): string {
 
 // ── React hook ───────────────────────────────────────────────────────────────
 
-export function useLanguage(): [Lang, (l: Lang) => void] {
+export function useLanguage(): [Lang, (l: Lang) => void, boolean] {
   const [lang, setLang] = useState<Lang>('fr')
+  const [langDetected, setLangDetected] = useState(false)
 
   useEffect(() => {
     try {
       const stored = localStorage.getItem('tel:lang') as Lang | null
       if (stored === 'fr' || stored === 'en') {
         setLang(stored)
-        return
+      } else {
+        const browser = navigator.language || ''
+        setLang(browser.toLowerCase().startsWith('fr') ? 'fr' : 'en')
       }
-      // Auto-detect from browser
-      const browser = navigator.language || ''
-      setLang(browser.toLowerCase().startsWith('fr') ? 'fr' : 'en')
     } catch { /* localStorage indisponible */ }
+    setLangDetected(true)
   }, [])
 
   function setAndStore(l: Lang) {
     setLang(l)
+    setLangDetected(true)
     try { localStorage.setItem('tel:lang', l) } catch { /* ok */ }
   }
 
-  return [lang, setAndStore]
+  return [lang, setAndStore, langDetected]
 }

@@ -80,7 +80,7 @@ async function readSSEStream(
 
 export default function TELPage() {
   // ── Language ────────────────────────────────────────────────────────────────
-  const [lang, setLang] = useLanguage()
+  const [lang, , langDetected] = useLanguage()
 
   // ── App state ──────────────────────────────────────────────────────────────
   const [appState, setAppState] = useState<AppState>('idle')
@@ -151,8 +151,9 @@ export default function TELPage() {
     return () => clearInterval(timer)
   }, [demoCards])
 
-  // ── Hero typewriter — once per session ─────────────────────────────────────
+  // ── Hero typewriter — once per session, after lang is detected ─────────────
   useEffect(() => {
+    if (!langDetected) return   // wait for real lang before typing
     if (heroPlayed.current) return
     try {
       if (sessionStorage.getItem('tel:hero-played')) {
@@ -180,7 +181,7 @@ export default function TELPage() {
     }
     setTimeout(type, 400)
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [lang])
+  }, [lang, langDetected])
 
   // ── Loading message rotation ───────────────────────────────────────────────
   useEffect(() => {
@@ -449,12 +450,26 @@ export default function TELPage() {
     setShowingSidebar(false)
   }, [])
 
+  // ── IntersectionObserver — scroll fade-in ─────────────────────────────────
+  useEffect(() => {
+    const els = document.querySelectorAll('.tel-animate')
+    if (!els.length) return
+    const observer = new IntersectionObserver(
+      (entries) => entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('tel-visible') }),
+      { threshold: 0.12 }
+    )
+    els.forEach(el => observer.observe(el))
+    return () => observer.disconnect()
+  }, [appState])
+
   const souffleIndicator = '•'.repeat(Math.min(3, Math.max(1, souffleNiveaux.length)))
   const demo = demoCards[demoIndex] ?? ALL_DEMO_CROSSINGS[0]
   const demoSourceA = demo.sources[0]
   const demoSourceB = demo.sources[1]
+  const demoQuestion = (lang === 'en' && demo.questionNoOneHasAskedEN) ? demo.questionNoOneHasAskedEN : demo.questionNoOneHasAsked
   const [showExplorer, setShowExplorer] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [prefillSources, setPrefillSources] = useState<string[]>([])
 
   return (
     <main className="relative min-h-screen" style={{ background: '#09090b', overflowX: 'hidden' }}>
@@ -649,7 +664,7 @@ export default function TELPage() {
                   className="tel-ghost-btn"
                   style={{ fontSize: '12px' }}
                 >
-                  Se connecter
+                  {t('nav.signin', lang)}
                 </button>
               )}
             </div>
@@ -681,9 +696,18 @@ export default function TELPage() {
             <div>
 
               {/* HERO */}
-              <section className="px-6 pt-12 pb-16 md:px-10 md:pt-20 md:pb-24 text-center" style={{ maxWidth: '760px', margin: '0 auto' }}>
+              <section className="px-6 pt-12 pb-16 md:px-10 md:pt-20 md:pb-24 text-center" style={{ maxWidth: '760px', margin: '0 auto', position: 'relative' }}>
+                {/* Gold glow behind title */}
+                <div style={{
+                  position: 'absolute', top: '30%', left: '50%',
+                  width: '560px', height: '260px', borderRadius: '50%',
+                  background: 'radial-gradient(ellipse at center, #C9A84C 0%, transparent 70%)',
+                  animation: 'heroGlow 4s ease-in-out infinite',
+                  pointerEvents: 'none', zIndex: 0,
+                }} />
                 <h2
                   style={{
+                    position: 'relative', zIndex: 1,
                     fontWeight: 300,
                     fontSize: 'clamp(2rem, 5vw, 3rem)',
                     lineHeight: 1.2,
@@ -704,6 +728,7 @@ export default function TELPage() {
                 </h2>
                 <p
                   style={{
+                    position: 'relative', zIndex: 1,
                     fontSize: '16px',
                     lineHeight: 1.7,
                     color: '#666666',
@@ -715,11 +740,21 @@ export default function TELPage() {
                 >
                   {t('hero.desc', lang)}
                 </p>
-                <div style={{ opacity: heroCtaVisible ? 1 : 0, transition: 'opacity 400ms ease' }}>
+                <div style={{ position: 'relative', zIndex: 1, display: 'inline-block', opacity: heroCtaVisible ? 1 : 0, transition: 'opacity 400ms ease' }}>
+                  {/* CTA glow */}
+                  <div style={{
+                    position: 'absolute', top: '50%', left: '50%',
+                    width: '180px', height: '60px', borderRadius: '50%',
+                    background: 'radial-gradient(ellipse at center, #C9A84C 0%, transparent 70%)',
+                    animation: 'ctaGlow 3s ease-in-out infinite',
+                    pointerEvents: 'none', zIndex: 0,
+                  }} />
                   <button
                     onClick={() => formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })}
                     className="tel-gold-btn"
-                    style={{ padding: '12px 32px', fontSize: '14px' }}
+                    style={{ position: 'relative', zIndex: 1, padding: '12px 32px', fontSize: '14px', transition: 'transform 200ms ease' }}
+                    onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.02)' }}
+                    onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)' }}
                   >
                     {t('hero.cta', lang)}
                   </button>
@@ -727,12 +762,18 @@ export default function TELPage() {
               </section>
 
               {/* DEMO CAROUSEL */}
-              <section className="px-6 pb-12 md:px-10" style={{ maxWidth: '680px', margin: '0 auto' }}>
+              <section className="tel-animate px-6 pb-12 md:px-10" style={{ maxWidth: '680px', margin: '0 auto' }}>
                 <p className="tel-label text-center mb-6">
                   {t('carousel.title', lang)}
                 </p>
 
-                <div
+                <button
+                  className="tel-carousel-card w-full text-left"
+                  onClick={() => {
+                    const srcs = demo.sources.map(s => s.url || s.title || '').filter(Boolean)
+                    setPrefillSources(srcs)
+                    setTimeout(() => formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 50)
+                  }}
                   style={{
                     background: '#111113',
                     border: '1px solid rgba(255,255,255,0.047)',
@@ -741,10 +782,11 @@ export default function TELPage() {
                     opacity: demoVisible ? 1 : 0,
                     transition: 'opacity 300ms ease',
                     minHeight: '160px',
+                    width: '100%',
                   }}
                 >
                   <div className="flex items-center gap-3 flex-wrap mb-5">
-                    {[demoSourceA, demoSourceB].map((src, i) => (
+                    {[demoSourceA, demoSourceB].filter(Boolean).map((src, i) => (
                       <span
                         key={i}
                         style={{
@@ -763,13 +805,16 @@ export default function TELPage() {
                     <span style={{ color: '#333', fontSize: '1rem', flexShrink: 0 }}>×</span>
                   </div>
 
-                  <p className="tel-italic" style={{ color: '#e0e0e0', fontSize: '15px', lineHeight: 1.75 }}>
-                    &ldquo;{demo.questionNoOneHasAsked}&rdquo;
+                  <p key={`q-${demoIndex}`} className="tel-italic carousel-question-enter" style={{ color: '#e0e0e0', fontSize: '15px', lineHeight: 1.75 }}>
+                    &ldquo;{demoQuestion}&rdquo;
                   </p>
                   <p style={{ fontSize: '11px', marginTop: '12px', color: '#333' }}>
                     — {demo.theme}
                   </p>
-                </div>
+                  <p style={{ fontSize: '10px', marginTop: '8px', color: '#C9A84C', opacity: 0.5, letterSpacing: '0.1em' }}>
+                    {lang === 'en' ? 'Click to explore →' : 'Cliquer pour explorer →'}
+                  </p>
+                </button>
 
                 <div className="flex items-center justify-center gap-2 mt-4">
                   {demoCards.map((_, i) => (
@@ -788,27 +833,15 @@ export default function TELPage() {
               </section>
 
               {/* HOW IT WORKS */}
-              <section className="px-6 pb-12 md:px-10" style={{ maxWidth: '760px', margin: '0 auto' }}>
+              <section className="tel-animate px-6 pb-12 md:px-10" style={{ maxWidth: '760px', margin: '0 auto' }}>
                 <p className="tel-label text-center mb-8">{t('how.title', lang)}</p>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   {[
-                    {
-                      num: '01',
-                      title: t('how.step1.title', lang),
-                      desc: t('how.step1.desc', lang),
-                    },
-                    {
-                      num: '02',
-                      title: t('how.step2.title', lang),
-                      desc: t('how.step2.desc', lang),
-                    },
-                    {
-                      num: '03',
-                      title: t('how.step3.title', lang),
-                      desc: t('how.step3.desc', lang),
-                    },
+                    { num: '01', title: t('how.step1.title', lang), desc: t('how.step1.desc', lang) },
+                    { num: '02', title: t('how.step2.title', lang), desc: t('how.step2.desc', lang) },
+                    { num: '03', title: t('how.step3.title', lang), desc: t('how.step3.desc', lang) },
                   ].map(step => (
-                    <div key={step.num} style={{ background: '#111113', border: '1px solid rgba(255,255,255,0.047)', borderRadius: '12px', padding: '24px' }}>
+                    <div key={step.num} className="tel-how-card" style={{ background: '#111113', border: '1px solid rgba(255,255,255,0.047)', borderRadius: '12px', padding: '24px' }}>
                       <p style={{ fontSize: '11px', color: '#C9A84C', letterSpacing: '0.15em', marginBottom: '12px', opacity: 0.7 }}>{step.num}</p>
                       <p style={{ fontSize: '14px', color: '#e0e0e0', marginBottom: '8px', fontWeight: 500 }}>{step.title}</p>
                       <p style={{ fontSize: '13px', color: '#555', lineHeight: 1.7 }}>{step.desc}</p>
@@ -818,10 +851,10 @@ export default function TELPage() {
               </section>
 
               {/* INPUT FORM */}
-              <section ref={formRef} className="px-6 pb-20 md:px-10" style={{ maxWidth: '680px', margin: '0 auto' }}>
+              <section ref={formRef} className="tel-animate px-6 pb-20 md:px-10" style={{ maxWidth: '680px', margin: '0 auto' }}>
                 <div style={{ background: '#111113', border: '1px solid rgba(255,255,255,0.047)', borderRadius: '12px', padding: '32px' }}>
                   <p className="tel-label text-center mb-6">{t('action.newcrossing', lang)}</p>
-                  <SourceInput onCross={handleCross} isLoading={false} />
+                  <SourceInput onCross={handleCross} isLoading={false} prefill={prefillSources} />
                 </div>
                 {sessionHistory.length > 0 && (
                   <div className="text-center mt-4">
@@ -936,33 +969,30 @@ export default function TELPage() {
         </div>
 
         {/* ─── Footer ──────────────────────────────────────────────────── */}
-        <footer className="flex-shrink-0 px-6 py-5 text-center" style={{ borderTop: '1px solid rgba(255,255,255,0.031)' }}>
-          <div className="flex items-center justify-center gap-4 flex-wrap">
-            <span style={{ color: '#222', fontSize: '12px' }}>theexperiencelayer.org</span>
-            <span style={{ color: '#1a1a1a', fontSize: '10px' }}>·</span>
-            <a href="/legends" style={{ color: '#333', fontSize: '12px', textDecoration: 'none', transition: 'color 200ms ease' }}
-              onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.color = '#888' }}
-              onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.color = '#333' }}>
-              Les Croisements Fondateurs →
-            </a>
-            <span style={{ color: '#1a1a1a', fontSize: '10px' }}>·</span>
-            <a href="/education" style={{ color: '#333', fontSize: '12px', textDecoration: 'none', transition: 'color 200ms ease' }}
-              onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.color = '#888' }}
-              onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.color = '#333' }}>
-              TEL Éducation →
-            </a>
-            <span style={{ color: '#1a1a1a', fontSize: '10px' }}>·</span>
-            <a href="/manifesto" style={{ color: '#333', fontSize: '12px', textDecoration: 'none', transition: 'color 200ms ease' }}
-              onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.color = '#888' }}
-              onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.color = '#333' }}>
-              Manifeste
-            </a>
-            <span style={{ color: '#1a1a1a', fontSize: '10px' }}>·</span>
-            <a href="/careers" style={{ color: '#333', fontSize: '12px', textDecoration: 'none', transition: 'color 200ms ease' }}
-              onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.color = '#888' }}
-              onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.color = '#333' }}>
-              Métiers
-            </a>
+        <footer className="flex-shrink-0 px-6 py-8 text-center" style={{ borderTop: '1px solid rgba(255,255,255,0.031)' }}>
+          <p style={{ color: '#444', fontSize: '11px', letterSpacing: '0.1em', marginBottom: '10px' }}>
+            TEL — The Experience Layer
+          </p>
+          <div className="flex items-center justify-center flex-wrap" style={{ gap: '6px' }}>
+            {[
+              { href: '/legends', label: t('nav.legends', lang) },
+              { href: '/education', label: t('nav.education', lang) },
+              { href: '/transparency', label: t('nav.transparency', lang) },
+              { href: '/manifesto', label: t('nav.manifesto', lang) },
+              { href: '/careers', label: t('nav.careers', lang) },
+            ].map((link, i, arr) => (
+              <span key={link.href} className="flex items-center gap-1.5">
+                <a
+                  href={link.href}
+                  style={{ color: '#333', fontSize: '11px', letterSpacing: '0.1em', textDecoration: 'none', transition: 'color 200ms ease' }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.color = '#888' }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.color = '#333' }}
+                >
+                  {link.label}
+                </a>
+                {i < arr.length - 1 && <span style={{ color: '#222', fontSize: '10px' }}>·</span>}
+              </span>
+            ))}
           </div>
         </footer>
       </div>

@@ -56,6 +56,8 @@ export const DEMO_MOUMOUE_LUMUMBA: InsightCard = {
     'Ce croisement ne peut pas capturer ce que Moumié et Lumumba auraient pensé l\'un de l\'autre. Il ne peut pas rendre le poids de savoir — comme ils le savaient — qu\'ils allaient mourir. Il ne peut pas rendre la rage lucide de ceux qui ont choisi la résistance en sachant le prix.',
   questionNoOneHasAsked:
     'Si Moumié et Lumumba s\'étaient rencontrés à Accra en 1960, quelle Afrique auraient-ils imaginée ensemble — et pourquoi cette réunion n\'a jamais eu lieu ?',
+  questionNoOneHasAskedEN:
+    'If Moumié and Lumumba had met in Accra in 1960, what Africa would they have imagined together — and why did that meeting never happen?',
   sourceCoordinates: [
     { lat: 3.8480, lng: 11.5021, region: 'Cameroun (Yaoundé)' },
     { lat: -4.3216, lng: 15.3216, region: 'Congo (Kinshasa)' },
@@ -108,6 +110,8 @@ export const DEMO_BOHR_HOPI: InsightCard = {
     'Ce croisement ne peut pas capturer ce que ressentent les physiciens qui découvrent cette convergence — ni l\'embarras académique qu\'elle provoque. Il ne peut pas rendre la sacralité d\'un chant Hopi, ni ce que cela fait d\'appartenir à une langue dont la grammaire encode une autre physique.',
   questionNoOneHasAsked:
     'Si les physiciens de Copenhague avaient eu accès à la cosmologie Hopi en 1927, auraient-ils formulé le principe d\'incertitude différemment — et cela aurait-il changé l\'interprétation de la mécanique quantique ?',
+  questionNoOneHasAskedEN:
+    'If quantum physicists and Hopi elders had co-authored a theory of reality in 1927, what would it say about the role of the observer — and why has Western science avoided this encounter?',
   sourceCoordinates: [
     { lat: 55.6761, lng: 12.5683, region: 'Copenhague (Danemark)' },
     { lat: 35.8156, lng: -110.4052, region: 'Territoire Hopi (Arizona)' },
@@ -159,6 +163,8 @@ export const DEMO_MPESA_SILICON: InsightCard = {
     'Ce croisement ne peut pas mesurer l\'arrogance structurelle qui fait qu\'une innovation africaine n\'existe dans le récit mondial que lorsqu\'elle est validée par un papier de Harvard ou un investissement de McKinsey. Il ne peut pas rendre ce que cela fait d\'avoir inventé quelque chose que le monde attribuera plus tard à quelqu\'un d\'autre.',
   questionNoOneHasAsked:
     'Combien d\'innovations du Sud Global ont été "réinventées" par la Silicon Valley entre 2000 et 2024 — et combien de brevets ont été déposés sur des pratiques qui existaient déjà depuis des décennies dans des contextes que le droit des brevets ne considérait pas ?',
+  questionNoOneHasAskedEN:
+    'How many Global South innovations were "reinvented" by Silicon Valley between 2000 and 2024 — and what would financial inclusion look like if built from Nairobi rather than San Francisco?',
   sourceCoordinates: [
     { lat: -1.2921, lng: 36.8219, region: 'Nairobi (Kenya)' },
     { lat: 37.3861, lng: -122.0839, region: 'Silicon Valley (Californie)' },
@@ -218,6 +224,8 @@ export const DEMO_RECONCILIATION: InsightCard = {
     'Ce croisement ne peut pas capturer ce que ressent une mère rwandaise qui doit saluer chaque matin l\'homme qui a tué ses enfants. Il ne peut pas rendre la dissociation nécessaire à la survie. Il ne peut pas dire si la réconciliation est possible — ou si c\'est seulement un besoin des États et non des victimes.',
   questionNoOneHasAsked:
     'Les processus de réconciliation sont-ils conçus pour guérir les victimes — ou pour permettre aux sociétés de continuer à fonctionner malgré une guérison impossible ? Et si ces deux objectifs sont contradictoires, lequel doit primer ?',
+  questionNoOneHasAskedEN:
+    'Are reconciliation processes designed to heal victims — or to allow societies to function despite an impossible healing? And if these two goals contradict, which must come first?',
   sourceCoordinates: [
     { lat: -1.9706, lng: 30.1044, region: 'Kigali (Rwanda)' },
     { lat: -33.9249, lng: 18.4241, region: 'Cape Town (Afrique du Sud)' },
@@ -271,6 +279,8 @@ export const DEMO_WITTGENSTEIN_PIRAHA: InsightCard = {
     'Ce croisement ne peut pas capturer ce que c\'est d\'être locuteur Pirahã et de voir un linguiste européen décider que votre langue "prouve" une théorie philosophique. Il ne peut pas rendre la différence entre une langue "limitée" (selon des critères externes) et une langue qui a décidé de ses propres limites comme acte de souveraineté.',
   questionNoOneHasAsked:
     'Si Wittgenstein avait vécu six mois avec la communauté Pirahã, aurait-il réécrit les Investigations philosophiques — ou aurait-il conclu que les Pirahã avaient déjà résolu le problème qu\'il cherchait à poser ?',
+  questionNoOneHasAskedEN:
+    'If Wittgenstein had lived six months with the Pirahã, would he have rewritten the Philosophical Investigations — or concluded that the Pirahã had already solved the problem he was trying to pose?',
   sourceCoordinates: [
     { lat: 48.2082, lng: 16.3738, region: 'Vienne (Autriche)' },
     { lat: -3.1190, lng: -60.0217, region: 'Río Maici, Amazonie (Brésil)' },
@@ -318,6 +328,8 @@ export const DEMO_COMPAS_JUSTICE: InsightCard = {
     'Ce croisement ne peut pas rendre ce que ressent un homme de 23 ans qui apprend qu\'un algorithme a recommandé 10 ans de prison en 0.3 secondes.',
   questionNoOneHasAsked:
     'Si COMPAS avait été entraîné sur des données de Norvège plutôt que des États-Unis, quelles décisions aurait-il recommandées — et que révèle cette différence sur ce que nous appelons \'justice\' ?',
+  questionNoOneHasAskedEN:
+    'If the judge who sentenced you had been assessed by the same algorithm that assessed you, what sentence would they receive — and why is this question never asked in court?',
   sourceCoordinates: [
     { lat: 38.9072, lng: -77.0369, region: 'Washington DC (système judiciaire)' },
     { lat: 29.9511, lng: -90.0715, region: 'Louisiane (État le plus incarcérant)' },
@@ -366,6 +378,8 @@ export const DEMO_REVOLUTION_HAITI: InsightCard = {
     'Ce croisement ne peut pas rendre l\'humiliation d\'enseigner les droits de l\'homme à des élèves dont les ancêtres ont été exclus de ces droits par ceux qui les ont formulés.',
   questionNoOneHasAsked:
     'Si la révolution haïtienne avait réussi à être reconnue immédiatement par la France, qu\'est-ce que cela aurait changé à la définition des droits universels — et pourquoi la France a-t-elle préféré payer pour effacer cette question ?',
+  questionNoOneHasAskedEN:
+    'If Haiti\'s revolution had been immediately recognized by France in 1804, what would have changed in the definition of universal rights — and why did France prefer to pay to erase this question?',
   sourceCoordinates: [
     { lat: 48.8566, lng: 2.3522, region: 'Paris (France)' },
     { lat: 18.5944, lng: -72.3074, region: 'Port-au-Prince (Haïti)' },
@@ -414,6 +428,8 @@ export const DEMO_BURNOUT_ZEN: InsightCard = {
     'Ce croisement ne peut pas rendre ce que ressent quelqu\'un qui \'guérit\' de son burn-out pour retourner exactement dans le système qui l\'a produit.',
   questionNoOneHasAsked:
     'Si les entreprises adoptaient la pratique zen de zazen — l\'assise silencieuse sans but productif — combien disparaîtraient en 6 mois, et que révèle cette fragilité sur leur modèle économique ?',
+  questionNoOneHasAskedEN:
+    'If burn-out were officially recognized as a spiritual emergency rather than a medical pathology, what treatment would exist — and why does the healthcare system avoid this diagnosis?',
   sourceCoordinates: [
     { lat: 51.5074, lng: -0.1278, region: 'Londres (culture du travail occidental)' },
     { lat: 35.0116, lng: 135.7681, region: 'Kyoto (Japon — centres zen)' },
@@ -462,6 +478,8 @@ export const DEMO_INSTAGRAM_DUDH: InsightCard = {
     'Ce croisement ne peut pas rendre ce que ressent un adolescent haïtien qui découvre que ses photos d\'enfance sont la propriété d\'une entreprise californienne.',
   questionNoOneHasAsked:
     'Si la DUDH avait été rédigée en 2024 en anticipant les plateformes numériques, quels articles auraient rendu les CGU actuelles illégales — et pourquoi cette question n\'est-elle pas débattue dans les parlements ?',
+  questionNoOneHasAskedEN:
+    'If Instagram had to pay each user for every hour of attention captured at advertising market rates, how much would it owe you — and would this model survive?',
   sourceCoordinates: [
     { lat: 37.3382, lng: -121.8863, region: 'San Jose (Meta headquarters)' },
     { lat: 46.2044, lng: 6.1432, region: 'Genève (ONU — droits humains)' },
@@ -510,6 +528,8 @@ export const DEMO_MONEY_DETTE: InsightCard = {
     'Ce croisement ne peut pas rendre ce que ressent une infirmière zambienne dont le salaire a été coupé pour \'rembourser\' une dette contractée par un dictateur avant sa naissance.',
   questionNoOneHasAsked:
     'Si les manuels d\'économie enseignaient la psychologie de la dette du Sud Global avec la même rigueur que la crise des subprimes, quelle révision de la notion de \'croissance\' cela imposerait-il ?',
+  questionNoOneHasAskedEN:
+    'If the financial principles of The Psychology of Money had been written from the perspective of a country carrying colonial debt, what would chapter one say?',
   sourceCoordinates: [
     { lat: 40.7128, lng: -74.0060, region: 'New York (marchés financiers)' },
     { lat: -15.4167, lng: 28.2833, region: 'Lusaka (Zambie)' },

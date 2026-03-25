@@ -8,6 +8,7 @@ import type { InputMode } from '@/lib/detect-mode'
 interface SourceInputProps {
   onCross: (inputs: string[], contexte: SouffleContexte) => void
   isLoading: boolean
+  prefill?: string[]
 }
 
 function detectUrlMeta(url: string): { icon: string; color: string; label: string } {
@@ -51,7 +52,7 @@ const CONTEXTES: { value: SouffleContexte; label: string; niveaux: string; descr
   { value: 'vecu_traumatique', label: 'Vécu fragile', niveaux: '•••', description: 'Mémoire douloureuse, dignité humaine' },
 ]
 
-export default function SourceInput({ onCross, isLoading }: SourceInputProps) {
+export default function SourceInput({ onCross, isLoading, prefill }: SourceInputProps) {
   const [mode, setMode] = useState<'cross' | 'resonate'>('cross')
   const [vecu, setVecu] = useState('')
   const [resonanceResult, setResonanceResult] = useState<null | {
@@ -66,6 +67,14 @@ export default function SourceInput({ onCross, isLoading }: SourceInputProps) {
 
   const [inputs, setInputs] = useState<string[]>(['', ''])
   const [contexte, setContexte] = useState<SouffleContexte>('exploration')
+
+  // Pre-fill from carousel click
+  useEffect(() => {
+    if (prefill && prefill.length > 0) {
+      setInputs(prefill.length >= 2 ? [...prefill] : [...prefill, ''])
+      setMode('cross')
+    }
+  }, [prefill])
 
   useEffect(() => {
     try {

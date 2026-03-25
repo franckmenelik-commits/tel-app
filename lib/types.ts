@@ -162,6 +162,7 @@ export interface InsightCard {
   geographicRepresentativity: string
   theUnspeakable: string
   questionNoOneHasAsked: string
+  questionNoOneHasAskedEN?: string    // English version for i18n carousel
   sourceCoordinates: MapCoordinate[]
   createdAt: Date
   irreconcilable?: string             // Ce que TEL refuse de réconcilier
