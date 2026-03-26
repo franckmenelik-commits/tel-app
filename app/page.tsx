@@ -477,6 +477,7 @@ export default function TELPage() {
       <CrossingSpheres
         isLoading={appState === 'loading' || appState === 'analysing'}
         hasResult={appState === 'result'}
+        isResonating={isDiscoveryMode && (appState === 'loading' || appState === 'analysing')}
       />
 
       {/* ── Living Map — reduced opacity ── */}

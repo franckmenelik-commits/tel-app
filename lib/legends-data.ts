@@ -6,6 +6,51 @@ import type { InsightCard as InsightCardType } from './types'
 
 export const FOUNDATIONAL_CROSSINGS: InsightCardType[] = [
   {
+    id: 'legend-000',
+    theme: 'La Fracture des Langages Amoureux',
+    sources: [
+      { url: '', type: 'free_text', title: "Lettre d'un étudiant à distance à sa partenaire", geographicContext: 'Montréal / Amérique du Sud, 2026', geographicConfidence: 100 },
+      { url: '', type: 'book', title: 'Correspondance Rilke et Lou Andreas-Salomé 1897–1903', geographicContext: 'Europe, fin XIXe–début XXe siècle', geographicConfidence: 90 },
+      { url: '', type: 'article', title: 'Le mythe de Psyché et Éros — Métamorphoses d\'Apulée, IIe siècle', geographicContext: 'Rome antique', geographicConfidence: 80 },
+    ],
+    revealedPattern: `Trois époques. Trois formes d'amour. Un même déchirement.
+
+Un étudiant écrit en 2026 : "je ne peux pas juste intellectualiser le fait que tu m'aimes, j'ai besoin de le ressentir." Rilke écrivait un siècle plus tôt : "je ne peux pas vivre de ton amour comme d'une théorie, j'ai besoin de le boire comme un vin." Psyché allumait une lampe pour voir Éros endormi — brisant leur pacte d'amour invisible.
+
+Le même cri traverse 2000 ans : rendre tangible l'intangible, au risque de tout perdre. L'amour doit être à la fois éprouvé dans le corps et pensé dans le silence. Ces deux régimes sont incompatibles dans l'instant. Pourtant aucun couple, à aucune époque, n'a réussi à aimer sans les deux.
+
+Ce croisement révèle une fracture fondamentale de la condition humaine : deux langages amoureux complets, irréductibles l'un à l'autre. Celui qui demande à ressentir n'est pas "trop" — il parle une langue que l'autre ne peut pas encore lire. Celui qui exprime par le silence n'est pas absent — il aime dans un registre que l'autre interprète comme indifférence.`,
+    convergenceZones: [
+      "Celui qui demande à ressentir est perçu comme celui qui menace la relation — alors qu'il essaie de la sauver.",
+      "Les partenaires silencieux ne sont pas indifférents — ils aiment dans un registre que l'autre ne peut pas lire.",
+      "La distance amplifie la fracture mais ne la crée pas — elle révèle ce qui existait déjà.",
+      "Le moment de vérité est toujours un acte de transparence radicale — une lettre, un geste — pas une conversation négociée.",
+    ],
+    divergenceZones: [
+      "Rilke et Lou ont transformé leur souffrance en œuvre. Le couple contemporain n'a pas ce luxe symbolique.",
+      "Psyché a un arbitre divin pour sa rédemption. Le couple moderne négocie sans filet et sans oracle.",
+      "Chapman propose une traduction pragmatique des langages. Mais le vécu révèle que le problème est existentiel, pas technique.",
+      "Rilke a trouvé la paix dans la solitude créatrice. Pour un étudiant de 19 ans amoureux en 2026, ni la solitude ni la divinisation ne sont des options.",
+    ],
+    globalConfidence: 87,
+    geographicRepresentativity: "Montréal et Amérique du Sud (témoignage contemporain), Europe fin XIXe (Rilke/Lou), Rome antique (Apulée). Absents : conceptions non-occidentales de la distance affective, modèles d'amour collectifs ou polygames, cultures où le silence est un langage d'amour reconnu socialement.",
+    theUnspeakable: "Ce que cette analyse ne peut pas capturer, c'est la texture même de la souffrance : le silence après l'envoi du message, l'attente du 'vu' sans réponse, la honte de se sentir 'trop' dans son besoin, et cette peur viscérale que le temps de réflexion de l'autre ne soit pas un temps de compréhension mais un temps de détachement. Il y a, dans ce vécu, une dimension presque physique de la déconnexion — comme si le corps se vidait de sa substance à chaque jour sans appel. Aucune résonance ne peut rendre cette sensation de désertion affective.",
+    questionNoOneHasAsked: "Si l'amour est à la fois ce qui doit être ressenti et intellectualisé, et que ces deux régimes sont incompatibles dans l'instant — existe-t-il une troisième voie, ni présence ni absence, ni corps ni esprit, qui permettrait de les réconcilier sans les trahir ? Ou bien l'amour n'est-il qu'une suite de malentendus nécessaires, où chacun donne ce qu'il peut, sans jamais combler l'autre ?",
+    questionNoOneHasAskedEN: "If love must be both felt and intellectualized, and these two modes are incompatible in the present moment — is there a third way, neither presence nor absence, neither body nor mind, that could reconcile them without betraying either? Or is love simply a necessary series of misunderstandings, where each person gives what they can, without ever fully reaching the other?",
+    irreconcilable: "Le besoin de ressentir l'amour dans le corps et le besoin de l'exprimer dans le silence sont deux vérités complètes. Aucune ne peut absorber l'autre sans la détruire. Cette fracture ne se résout pas — elle se vit, chaque jour, dans l'espace entre deux messages.",
+    sourceCoordinates: [
+      { lat: 45.50, lng: -73.56, region: 'Montréal, Canada' },
+      { lat: 48.21, lng: 16.37, region: 'Vienne / Europe' },
+      { lat: 41.90, lng: 12.50, region: 'Rome, Italie' },
+    ],
+    createdAt: new Date('2026-03-26'),
+    actionables: {
+      individu: "La prochaine fois que vous souffrez du silence de quelqu'un que vous aimez, demandez-vous : est-ce que cette personne m'aime dans un langage que je ne sais pas encore lire ?",
+      chercheur: "Étudiez les couples à distance comme des laboratoires de la fracture fondamentale de l'amour. La distance ne crée pas le problème — elle le révèle.",
+      institution: "Les applications de rencontre optimisent la compatibilité par algorithme. Aucune ne mesure la compatibilité des langages amoureux. C'est le prochain enjeu de santé relationnelle publique.",
+    },
+  },
+  {
     id: 'legend-001',
     theme: 'La Dette de Dignité',
     sources: [
