@@ -24,6 +24,7 @@ export const TRANSLATIONS = {
   'nav.transparency': { fr: 'Transparence',  en: 'Transparency' },
   'nav.manifesto':    { fr: 'Manifeste',     en: 'Manifesto' },
   'nav.careers':      { fr: 'Métiers',       en: 'Careers' },
+  'nav.initiative':   { fr: 'Initiative',    en: 'Initiative' },
   'nav.history':      { fr: 'Mes croisements', en: 'My crossings' },
   'nav.signin':       { fr: 'Se connecter',  en: 'Sign in' },
   'nav.explore':      { fr: 'Explorer',      en: 'Explore' },

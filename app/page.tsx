@@ -583,6 +583,7 @@ export default function TELPage() {
                         { href: '/legends', label: t('nav.legends', lang) },
                         { href: '/education', label: t('nav.education', lang) },
                         { href: '/transparency', label: t('nav.transparency', lang) },
+                        { href: '/initiative', label: t('nav.initiative', lang) },
                         { href: '/careers', label: t('nav.careers', lang) },
                       ].map(link => (
                         <a

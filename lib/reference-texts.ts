@@ -130,6 +130,25 @@ La vie privée doit être protégée et promue tout au long du cycle de vie de l
 Inclusion et équité :
 Les systèmes d'IA doivent être conçus pour éviter de perpétuer ou d'amplifier des biais discriminatoires. Une attention particulière doit être portée aux groupes vulnérables, notamment les enfants, les minorités et les populations marginalisées.`,
   },
+  {
+    id: 'cedaw-12',
+    label: 'CEDAW — Convention sur l\'élimination de toutes les formes de discrimination à l\'égard des femmes',
+    shortLabel: 'CEDAW — Droits des femmes ONU 1979',
+    source: 'ONU, 1979',
+    content: `Convention sur l'élimination de toutes les formes de discrimination à l'égard des femmes (CEDAW) — ONU, 1979 :
+
+Article 12 — Soins de santé :
+1. Les États parties prennent toutes les mesures appropriées pour éliminer la discrimination à l'égard des femmes dans le domaine des soins de santé, en vue de leur assurer, sur la base de l'égalité de l'homme et de la femme, les moyens d'accéder aux services médicaux, y compris ceux qui concernent la planification de la famille.
+2. Nonobstant les dispositions du paragraphe 1 ci-dessus, les États parties fournissent aux femmes pendant la grossesse, pendant l'accouchement et après l'accouchement, des services appropriés et, au besoin, gratuits, ainsi qu'une nutrition adéquate pendant la grossesse et l'allaitement.
+
+Article 11 — Emploi et conditions de travail :
+Les États parties prennent toutes les mesures appropriées pour éliminer la discrimination à l'égard des femmes dans le domaine de l'emploi, afin d'assurer, sur la base de l'égalité de l'homme et de la femme, les mêmes droits, notamment le droit au travail, le droit aux mêmes possibilités d'emploi, le droit à la sécurité de l'emploi et le droit à une rémunération égale pour un travail d'égale valeur.
+
+Article 16 — Mariage et vie de famille :
+Les États parties prennent toutes les mesures appropriées pour éliminer la discrimination à l'égard des femmes dans toutes les questions découlant du mariage et dans les rapports familiaux, et notamment assurer, sur la base de l'égalité de l'homme et de la femme : le même droit de contracter mariage, les mêmes droits et responsabilités au cours du mariage et lors de sa dissolution.
+
+Note critique : Tout système algorithmique qui traite différemment les femmes en matière d'accès aux services de santé, de crédit, d'emploi ou d'information constitue une forme de discrimination prohibée par cet instrument. La CEDAW est ratifiée par 189 États — c'est l'un des traités internationaux les plus universellement adoptés.`,
+  },
 ]
 
 export function getReferenceById(id: string): ReferenceText | undefined {
