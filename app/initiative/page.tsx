@@ -193,7 +193,10 @@ export default function InitiativePage() {
       `${report.argumentsParAudience.citoyen}`,
       ``,
       `[PREMIÈRES ÉTAPES]`,
-      ...report.premieresEtapes.map(e => `${e.numero}. ${e.action} — ${e.delai}`),
+      ...report.premieresEtapes.map(e => `${e.numero}. ${e.action} — ${e.delai}${e.contact ? ` (${e.contact})` : ''}`),
+      ``,
+      `[COALITION — APPEL À LA COLLABORATION]`,
+      ...report.coalitionPotentielle.map(c => `• ${c.nom} (${c.pays})${c.lien ? ` — ${c.lien}` : ''} : ${c.description}`),
     ].join('\n')
 
     const blob = new Blob([script], { type: 'text/plain' })
@@ -376,7 +379,7 @@ export default function InitiativePage() {
                     padding: '16px', background: 'rgba(255,255,255,0.025)',
                     borderRadius: '8px', border: `1px solid ${BORDER}`,
                   }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '10px', flexWrap: 'wrap' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px', flexWrap: 'wrap' }}>
                       <span style={{
                         fontSize: '13px', fontWeight: 600, color: TEXT1,
                         fontFamily: 'system-ui, sans-serif',
@@ -385,6 +388,15 @@ export default function InitiativePage() {
                         fontSize: '11px', color: TEXT3, fontFamily: 'system-ui, sans-serif',
                         background: 'rgba(255,255,255,0.05)', padding: '2px 8px', borderRadius: '20px',
                       }}>{p.pays} · {p.annee}</span>
+                      {p.notoriete === 'obscur' && (
+                        <span style={{
+                          fontSize: '10px', color: '#4A7CC9', fontFamily: 'system-ui, sans-serif',
+                          fontWeight: 600, letterSpacing: '0.08em',
+                          background: 'rgba(74,124,201,0.12)', padding: '2px 7px', borderRadius: '20px',
+                          border: '1px solid rgba(74,124,201,0.25)',
+                          textTransform: 'uppercase',
+                        }}>Rare</span>
+                      )}
                     </div>
                     <Body size={13}>{p.description}</Body>
                     <div style={{ marginTop: '8px', display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
@@ -451,15 +463,83 @@ export default function InitiativePage() {
                     }}>{e.numero}</span>
                     <div style={{ flex: 1 }}>
                       <Body size={13}>{e.action}</Body>
-                      <div style={{ display: 'flex', gap: '16px', marginTop: '8px', flexWrap: 'wrap' }}>
+                      <div style={{ display: 'flex', gap: '16px', marginTop: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
                         <span style={{ fontSize: '11px', color: '#00B894', fontFamily: 'system-ui, sans-serif' }}>⏱ {e.delai}</span>
                         <span style={{ fontSize: '11px', color: TEXT3, fontFamily: 'system-ui, sans-serif' }}>🔧 {e.ressources}</span>
+                        {e.contact && e.contact.trim() && e.contact !== '...' && (
+                          e.contact.startsWith('http') ? (
+                            <a
+                              href={e.contact}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              style={{
+                                fontSize: '11px', color: '#00B894',
+                                fontFamily: 'system-ui, sans-serif',
+                                textDecoration: 'underline', textUnderlineOffset: '2px',
+                              }}
+                            >→ {e.contact.replace(/^https?:\/\//, '')}</a>
+                          ) : (
+                            <span style={{ fontSize: '11px', color: '#00B894', fontFamily: 'system-ui, sans-serif' }}>→ {e.contact}</span>
+                          )
+                        )}
                       </div>
                     </div>
                   </div>
                 ))}
               </div>
             </Section>
+
+            {/* 6 — COALITION POTENTIELLE */}
+            {report.coalitionPotentielle?.length > 0 && (
+              <Section title="06 — Coalition potentielle" color="#C9A84C">
+                <p style={{ fontSize: '12px', color: TEXT3, fontFamily: 'system-ui, sans-serif', marginBottom: '16px' }}>
+                  Ces acteurs travaillent déjà sur ce problème — vous pouvez les contacter dès aujourd'hui.
+                </p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                  {report.coalitionPotentielle.map((c, i) => (
+                    <div key={i} style={{
+                      padding: '16px', background: 'rgba(201,168,76,0.04)',
+                      border: `1px solid rgba(201,168,76,0.15)`, borderRadius: '8px',
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap', marginBottom: '8px' }}>
+                        <div>
+                          <span style={{ fontSize: '14px', fontWeight: 600, color: TEXT1, fontFamily: 'system-ui, sans-serif' }}>
+                            {c.nom}
+                          </span>
+                          <span style={{ fontSize: '11px', color: TEXT3, fontFamily: 'system-ui, sans-serif', marginLeft: '10px' }}>
+                            {c.pays}
+                          </span>
+                        </div>
+                        {c.lien && c.lien.startsWith('http') && (
+                          <a
+                            href={c.lien}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{
+                              fontSize: '11px', color: GOLD, fontFamily: 'system-ui, sans-serif',
+                              textDecoration: 'none',
+                              padding: '4px 10px',
+                              border: `1px solid rgba(201,168,76,0.3)`,
+                              borderRadius: '20px',
+                              whiteSpace: 'nowrap',
+                            }}
+                          >
+                            Visiter →
+                          </a>
+                        )}
+                      </div>
+                      <Body size={13}>{c.description}</Body>
+                      <p style={{
+                        fontSize: '12px', color: GOLD, fontFamily: 'system-ui, sans-serif',
+                        marginTop: '8px', fontStyle: 'italic',
+                      }}>
+                        Pourquoi les contacter : {c.pourquoi}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </Section>
+            )}
 
             {/* Export bar */}
             <div style={{
