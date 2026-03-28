@@ -3,69 +3,38 @@
 // TEL — The Experience Layer
 // components/CrossingSpheres.tsx — Premium 3D interactive spheres
 //
-// ─────────────────────────────────────────────────────────────────────────────
-//  FEATURES
-//  • Draggable     — click + hold + drag each sphere independently
-//  • Momentum      — release throws sphere; springs back to natural position
-//  • 3D lighting   — gradient origin tracks cursor (real orb shading)
-//  • Mouse tilt    — full 3D perspective container tilts ±15° with cursor
-//  • Scroll 3D     — spheres counter-rotate + come toward viewer as merge
-//  • Velocity blur — faster movement = softer edges
-//  • z-index 11    — spheres float above content (mix-blend-mode screen)
-//  • isResonating  — Croise-moi mode: 3 human-vécus spheres travel to center
-// ─────────────────────────────────────────────────────────────────────────────
+// ARCHITECTURE : imperative DOM updates inside RAF (zero React re-renders per frame)
+// STATES : idle → scroll → loading → resonating → result
+// MOBILE  : no 3D tilt, smaller spheres, no drag, reduced opacity
+// RESULT  : spheres retreat to far corners at opacity 0.05 — never obstructs content
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef } from 'react'
 
 interface CrossingSpheresProps {
   isLoading?: boolean
   hasResult?: boolean
-  isResonating?: boolean  // Croise-moi loading: vécus humains viennent au centre
-}
-
-// ── Spring physics ────────────────────────────────────────────────────────────
-function spring(
-  pos: number, target: number, vel: number,
-  stiffness = 0.06, damping = 0.78
-): [number, number] {
-  const newVel = (vel + (target - pos) * stiffness) * damping
-  return [pos + newVel, newVel]
+  isResonating?: boolean
 }
 
 // ── Constants ─────────────────────────────────────────────────────────────────
-const A0 = { x: 15, y: 25 }
-const B0 = { x: 85, y: 75 }
+const A0 = { x: 16, y: 26 }
+const B0 = { x: 84, y: 74 }
 const CX = 50
 
-// 3 human-vécu spheres — appear from edges and converge on center
-const RESO_SPHERES = [
-  { sx: -8,  sy: 50,  color: '#E84393', light: '#FF8ED4' },  // rose — from left
-  { sx: 108, sy: 12,  color: '#00B894', light: '#55EFC4' },  // vert — from top-right
-  { sx: 50,  sy: 110, color: '#6C5CE7', light: '#A29BFE' },  // violet — from bottom
+const RESO = [
+  { sx: -8,  sy: 50,  color: '#E84393', light: '#FF8ED4' },
+  { sx: 108, sy: 12,  color: '#00B894', light: '#55EFC4' },
+  { sx: 50,  sy: 110, color: '#6C5CE7', light: '#A29BFE' },
 ] as const
 
 function lerp(a: number, b: number, t: number) { return a + (b - a) * t }
 function clamp(v: number, lo: number, hi: number) { return Math.max(lo, Math.min(hi, v)) }
 function easeOut(t: number) { return 1 - (1 - t) ** 3 }
 
-// ── Visual state ───────────────────────────────────────────────────────────────
-interface VS {
-  ax: number; ay: number
-  bx: number; by: number
-  aGX: number; aGY: number
-  bGX: number; bGY: number
-  aBlur: number; bBlur: number
-  aOp: number;  bOp: number
-  aScale: number; bScale: number
-  az: number; bz: number
-  arx: number; ary: number
-  brx: number; bry: number
-  cRx: number; cRy: number
-  centerOp: number
-  // Resonance spheres: position (%), opacity
-  r1x: number; r1y: number; r1Op: number
-  r2x: number; r2y: number; r2Op: number
-  r3x: number; r3y: number; r3Op: number
+// Softer spring — less overshoot, more fluid
+function spring(pos: number, target: number, vel: number, k = 0.048, d = 0.84): [number, number] {
+  const v = (vel + (target - pos) * k) * d
+  return [pos + v, v]
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────
@@ -75,34 +44,31 @@ export default function CrossingSpheres({
   isResonating = false,
 }: CrossingSpheresProps) {
 
-  const [vs, setVs] = useState<VS>({
-    ax: A0.x, ay: A0.y, bx: B0.x, by: B0.y,
-    aGX: 40,  aGY: 35,  bGX: 60, bGY: 65,
-    aBlur: 38, bBlur: 38,
-    aOp: 0.28, bOp: 0.28,
-    aScale: 1, bScale: 1,
-    az: 0, bz: 0,
-    arx: 0, ary: 0, brx: 0, bry: 0,
-    cRx: 0, cRy: 0,
-    centerOp: 0,
-    r1x: RESO_SPHERES[0].sx, r1y: RESO_SPHERES[0].sy, r1Op: 0,
-    r2x: RESO_SPHERES[1].sx, r2y: RESO_SPHERES[1].sy, r2Op: 0,
-    r3x: RESO_SPHERES[2].sx, r3y: RESO_SPHERES[2].sy, r3Op: 0,
-  })
+  // ── DOM refs — no React state in the RAF loop ─────────────────────────────
+  const sceneRef   = useRef<HTMLDivElement>(null)
+  const sphereARef = useRef<HTMLDivElement>(null)
+  const sphereBRef = useRef<HTMLDivElement>(null)
+  const centerRef  = useRef<HTMLDivElement>(null)
+  const resoRefs   = [
+    useRef<HTMLDivElement>(null),
+    useRef<HTMLDivElement>(null),
+    useRef<HTMLDivElement>(null),
+  ]
 
-  // ── Physics refs ────────────────────────────────────────────────────────────
-  const pA = useRef({ x: A0.x, y: A0.y, vx: 0, vy: 0 })
-  const pB = useRef({ x: B0.x, y: B0.y, vx: 0, vy: 0 })
+  // ── Physics state refs ────────────────────────────────────────────────────
+  const pA  = useRef({ x: A0.x, y: A0.y, vx: 0, vy: 0 })
+  const pB  = useRef({ x: B0.x, y: B0.y, vx: 0, vy: 0 })
 
-  // ── Input refs ──────────────────────────────────────────────────────────────
-  const mouse    = useRef({ x: 50, y: 50 })
-  const drag     = useRef<'A' | 'B' | null>(null)
-  const dragOff  = useRef({ x: 0, y: 0 })
-  const histA    = useRef<{ x: number; y: number; t: number }[]>([])
-  const histB    = useRef<{ x: number; y: number; t: number }[]>([])
-  const pinA     = useRef<{ x: number; y: number } | null>(null)
-  const pinB     = useRef<{ x: number; y: number } | null>(null)
+  // ── Input refs ─────────────────────────────────────────────────────────────
+  const mouse       = useRef({ x: 50, y: 50 })
+  const drag        = useRef<'A' | 'B' | null>(null)
+  const dragOff     = useRef({ x: 0, y: 0 })
+  const histA       = useRef<{ x: number; y: number; t: number }[]>([])
+  const histB       = useRef<{ x: number; y: number; t: number }[]>([])
+  const pinA        = useRef<{ x: number; y: number } | null>(null)
+  const pinB        = useRef<{ x: number; y: number } | null>(null)
 
+  // ── Prop refs (sync without re-running RAF) ────────────────────────────────
   const loadingRef    = useRef(isLoading)
   const resultRef     = useRef(hasResult)
   const resonatingRef = useRef(isResonating)
@@ -114,7 +80,17 @@ export default function CrossingSpheres({
   useEffect(() => { resultRef.current     = hasResult    }, [hasResult])
   useEffect(() => { resonatingRef.current = isResonating }, [isResonating])
 
-  // ── Global pointer events ───────────────────────────────────────────────────
+  // ── Result flash ──────────────────────────────────────────────────────────
+  useEffect(() => {
+    if (!hasResult) return
+    pinA.current = null
+    pinB.current = null
+    flashRef.current = true
+    const id = setTimeout(() => { flashRef.current = false }, 500)
+    return () => clearTimeout(id)
+  }, [hasResult])
+
+  // ── Window-level drag (works even with spheres behind content) ────────────
   useEffect(() => {
     const onMove = (e: PointerEvent) => {
       const mx = (e.clientX / window.innerWidth)  * 100
@@ -125,63 +101,65 @@ export default function CrossingSpheres({
         const pos = { x: mx - dragOff.current.x, y: my - dragOff.current.y }
         pinA.current = pos
         histA.current.push({ ...pos, t: Date.now() })
-        histA.current = histA.current.filter(p => Date.now() - p.t < 120)
+        histA.current = histA.current.filter(p => Date.now() - p.t < 100)
       } else if (drag.current === 'B') {
         const pos = { x: mx - dragOff.current.x, y: my - dragOff.current.y }
         pinB.current = pos
         histB.current.push({ ...pos, t: Date.now() })
-        histB.current = histB.current.filter(p => Date.now() - p.t < 120)
+        histB.current = histB.current.filter(p => Date.now() - p.t < 100)
+      }
+    }
+
+    const onDown = (e: PointerEvent) => {
+      if (resultRef.current || loadingRef.current || resonatingRef.current) return
+      if (window.innerWidth < 768) return  // no drag on mobile
+      const mx = (e.clientX / window.innerWidth)  * 100
+      const my = (e.clientY / window.innerHeight) * 100
+      const dA = Math.hypot(mx - pA.current.x, my - pA.current.y)
+      const dB = Math.hypot(mx - pB.current.x, my - pB.current.y)
+      const HIT = 18  // % of viewport
+      if (dA < HIT && dA <= dB) {
+        drag.current = 'A'
+        dragOff.current = { x: mx - pA.current.x, y: my - pA.current.y }
+      } else if (dB < HIT) {
+        drag.current = 'B'
+        dragOff.current = { x: mx - pB.current.x, y: my - pB.current.y }
       }
     }
 
     const onUp = () => {
       const released = drag.current
       drag.current = null
-
-      if (released === 'A') {
-        const h = histA.current
-        if (h.length >= 2) {
-          const dt = (h[h.length - 1].t - h[0].t) / 1000
-          if (dt > 0) {
-            pA.current.vx = ((h[h.length - 1].x - h[0].x) / dt) * 0.12
-            pA.current.vy = ((h[h.length - 1].y - h[0].y) / dt) * 0.12
-          }
+      if (!released) return
+      const hist = released === 'A' ? histA.current : histB.current
+      const p = released === 'A' ? pA.current : pB.current
+      if (hist.length >= 2) {
+        const dt = (hist[hist.length - 1].t - hist[0].t) / 1000
+        if (dt > 0) {
+          p.vx = ((hist[hist.length - 1].x - hist[0].x) / dt) * 0.09
+          p.vy = ((hist[hist.length - 1].y - hist[0].y) / dt) * 0.09
         }
-        histA.current = []
-        setTimeout(() => { pinA.current = null }, 1800)
-      } else if (released === 'B') {
-        const h = histB.current
-        if (h.length >= 2) {
-          const dt = (h[h.length - 1].t - h[0].t) / 1000
-          if (dt > 0) {
-            pB.current.vx = ((h[h.length - 1].x - h[0].x) / dt) * 0.12
-            pB.current.vy = ((h[h.length - 1].y - h[0].y) / dt) * 0.12
-          }
-        }
-        histB.current = []
-        setTimeout(() => { pinB.current = null }, 1800)
       }
+      if (released === 'A') histA.current = []
+      else histB.current = []
+      // Spring back to natural after 2s
+      setTimeout(() => {
+        if (released === 'A') pinA.current = null
+        else pinB.current = null
+      }, 2200)
     }
 
     window.addEventListener('pointermove', onMove, { passive: true })
+    window.addEventListener('pointerdown', onDown)
     window.addEventListener('pointerup',   onUp)
     return () => {
       window.removeEventListener('pointermove', onMove)
+      window.removeEventListener('pointerdown', onDown)
       window.removeEventListener('pointerup',   onUp)
     }
   }, [])
 
-  // ── Result flash ────────────────────────────────────────────────────────────
-  useEffect(() => {
-    if (!hasResult) return
-    pinA.current = null
-    pinB.current = null
-    flashRef.current = true
-    const id = setTimeout(() => { flashRef.current = false }, 400)
-    return () => clearTimeout(id)
-  }, [hasResult])
-
-  // ── Main RAF loop ──────────────────────────────────────────────────────────
+  // ── Main RAF loop — 100% imperative DOM updates ───────────────────────────
   useEffect(() => {
     function tick() {
       const t          = (Date.now() - t0.current) / 1000
@@ -190,29 +168,30 @@ export default function CrossingSpheres({
       const loading    = loadingRef.current
       const result     = resultRef.current
       const resonating = resonatingRef.current
+      const isMobile   = window.innerWidth < 768
 
       const maxS   = document.documentElement.scrollHeight - window.innerHeight
       const scroll = maxS > 0 ? Math.min(1, window.scrollY / maxS) : 0
       const merge  = Math.min(1, scroll * 2)
 
-      // ── Target positions ───────────────────────────────────────────────────
+      // ── Target positions ─────────────────────────────────────────────────
       let tAx: number, tAy: number, tBx: number, tBy: number
 
-      if (resonating) {
-        // RESONATING: gold stays at center, blue orbits slowly around it
+      if (result) {
+        // Retreat to far corners — never obstructs InsightCard content
+        tAx = 5;  tAy = 8
+        tBx = 95; tBy = 92
+      } else if (resonating) {
         tAx = CX; tAy = CX
-        const orbitAngle = t * (Math.PI * 2 / 5) // 5s orbit
-        tBx = CX + Math.cos(orbitAngle) * 10
-        tBy = CX + Math.sin(orbitAngle) * 10
+        const orb = t * (Math.PI * 2 / 5)
+        tBx = CX + Math.cos(orb) * 10
+        tBy = CX + Math.sin(orb) * 10
       } else if (loading) {
-        // LOADING: both orbit at center, 3s period
         const a = t * (Math.PI * 2 / 3)
         tAx = CX + Math.cos(a)           * 7
         tAy = CX + Math.sin(a)           * 7
         tBx = CX + Math.cos(a + Math.PI) * 7
         tBy = CX + Math.sin(a + Math.PI) * 7
-      } else if (result) {
-        tAx = CX; tAy = CX; tBx = CX; tBy = CX + 2
       } else {
         const bAx = lerp(A0.x, CX, merge)
         const bAy = lerp(A0.y, CX, merge)
@@ -220,109 +199,142 @@ export default function CrossingSpheres({
         const bBy = lerp(B0.y, CX, merge)
         const pull = 1 - merge
 
-        tAx = pinA.current ? pinA.current.x : lerp(bAx, mx, 0.15 * pull)
-        tAy = pinA.current ? pinA.current.y : lerp(bAy, my, 0.10 * pull)
-        tBx = pinB.current ? pinB.current.x : lerp(bBx, mx, 0.08 * pull)
-        tBy = pinB.current ? pinB.current.y : lerp(bBy, my, 0.06 * pull)
+        // COUNTERBALANCE:
+        // Sphere A attracted toward cursor
+        // Sphere B attracted toward OPPOSITE of cursor
+        // → Moving mouse left pushes A left, B right — they diverge
+        if (pinA.current) { tAx = pinA.current.x; tAy = pinA.current.y }
+        else {
+          tAx = lerp(bAx, mx,       0.13 * pull)
+          tAy = lerp(bAy, my,       0.09 * pull)
+        }
+        if (pinB.current) { tBx = pinB.current.x; tBy = pinB.current.y }
+        else {
+          tBx = lerp(bBx, 100 - mx, 0.08 * pull)
+          tBy = lerp(bBy, 100 - my, 0.06 * pull)
+        }
       }
 
-      // ── Spring physics ─────────────────────────────────────────────────────
-      const isDraggingA = drag.current === 'A'
-      const isDraggingB = drag.current === 'B'
-      const stA = (loading || resonating) ? 0.10 : isDraggingA ? 0.88 : 0.055
-      const stB = (loading || resonating) ? 0.10 : isDraggingB ? 0.88 : 0.055
-
-      const [nAx, nAvx] = spring(pA.current.x, tAx, pA.current.vx, stA)
-      const [nAy, nAvy] = spring(pA.current.y, tAy, pA.current.vy, stA)
+      // ── Spring physics ────────────────────────────────────────────────────
+      const fastK  = (loading || resonating || result) ? 0.09 : 0.048
+      const [nAx, nAvx] = spring(pA.current.x, tAx, pA.current.vx, fastK)
+      const [nAy, nAvy] = spring(pA.current.y, tAy, pA.current.vy, fastK)
       pA.current = { x: nAx, y: nAy, vx: nAvx, vy: nAvy }
 
-      const [nBx, nBvx] = spring(pB.current.x, tBx, pB.current.vx, stB)
-      const [nBy, nBvy] = spring(pB.current.y, tBy, pB.current.vy, stB)
+      const [nBx, nBvx] = spring(pB.current.x, tBx, pB.current.vx, fastK)
+      const [nBy, nBvy] = spring(pB.current.y, tBy, pB.current.vy, fastK)
       pB.current = { x: nBx, y: nBy, vx: nBvx, vy: nBvy }
 
-      // ── Velocity blur ──────────────────────────────────────────────────────
-      const speedA = Math.sqrt(nAvx ** 2 + nAvy ** 2)
-      const speedB = Math.sqrt(nBvx ** 2 + nBvy ** 2)
-      const aBlur  = clamp(38 - merge * 10 + speedA * 18, 20, 65)
-      const bBlur  = clamp(38 - merge * 10 + speedB * 18, 20, 65)
+      // ── Derived values ────────────────────────────────────────────────────
+      const speedA = Math.hypot(nAvx, nAvy)
+      const speedB = Math.hypot(nBvx, nBvy)
 
-      // ── JS pulse ───────────────────────────────────────────────────────────
+      const baseBlur = isMobile ? 22 : 36
+      const aBlur = clamp(baseBlur - merge * 8 + speedA * 10, 10, 55)
+      const bBlur = clamp(baseBlur - merge * 8 + speedB * 10, 10, 55)
+
       const TWO_PI = Math.PI * 2
-      const aScale = (loading || resonating) ? 1 : 1 + Math.sin(t * (TWO_PI / 6)) * 0.09
-      const bScale = (loading || resonating) ? 1 : 1 + Math.sin((t - 3) * (TWO_PI / 6)) * 0.09
+      const aScale = (loading || resonating) ? 1 : 1 + Math.sin(t * (TWO_PI / 6)) * 0.08
+      const bScale = (loading || resonating) ? 1 : 1 + Math.sin((t - 3) * (TWO_PI / 6)) * 0.08
 
-      // ── 3D lighting ─────────────────────────────────────────────────────────
-      const aGX = clamp(50 + (mx - pA.current.x) * 0.45, 18, 82)
-      const aGY = clamp(50 + (my - pA.current.y) * 0.45, 18, 82)
-      const bGX = clamp(50 + (mx - pB.current.x) * 0.45, 18, 82)
-      const bGY = clamp(50 + (my - pB.current.y) * 0.45, 18, 82)
+      // 3D lighting — gradient tracks cursor relative to sphere
+      const aGX = clamp(50 + (mx - nAx) * 0.42, 18, 82)
+      const aGY = clamp(50 + (my - nAy) * 0.42, 18, 82)
+      const bGX = clamp(50 + (mx - nBx) * 0.42, 18, 82)
+      const bGY = clamp(50 + (my - nBy) * 0.42, 18, 82)
 
-      // ── Container tilt ─────────────────────────────────────────────────────
-      const cRx = resonating ? 0 : (my - 50) * 0.14 + scroll * 22
-      const cRy = resonating ? 0 : (mx - 50) * -0.10
+      // Container tilt — disabled on mobile (causes jitter)
+      const tF  = isMobile ? 0 : 1
+      const cRx = resonating ? 0 : ((my - 50) * 0.09 + scroll * 14) * tF
+      const cRy = resonating ? 0 : (mx - 50) * -0.07 * tF
 
-      // ── Sphere 3D rotation on scroll ───────────────────────────────────────
-      const arx = -scroll * 22; const ary = scroll * 16
-      const brx =  scroll * 22; const bry = -scroll * 16
+      // Sphere 3D rotation on scroll — disabled on mobile
+      const arx = -scroll * 16 * tF;  const ary = scroll * 11 * tF
+      const brx =  scroll * 16 * tF;  const bry = -scroll * 11 * tF
+      const az  = merge * 40;  const bz = merge * 28
 
-      // ── Z-depth ────────────────────────────────────────────────────────────
-      const az = merge * 55; const bz = merge * 38
+      // Opacity
+      const baseOp = result
+        ? (flashRef.current ? 0.45 : 0.05)
+        : isMobile ? 0.20 : 0.26
 
-      // ── Resonance spheres — 3 human vécus converging ──────────────────────
-      // 9-second cycle: sphere 1 travels s0→3, sphere 2 s3→6, sphere 3 s6→9
-      const CYCLE   = 9
-      const tMod    = t % CYCLE
-      const TRAVEL  = 2.8  // seconds to travel from edge to center
+      // Sphere size — responsive
+      const SZ   = isMobile ? '150px' : 'clamp(200px, 28vw, 340px)'
+      const HALF = isMobile ? '75px'  : 'clamp(100px, 14vw, 170px)'
 
-      const rData = RESO_SPHERES.map((s, i) => {
-        const windowStart = i * 3
-        const progress    = clamp((tMod - windowStart) / TRAVEL, 0, 1)
-        const eased       = easeOut(progress)
+      // ── Apply to DOM ──────────────────────────────────────────────────────
+      if (sphereARef.current) {
+        const el = sphereARef.current
+        el.style.width  = SZ
+        el.style.height = SZ
+        el.style.left   = `calc(${nAx}% - ${HALF})`
+        el.style.top    = `calc(${nAy}% - ${HALF})`
+        el.style.filter = `blur(${aBlur}px)`
+        el.style.opacity = String(baseOp)
+        el.style.background = `radial-gradient(circle at ${aGX}% ${aGY}%, #FFE599 0%, #D4A843 28%, #C9A84C 50%, transparent 72%)`
+        el.style.transform  = `translateZ(${az}px) rotateX(${arx}deg) rotateY(${ary}deg) scale(${aScale})`
+        el.style.cursor = (loading || result || resonating || isMobile) ? 'default' : 'grab'
+        el.style.pointerEvents = (loading || result || resonating || isMobile) ? 'none' : 'auto'
+      }
 
+      if (sphereBRef.current) {
+        const el = sphereBRef.current
+        el.style.width  = SZ
+        el.style.height = SZ
+        el.style.left   = `calc(${nBx}% - ${HALF})`
+        el.style.top    = `calc(${nBy}% - ${HALF})`
+        el.style.filter = `blur(${bBlur}px)`
+        el.style.opacity = String(baseOp)
+        el.style.background = `radial-gradient(circle at ${bGX}% ${bGY}%, #A8C8FF 0%, #5A8FD4 28%, #4A7CC9 50%, transparent 72%)`
+        el.style.transform  = `translateZ(${bz}px) rotateX(${brx}deg) rotateY(${bry}deg) scale(${bScale})`
+        el.style.cursor = (loading || result || resonating || isMobile) ? 'default' : 'grab'
+        el.style.pointerEvents = (loading || result || resonating || isMobile) ? 'none' : 'auto'
+      }
+
+      if (sceneRef.current) {
+        sceneRef.current.style.transform = `rotateX(${cRx}deg) rotateY(${cRy}deg)`
+      }
+
+      // Center glow
+      if (centerRef.current) {
+        const cOp = resonating ? 0.20 : loading ? 0.16 : merge * 0.16
+        centerRef.current.style.opacity = String(cOp)
+      }
+
+      // ── Resonance spheres ─────────────────────────────────────────────────
+      const CYCLE  = 9
+      const tMod   = t % CYCLE
+      const TRAVEL = 2.8
+
+      resoRefs.forEach((ref, i) => {
+        const el = ref.current
+        if (!el) return
+        if (!resonating) { el.style.opacity = '0'; return }
+
+        const winStart = i * 3
+        const progress = clamp((tMod - winStart) / TRAVEL, 0, 1)
+        const eased    = easeOut(progress)
+        const s        = RESO[i]
         let rx: number, ry: number, rop: number
 
-        if (!resonating) {
-          // hidden when not resonating
-          rx = s.sx; ry = s.sy; rop = 0
-        } else if (progress <= 0) {
-          // waiting at edge — subtle pulse
+        if (progress <= 0) {
           rx = s.sx; ry = s.sy
-          rop = 0.12 + Math.sin(t * 3 + i) * 0.05
+          rop = 0.10 + Math.sin(t * 3 + i) * 0.04
         } else if (progress >= 1) {
-          // arrived — drift slowly near center with soft glow
-          const driftAngle = t * 0.4 + i * (Math.PI * 2 / 3)
-          rx = CX + Math.cos(driftAngle) * 3.5
-          ry = CX + Math.sin(driftAngle) * 3.5
-          // flash at moment of arrival (once)
-          const arrivedAt = windowStart + TRAVEL
-          const timeSinceArrival = tMod - arrivedAt
-          const flashWindow = timeSinceArrival >= 0 && timeSinceArrival < 0.4
-          rop = flashWindow ? 0.55 : 0.22
+          const da = t * 0.4 + i * (Math.PI * 2 / 3)
+          rx  = CX + Math.cos(da) * 3.5
+          ry  = CX + Math.sin(da) * 3.5
+          const arrived = tMod - (winStart + TRAVEL)
+          rop = (arrived >= 0 && arrived < 0.4) ? 0.55 : 0.20
         } else {
-          // traveling — smooth eased path from edge to center
           rx  = lerp(s.sx, CX, eased)
           ry  = lerp(s.sy, CX, eased)
-          rop = 0.28 + eased * 0.10  // brightens as it arrives
+          rop = 0.25 + eased * 0.12
         }
 
-        return { rx, ry, rop }
-      })
-
-      const baseOp = flashRef.current ? 0.58 : 0.28
-
-      setVs({
-        ax: pA.current.x, ay: pA.current.y,
-        bx: pB.current.x, by: pB.current.y,
-        aGX, aGY, bGX, bGY,
-        aBlur, bBlur,
-        aOp: baseOp, bOp: baseOp,
-        aScale, bScale,
-        az, bz, arx, ary, brx, bry,
-        cRx, cRy,
-        centerOp: resonating ? 0.22 : loading ? 0.20 : merge * 0.20,
-        r1x: rData[0].rx, r1y: rData[0].ry, r1Op: rData[0].rop,
-        r2x: rData[1].rx, r2y: rData[1].ry, r2Op: rData[1].rop,
-        r3x: rData[2].rx, r3y: rData[2].ry, r3Op: rData[2].rop,
+        el.style.left    = `calc(${rx}% - 30px)`
+        el.style.top     = `calc(${ry}% - 30px)`
+        el.style.opacity = String(rop)
       })
 
       raf.current = requestAnimationFrame(tick)
@@ -330,34 +342,11 @@ export default function CrossingSpheres({
 
     raf.current = requestAnimationFrame(tick)
     return () => cancelAnimationFrame(raf.current)
-  }, [])
+  }, []) // intentionally empty — all props sync via refs
 
-  // ── Drag start ─────────────────────────────────────────────────────────────
-  const startDrag = (sphere: 'A' | 'B') => (e: React.PointerEvent) => {
-    if (resonatingRef.current || loadingRef.current) return
-    e.preventDefault()
-    e.stopPropagation()
-    drag.current = sphere
-    const mx = (e.clientX / window.innerWidth)  * 100
-    const my = (e.clientY / window.innerHeight) * 100
-    const cur = sphere === 'A' ? pA.current : pB.current
-    dragOff.current = { x: mx - cur.x, y: my - cur.y }
-    ;(e.currentTarget as HTMLElement).setPointerCapture(e.pointerId)
-  }
-
-  // ── Render helpers ─────────────────────────────────────────────────────────
-  const SZ   = 'clamp(200px, 28vw, 340px)'
-  const HALF = 'clamp(100px, 14vw, 170px)'
-
-  // Small resonance spheres — 60px fixed
-  const RSZ  = '60px'
-  const RHALF = '30px'
-
-  const resoSpheres = [
-    { x: vs.r1x, y: vs.r1y, op: vs.r1Op, ...RESO_SPHERES[0] },
-    { x: vs.r2x, y: vs.r2y, op: vs.r2Op, ...RESO_SPHERES[1] },
-    { x: vs.r3x, y: vs.r3y, op: vs.r3Op, ...RESO_SPHERES[2] },
-  ]
+  // ── Static initial styles — RAF overwrites from first frame ──────────────
+  const initSZ   = 'clamp(200px, 28vw, 340px)'
+  const initHALF = 'clamp(100px, 14vw, 170px)'
 
   return (
     <div style={{
@@ -368,91 +357,91 @@ export default function CrossingSpheres({
       perspective: '900px',
       perspectiveOrigin: '50% 38%',
     }}>
-      {/* 3D scene */}
-      <div style={{
-        position: 'absolute', inset: 0,
-        transformStyle: 'preserve-3d',
-        transform: `rotateX(${vs.cRx}deg) rotateY(${vs.cRy}deg)`,
-      }}>
-
-        {/* ── Sphere A — Gold ────────────────────────────────────────────── */}
+      <div
+        ref={sceneRef}
+        style={{
+          position: 'absolute', inset: 0,
+          transformStyle: 'preserve-3d',
+          transform: 'rotateX(0deg) rotateY(0deg)',
+        }}
+      >
+        {/* Sphere A — Gold */}
         <div
-          onPointerDown={startDrag('A')}
+          ref={sphereARef}
           style={{
             position: 'absolute',
-            width: SZ, height: SZ,
-            left: `calc(${vs.ax}% - ${HALF})`,
-            top:  `calc(${vs.ay}% - ${HALF})`,
+            width: initSZ, height: initSZ,
+            left: `calc(${A0.x}% - ${initHALF})`,
+            top:  `calc(${A0.y}% - ${initHALF})`,
             borderRadius: '50%',
-            background: `radial-gradient(circle at ${vs.aGX}% ${vs.aGY}%,
-              #FFE599 0%, #D4A843 28%, #C9A84C 50%, transparent 72%)`,
-            filter: `blur(${vs.aBlur}px)`,
+            background: 'radial-gradient(circle at 40% 35%, #FFE599 0%, #D4A843 28%, #C9A84C 50%, transparent 72%)',
+            filter: 'blur(36px)',
             mixBlendMode: 'screen',
-            opacity: vs.aOp,
-            transform: `translateZ(${vs.az}px) rotateX(${vs.arx}deg) rotateY(${vs.ary}deg) scale(${vs.aScale})`,
+            opacity: 0.26,
             willChange: 'transform, opacity, left, top, filter',
-            cursor: isResonating || isLoading ? 'default' : drag.current === 'A' ? 'grabbing' : 'grab',
-            pointerEvents: 'auto',
-            touchAction: 'none',
-            userSelect: 'none',
-          }}
-        />
-
-        {/* ── Sphere B — Blue ────────────────────────────────────────────── */}
-        <div
-          onPointerDown={startDrag('B')}
-          style={{
-            position: 'absolute',
-            width: SZ, height: SZ,
-            left: `calc(${vs.bx}% - ${HALF})`,
-            top:  `calc(${vs.by}% - ${HALF})`,
-            borderRadius: '50%',
-            background: `radial-gradient(circle at ${vs.bGX}% ${vs.bGY}%,
-              #A8C8FF 0%, #5A8FD4 28%, #4A7CC9 50%, transparent 72%)`,
-            filter: `blur(${vs.bBlur}px)`,
-            mixBlendMode: 'screen',
-            opacity: vs.bOp,
-            transform: `translateZ(${vs.bz}px) rotateX(${vs.brx}deg) rotateY(${vs.bry}deg) scale(${vs.bScale})`,
-            willChange: 'transform, opacity, left, top, filter',
-            cursor: isResonating || isLoading ? 'default' : drag.current === 'B' ? 'grabbing' : 'grab',
-            pointerEvents: 'auto',
-            touchAction: 'none',
-            userSelect: 'none',
-          }}
-        />
-
-        {/* ── Resonance spheres — 3 human vécus (rose, vert, violet) ─────── */}
-        {resoSpheres.map((s, i) => (
-          <div key={i} style={{
-            position: 'absolute',
-            width: RSZ, height: RSZ,
-            left: `calc(${s.x}% - ${RHALF})`,
-            top:  `calc(${s.y}% - ${RHALF})`,
-            borderRadius: '50%',
-            background: `radial-gradient(circle at 38% 38%, ${s.light} 0%, ${s.color} 45%, transparent 72%)`,
-            filter: 'blur(12px)',
-            mixBlendMode: 'screen',
-            opacity: s.op,
-            willChange: 'transform, opacity, left, top',
             pointerEvents: 'none',
-            transition: 'opacity 0.3s ease',
-          }} />
+            touchAction: 'none',
+            userSelect: 'none',
+          }}
+        />
+
+        {/* Sphere B — Blue */}
+        <div
+          ref={sphereBRef}
+          style={{
+            position: 'absolute',
+            width: initSZ, height: initSZ,
+            left: `calc(${B0.x}% - ${initHALF})`,
+            top:  `calc(${B0.y}% - ${initHALF})`,
+            borderRadius: '50%',
+            background: 'radial-gradient(circle at 60% 65%, #A8C8FF 0%, #5A8FD4 28%, #4A7CC9 50%, transparent 72%)',
+            filter: 'blur(36px)',
+            mixBlendMode: 'screen',
+            opacity: 0.26,
+            willChange: 'transform, opacity, left, top, filter',
+            pointerEvents: 'none',
+            touchAction: 'none',
+            userSelect: 'none',
+          }}
+        />
+
+        {/* Resonance spheres — hidden until isResonating */}
+        {RESO.map((s, i) => (
+          <div
+            key={i}
+            ref={resoRefs[i]}
+            style={{
+              position: 'absolute',
+              width: '60px', height: '60px',
+              left: `calc(${s.sx}% - 30px)`,
+              top:  `calc(${s.sy}% - 30px)`,
+              borderRadius: '50%',
+              background: `radial-gradient(circle at 38% 38%, ${s.light} 0%, ${s.color} 45%, transparent 72%)`,
+              filter: 'blur(12px)',
+              mixBlendMode: 'screen',
+              opacity: 0,
+              willChange: 'left, top, opacity',
+              pointerEvents: 'none',
+            }}
+          />
         ))}
 
-        {/* ── Center convergence glow — 400px ────────────────────────────── */}
-        <div style={{
-          position: 'absolute',
-          left: 'calc(50% - 200px)', top: 'calc(50% - 200px)',
-          width: '400px', height: '400px',
-          borderRadius: '50%',
-          background: 'radial-gradient(circle, #ffffff 0%, transparent 70%)',
-          filter: 'blur(60px)',
-          mixBlendMode: 'screen',
-          opacity: vs.centerOp,
-          transform: 'translateZ(22px)',
-          pointerEvents: 'none',
-        }} />
-
+        {/* Center convergence glow — 400px */}
+        <div
+          ref={centerRef}
+          style={{
+            position: 'absolute',
+            left: 'calc(50% - 200px)', top: 'calc(50% - 200px)',
+            width: '400px', height: '400px',
+            borderRadius: '50%',
+            background: 'radial-gradient(circle, #ffffff 0%, transparent 70%)',
+            filter: 'blur(60px)',
+            mixBlendMode: 'screen',
+            opacity: 0,
+            transform: 'translateZ(22px)',
+            pointerEvents: 'none',
+          }}
+        />
       </div>
     </div>
   )
