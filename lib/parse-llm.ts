@@ -10,9 +10,18 @@
  * Extrait et parse le premier objet JSON d'un texte LLM.
  * Échappe automatiquement les caractères de contrôle dans les chaînes.
  */
-export function parseLLMJson<T = unknown>(raw: string): T {
-  const jsonMatch = raw.match(/\{[\s\S]*\}/)
+export function parseLLMJson<T = unknown>(raw: string, fallback?: Partial<T>): T {
+  if (!raw || raw.trim().length === 0) {
+    console.error('[parseLLMJson] Réponse vide du LLM')
+    if (fallback) return fallback as T
+    throw new Error('Réponse vide du modèle LLM')
+  }
+
+  // Try object first, then array
+  const jsonMatch = raw.match(/\{[\s\S]*\}/) ?? raw.match(/\[[\s\S]*\]/)
   if (!jsonMatch) {
+    console.error('[parseLLMJson] Aucun JSON trouvé dans:', raw.substring(0, 200))
+    if (fallback) return fallback as T
     throw new Error('Réponse LLM sans JSON valide')
   }
 
@@ -23,8 +32,14 @@ export function parseLLMJson<T = unknown>(raw: string): T {
     return JSON.parse(json) as T
   } catch {
     // 2ème essai — on échappe les caractères de contrôle dans les string values
-    const sanitized = sanitizeJsonString(json)
-    return JSON.parse(sanitized) as T
+    try {
+      const sanitized = sanitizeJsonString(json)
+      return JSON.parse(sanitized) as T
+    } catch (err) {
+      console.error('[parseLLMJson] Échec du parsing JSON:', err, '\nRaw:', raw.substring(0, 300))
+      if (fallback) return fallback as T
+      throw new Error('Impossible de parser la réponse du modèle LLM')
+    }
   }
 }
 

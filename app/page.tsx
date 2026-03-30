@@ -752,6 +752,22 @@ export default function TELPage() {
                 </div>
               </section>
 
+              {/* CITATION */}
+              <p style={{
+                fontFamily: 'Georgia, serif',
+                fontStyle: 'italic',
+                fontSize: 'clamp(15px, 2vw, 18px)',
+                color: 'rgba(255, 255, 255, 0.45)',
+                maxWidth: '560px',
+                margin: '8px auto 40px auto',
+                textAlign: 'center',
+                letterSpacing: '0.01em',
+                lineHeight: 1.7,
+                padding: '0 24px',
+              }}>
+                Sometimes the answer isn&rsquo;t hidden. It&rsquo;s just sitting in the space between some people who never talked to each other.
+              </p>
+
               {/* DEMO CAROUSEL */}
               <section className="tel-animate px-6 pb-12 md:px-10" style={{ maxWidth: '680px', margin: '0 auto' }}>
                 <p className="tel-label text-center mb-6">

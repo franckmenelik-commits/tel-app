@@ -187,11 +187,12 @@ export default function CrossingSpheres({
         tBx = CX + Math.cos(orb) * 10
         tBy = CX + Math.sin(orb) * 10
       } else if (loading) {
+        // Orbit in upper quarter — never at screen center where content lives
         const a = t * (Math.PI * 2 / 3)
         tAx = CX + Math.cos(a)           * 7
-        tAy = CX + Math.sin(a)           * 7
+        tAy = 25 + Math.sin(a)           * 7
         tBx = CX + Math.cos(a + Math.PI) * 7
-        tBy = CX + Math.sin(a + Math.PI) * 7
+        tBy = 25 + Math.sin(a + Math.PI) * 7
       } else {
         const bAx = lerp(A0.x, CX, merge)
         const bAy = lerp(A0.y, CX, merge)
@@ -253,10 +254,12 @@ export default function CrossingSpheres({
       const brx =  scroll * 16 * tF;  const bry = -scroll * 11 * tF
       const az  = merge * 40;  const bz = merge * 28
 
-      // Opacity
+      // Opacity — max 0.15 during loading/result so content always readable
       const baseOp = result
-        ? (flashRef.current ? 0.45 : 0.05)
-        : isMobile ? 0.20 : 0.26
+        ? (flashRef.current ? 0.40 : 0.05)
+        : loading
+        ? 0.15
+        : isMobile ? 0.12 : 0.25
 
       // Sphere size — responsive
       const SZ   = isMobile ? '150px' : 'clamp(200px, 28vw, 340px)'
@@ -351,7 +354,7 @@ export default function CrossingSpheres({
   return (
     <div style={{
       position: 'fixed', inset: 0,
-      zIndex: 11,
+      zIndex: 0,
       overflow: 'hidden',
       pointerEvents: 'none',
       perspective: '900px',

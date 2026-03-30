@@ -153,6 +153,12 @@ export async function POST(request: Request) {
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Erreur inconnue'
     console.error('[/api/discover]', message)
-    return Response.json({ error: message }, { status: 500 })
+    const lower = message.toLowerCase()
+    const friendly = lower.includes('credit') || lower.includes('balance') || lower.includes('insufficient')
+      ? 'Crédits API épuisés. Réessayez dans quelques minutes.'
+      : lower.includes('timeout') || lower.includes('abort')
+      ? 'La découverte a pris trop de temps. Réessayez.'
+      : message
+    return Response.json({ error: friendly }, { status: 200 })
   }
 }

@@ -110,7 +110,7 @@ export async function POST(request: Request) {
     console.error('[/api/resonate]', err)
     return new Response(
       JSON.stringify({ error: err instanceof Error ? err.message : 'Erreur lors de la recherche de résonances' }),
-      { status: 500, headers: { 'Content-Type': 'application/json' } }
+      { status: 200, headers: { 'Content-Type': 'application/json' } }
     )
   }
 }

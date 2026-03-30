@@ -178,9 +178,16 @@ export async function POST(request: Request) {
     })
   } catch (err) {
     console.error('[/api/transparency] Erreur:', err)
+    const msg = err instanceof Error ? err.message : 'Erreur lors de l\'analyse'
+    const lower = msg.toLowerCase()
+    const friendly = lower.includes('credit') || lower.includes('balance') || lower.includes('insufficient')
+      ? 'Crédits API épuisés. Réessayez dans quelques minutes.'
+      : lower.includes('timeout') || lower.includes('abort') || lower.includes('timed out')
+      ? 'L\'analyse a pris trop de temps. Réessayez avec un texte plus court.'
+      : msg
     return new Response(
-      JSON.stringify({ error: err instanceof Error ? err.message : 'Erreur lors de l\'analyse' }),
-      { status: 500, headers: { 'Content-Type': 'application/json' } }
+      JSON.stringify({ error: friendly }),
+      { status: 200, headers: { 'Content-Type': 'application/json' } }
     )
   }
 }
