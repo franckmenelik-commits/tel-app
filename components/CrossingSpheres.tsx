@@ -170,6 +170,7 @@ export default function CrossingSpheres({
       const result     = resultRef.current
       const resonating = resonatingRef.current
       const isMobile   = window.innerWidth < 768
+      const isTablet   = !isMobile && window.innerWidth < 1100
 
       const maxS   = document.documentElement.scrollHeight - window.innerHeight
       const scroll = maxS > 0 ? Math.min(1, window.scrollY / maxS) : 0
@@ -217,9 +218,12 @@ export default function CrossingSpheres({
         }
       }
 
-      // ── Dynamic z-index — interactive on top, behind content when result shown ─
+      // ── Dynamic z-index ───────────────────────────────────────────────────
+      // Idle: 11 (interactive, on top)
+      // Loading: 0 (loading text must be readable, spheres are background FX)
+      // Result/enrichissement: 0 (InsightCard content must be on top)
       if (containerRef.current) {
-        containerRef.current.style.zIndex = result ? '0' : '11'
+        containerRef.current.style.zIndex = (result || loading) ? '0' : '11'
       }
 
       // ── Spring physics ────────────────────────────────────────────────────
@@ -250,26 +254,35 @@ export default function CrossingSpheres({
       const bGX = clamp(50 + (mx - nBx) * 0.60, 15, 85)
       const bGY = clamp(50 + (my - nBy) * 0.60, 15, 85)
 
-      // Container tilt — stronger, disabled on mobile
+      // Container tilt — only in idle; disabled during loading, resonating, mobile
       const tF  = isMobile ? 0 : 1
-      const cRx = resonating ? 0 : ((my - 50) * 0.15 + scroll * 20) * tF
-      const cRy = resonating ? 0 : (mx - 50) * -0.12 * tF
+      const cRx = (resonating || loading || result) ? 0 : ((my - 50) * 0.15 + scroll * 20) * tF
+      const cRy = (resonating || loading || result) ? 0 : (mx - 50) * -0.12 * tF
 
       // Sphere 3D rotation on scroll — more dramatic spin
       const arx = -scroll * 28 * tF;  const ary = scroll * 18 * tF
       const brx =  scroll * 28 * tF;  const bry = -scroll * 18 * tF
       const az  = merge * 40;  const bz = merge * 28
 
-      // Opacity — result at corners is near-invisible, otherwise vivid
+      // Opacity — subdued during loading/result, vivid in idle
       const baseOp = result
         ? (flashRef.current ? 0.45 : 0.05)
         : loading
-        ? 0.18
-        : isMobile ? 0.14 : 0.28
+        ? (isMobile || isTablet ? 0.10 : 0.14)
+        : isMobile ? 0.14 : isTablet ? 0.22 : 0.28
 
-      // Sphere size — large enough to feel physical, to grab
-      const SZ   = isMobile ? '160px' : 'clamp(240px, 32vw, 400px)'
-      const HALF = isMobile ? '80px'  : 'clamp(120px, 16vw, 200px)'
+      // Sphere size — small during loading (background FX only), large in idle
+      const SZ = loading
+        ? (isMobile ? '90px' : isTablet ? '110px' : 'clamp(110px, 12vw, 160px)')
+        : isMobile ? '160px'
+        : isTablet ? 'clamp(180px, 24vw, 280px)'
+        : 'clamp(240px, 32vw, 400px)'
+
+      const HALF = loading
+        ? (isMobile ? '45px' : isTablet ? '55px' : 'clamp(55px, 6vw, 80px)')
+        : isMobile ? '80px'
+        : isTablet ? 'clamp(90px, 12vw, 140px)'
+        : 'clamp(120px, 16vw, 200px)'
 
       // ── Apply to DOM ──────────────────────────────────────────────────────
       if (sphereARef.current) {

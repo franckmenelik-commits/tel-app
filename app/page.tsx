@@ -476,7 +476,7 @@ export default function TELPage() {
     <main className="relative min-h-screen" style={{ background: '#09090b', overflowX: 'hidden' }}>
       <CrossingSpheres
         isLoading={appState === 'loading' || appState === 'analysing'}
-        hasResult={appState === 'result'}
+        hasResult={appState === 'result' || appState === 'enrichissement'}
         isResonating={isDiscoveryMode && (appState === 'loading' || appState === 'analysing')}
       />
 
