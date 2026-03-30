@@ -31,8 +31,8 @@ function lerp(a: number, b: number, t: number) { return a + (b - a) * t }
 function clamp(v: number, lo: number, hi: number) { return Math.max(lo, Math.min(hi, v)) }
 function easeOut(t: number) { return 1 - (1 - t) ** 3 }
 
-// Softer spring — less overshoot, more fluid
-function spring(pos: number, target: number, vel: number, k = 0.048, d = 0.84): [number, number] {
+// Responsive spring — snappy but not jittery
+function spring(pos: number, target: number, vel: number, k = 0.065, d = 0.80): [number, number] {
   const v = (vel + (target - pos) * k) * d
   return [pos + v, v]
 }
@@ -45,6 +45,7 @@ export default function CrossingSpheres({
 }: CrossingSpheresProps) {
 
   // ── DOM refs — no React state in the RAF loop ─────────────────────────────
+  const containerRef = useRef<HTMLDivElement>(null)
   const sceneRef   = useRef<HTMLDivElement>(null)
   const sphereARef = useRef<HTMLDivElement>(null)
   const sphereBRef = useRef<HTMLDivElement>(null)
@@ -117,7 +118,7 @@ export default function CrossingSpheres({
       const my = (e.clientY / window.innerHeight) * 100
       const dA = Math.hypot(mx - pA.current.x, my - pA.current.y)
       const dB = Math.hypot(mx - pB.current.x, my - pB.current.y)
-      const HIT = 18  // % of viewport
+      const HIT = 26  // % of viewport — larger hit zone, easier to grab
       if (dA < HIT && dA <= dB) {
         drag.current = 'A'
         dragOff.current = { x: mx - pA.current.x, y: my - pA.current.y }
@@ -136,8 +137,8 @@ export default function CrossingSpheres({
       if (hist.length >= 2) {
         const dt = (hist[hist.length - 1].t - hist[0].t) / 1000
         if (dt > 0) {
-          p.vx = ((hist[hist.length - 1].x - hist[0].x) / dt) * 0.09
-          p.vy = ((hist[hist.length - 1].y - hist[0].y) / dt) * 0.09
+          p.vx = ((hist[hist.length - 1].x - hist[0].x) / dt) * 0.14
+          p.vy = ((hist[hist.length - 1].y - hist[0].y) / dt) * 0.14
         }
       }
       if (released === 'A') histA.current = []
@@ -206,18 +207,23 @@ export default function CrossingSpheres({
         // → Moving mouse left pushes A left, B right — they diverge
         if (pinA.current) { tAx = pinA.current.x; tAy = pinA.current.y }
         else {
-          tAx = lerp(bAx, mx,       0.13 * pull)
-          tAy = lerp(bAy, my,       0.09 * pull)
+          tAx = lerp(bAx, mx,       0.22 * pull)   // strong attraction toward cursor
+          tAy = lerp(bAy, my,       0.16 * pull)
         }
         if (pinB.current) { tBx = pinB.current.x; tBy = pinB.current.y }
         else {
-          tBx = lerp(bBx, 100 - mx, 0.08 * pull)
-          tBy = lerp(bBy, 100 - my, 0.06 * pull)
+          tBx = lerp(bBx, 100 - mx, 0.14 * pull)   // strong repulsion to opposite
+          tBy = lerp(bBy, 100 - my, 0.10 * pull)
         }
       }
 
+      // ── Dynamic z-index — interactive on top, behind content when result shown ─
+      if (containerRef.current) {
+        containerRef.current.style.zIndex = result ? '0' : '11'
+      }
+
       // ── Spring physics ────────────────────────────────────────────────────
-      const fastK  = (loading || resonating || result) ? 0.09 : 0.048
+      const fastK  = (loading || resonating || result) ? 0.10 : 0.065
       const [nAx, nAvx] = spring(pA.current.x, tAx, pA.current.vx, fastK)
       const [nAy, nAvy] = spring(pA.current.y, tAy, pA.current.vy, fastK)
       pA.current = { x: nAx, y: nAy, vx: nAvx, vy: nAvy }
@@ -238,32 +244,32 @@ export default function CrossingSpheres({
       const aScale = (loading || resonating) ? 1 : 1 + Math.sin(t * (TWO_PI / 6)) * 0.08
       const bScale = (loading || resonating) ? 1 : 1 + Math.sin((t - 3) * (TWO_PI / 6)) * 0.08
 
-      // 3D lighting — gradient tracks cursor relative to sphere
-      const aGX = clamp(50 + (mx - nAx) * 0.42, 18, 82)
-      const aGY = clamp(50 + (my - nAy) * 0.42, 18, 82)
-      const bGX = clamp(50 + (mx - nBx) * 0.42, 18, 82)
-      const bGY = clamp(50 + (my - nBy) * 0.42, 18, 82)
+      // 3D lighting — gradient tracks cursor relative to sphere (more pronounced)
+      const aGX = clamp(50 + (mx - nAx) * 0.60, 15, 85)
+      const aGY = clamp(50 + (my - nAy) * 0.60, 15, 85)
+      const bGX = clamp(50 + (mx - nBx) * 0.60, 15, 85)
+      const bGY = clamp(50 + (my - nBy) * 0.60, 15, 85)
 
-      // Container tilt — disabled on mobile (causes jitter)
+      // Container tilt — stronger, disabled on mobile
       const tF  = isMobile ? 0 : 1
-      const cRx = resonating ? 0 : ((my - 50) * 0.09 + scroll * 14) * tF
-      const cRy = resonating ? 0 : (mx - 50) * -0.07 * tF
+      const cRx = resonating ? 0 : ((my - 50) * 0.15 + scroll * 20) * tF
+      const cRy = resonating ? 0 : (mx - 50) * -0.12 * tF
 
-      // Sphere 3D rotation on scroll — disabled on mobile
-      const arx = -scroll * 16 * tF;  const ary = scroll * 11 * tF
-      const brx =  scroll * 16 * tF;  const bry = -scroll * 11 * tF
+      // Sphere 3D rotation on scroll — more dramatic spin
+      const arx = -scroll * 28 * tF;  const ary = scroll * 18 * tF
+      const brx =  scroll * 28 * tF;  const bry = -scroll * 18 * tF
       const az  = merge * 40;  const bz = merge * 28
 
-      // Opacity — max 0.15 during loading/result so content always readable
+      // Opacity — result at corners is near-invisible, otherwise vivid
       const baseOp = result
-        ? (flashRef.current ? 0.40 : 0.05)
+        ? (flashRef.current ? 0.45 : 0.05)
         : loading
-        ? 0.15
-        : isMobile ? 0.12 : 0.25
+        ? 0.18
+        : isMobile ? 0.14 : 0.28
 
-      // Sphere size — responsive
-      const SZ   = isMobile ? '150px' : 'clamp(200px, 28vw, 340px)'
-      const HALF = isMobile ? '75px'  : 'clamp(100px, 14vw, 170px)'
+      // Sphere size — large enough to feel physical, to grab
+      const SZ   = isMobile ? '160px' : 'clamp(240px, 32vw, 400px)'
+      const HALF = isMobile ? '80px'  : 'clamp(120px, 16vw, 200px)'
 
       // ── Apply to DOM ──────────────────────────────────────────────────────
       if (sphereARef.current) {
@@ -348,18 +354,21 @@ export default function CrossingSpheres({
   }, []) // intentionally empty — all props sync via refs
 
   // ── Static initial styles — RAF overwrites from first frame ──────────────
-  const initSZ   = 'clamp(200px, 28vw, 340px)'
-  const initHALF = 'clamp(100px, 14vw, 170px)'
+  const initSZ   = 'clamp(240px, 32vw, 400px)'
+  const initHALF = 'clamp(120px, 16vw, 200px)'
 
   return (
-    <div style={{
-      position: 'fixed', inset: 0,
-      zIndex: 0,
-      overflow: 'hidden',
-      pointerEvents: 'none',
-      perspective: '900px',
-      perspectiveOrigin: '50% 38%',
-    }}>
+    <div
+      ref={containerRef}
+      style={{
+        position: 'fixed', inset: 0,
+        zIndex: 11,
+        overflow: 'hidden',
+        pointerEvents: 'none',
+        perspective: '900px',
+        perspectiveOrigin: '50% 38%',
+      }}
+    >
       <div
         ref={sceneRef}
         style={{
