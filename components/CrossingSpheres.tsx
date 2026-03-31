@@ -4,9 +4,10 @@
 // components/CrossingSpheres.tsx — Premium 3D interactive spheres
 //
 // ARCHITECTURE : imperative DOM updates inside RAF (zero React re-renders per frame)
-// STATES : idle → scroll → loading → resonating → result
-// MOBILE  : no 3D tilt, smaller spheres, no drag, reduced opacity
-// RESULT  : spheres retreat to far corners at opacity 0.05 — never obstructs content
+// STATES : idle → scroll → loading (approach→merge→pulse) → resonating → result
+// DRAG   : pin stays wherever you drop it — no auto-return
+// MOBILE : no 3D tilt, smaller spheres, no drag, reduced opacity
+// RESULT : spheres retreat to far corners at opacity 0.05 — never obstructs content
 
 import { useEffect, useRef } from 'react'
 
@@ -20,6 +21,11 @@ interface CrossingSpheresProps {
 const A0 = { x: 16, y: 26 }
 const B0 = { x: 84, y: 74 }
 const CX = 50
+
+// Loading animation phases (seconds from loading start)
+const APPROACH_END = 1.4   // both spheres reach center-top
+const MERGE_DUR    = 0.6   // B fades, A swells
+const MERGE_END    = APPROACH_END + MERGE_DUR  // 2.0s — A alone, pulses
 
 const RESO = [
   { sx: -8,  sy: 50,  color: '#E84393', light: '#FF8ED4' },
@@ -70,16 +76,28 @@ export default function CrossingSpheres({
   const pinB        = useRef<{ x: number; y: number } | null>(null)
 
   // ── Prop refs (sync without re-running RAF) ────────────────────────────────
-  const loadingRef    = useRef(isLoading)
-  const resultRef     = useRef(hasResult)
-  const resonatingRef = useRef(isResonating)
-  const flashRef      = useRef(false)
-  const raf           = useRef<number>(0)
-  const t0            = useRef(Date.now())
+  const loadingRef      = useRef(isLoading)
+  const resultRef       = useRef(hasResult)
+  const resonatingRef   = useRef(isResonating)
+  const loadingStartRef = useRef<number | null>(null)
+  const flashRef        = useRef(false)
+  const raf             = useRef<number>(0)
+  const t0              = useRef(Date.now())
 
   useEffect(() => { loadingRef.current    = isLoading    }, [isLoading])
   useEffect(() => { resultRef.current     = hasResult    }, [hasResult])
   useEffect(() => { resonatingRef.current = isResonating }, [isResonating])
+
+  // ── Loading start — record time, clear drag pins ──────────────────────────
+  useEffect(() => {
+    if (isLoading) {
+      loadingStartRef.current = Date.now()
+      pinA.current = null
+      pinB.current = null
+    } else {
+      loadingStartRef.current = null
+    }
+  }, [isLoading])
 
   // ── Result flash ──────────────────────────────────────────────────────────
   useEffect(() => {
@@ -132,6 +150,7 @@ export default function CrossingSpheres({
       const released = drag.current
       drag.current = null
       if (!released) return
+      // Apply throw velocity — sphere stays wherever you release it (no auto-return)
       const hist = released === 'A' ? histA.current : histB.current
       const p = released === 'A' ? pA.current : pB.current
       if (hist.length >= 2) {
@@ -143,11 +162,7 @@ export default function CrossingSpheres({
       }
       if (released === 'A') histA.current = []
       else histB.current = []
-      // Spring back to natural after 2s
-      setTimeout(() => {
-        if (released === 'A') pinA.current = null
-        else pinB.current = null
-      }, 2200)
+      // Pin stays — sphere remains where you dropped it until next state change
     }
 
     window.addEventListener('pointermove', onMove, { passive: true })
@@ -172,6 +187,11 @@ export default function CrossingSpheres({
       const isMobile   = window.innerWidth < 768
       const isTablet   = !isMobile && window.innerWidth < 1100
 
+      // Loading elapsed time
+      const lt = loading && loadingStartRef.current
+        ? (Date.now() - loadingStartRef.current) / 1000
+        : 0
+
       const maxS   = document.documentElement.scrollHeight - window.innerHeight
       const scroll = maxS > 0 ? Math.min(1, window.scrollY / maxS) : 0
       const merge  = Math.min(1, scroll * 2)
@@ -189,12 +209,20 @@ export default function CrossingSpheres({
         tBx = CX + Math.cos(orb) * 10
         tBy = CX + Math.sin(orb) * 10
       } else if (loading) {
-        // Orbit in upper quarter — never at screen center where content lives
-        const a = t * (Math.PI * 2 / 3)
-        tAx = CX + Math.cos(a)           * 7
-        tAy = 25 + Math.sin(a)           * 7
-        tBx = CX + Math.cos(a + Math.PI) * 7
-        tBy = 25 + Math.sin(a + Math.PI) * 7
+        // Phases: approach → merge → pulse
+        const cx = 50, cy = 26
+        if (lt < MERGE_END) {
+          // Approach + merge: spread shrinks linearly to 0
+          const spread = Math.max(0, (MERGE_END - lt) / MERGE_END) * 5
+          tAx = cx - spread; tAy = cy
+          tBx = cx + spread; tBy = cy
+        } else {
+          // Post-merge: A orbits slowly at center-top, B stays hidden at center
+          const a = (lt - MERGE_END) * (Math.PI * 2 / 7)
+          tAx = cx + Math.cos(a) * 1.8
+          tAy = cy + Math.sin(a) * 1.8
+          tBx = cx; tBy = cy
+        }
       } else {
         const bAx = lerp(A0.x, CX, merge)
         const bAy = lerp(A0.y, CX, merge)
@@ -208,20 +236,17 @@ export default function CrossingSpheres({
         // → Moving mouse left pushes A left, B right — they diverge
         if (pinA.current) { tAx = pinA.current.x; tAy = pinA.current.y }
         else {
-          tAx = lerp(bAx, mx,       0.22 * pull)   // strong attraction toward cursor
+          tAx = lerp(bAx, mx,       0.22 * pull)
           tAy = lerp(bAy, my,       0.16 * pull)
         }
         if (pinB.current) { tBx = pinB.current.x; tBy = pinB.current.y }
         else {
-          tBx = lerp(bBx, 100 - mx, 0.14 * pull)   // strong repulsion to opposite
+          tBx = lerp(bBx, 100 - mx, 0.14 * pull)
           tBy = lerp(bBy, 100 - my, 0.10 * pull)
         }
       }
 
       // ── Dynamic z-index ───────────────────────────────────────────────────
-      // Idle: 11 (interactive, on top)
-      // Loading: 0 (loading text must be readable, spheres are background FX)
-      // Result/enrichissement: 0 (InsightCard content must be on top)
       if (containerRef.current) {
         containerRef.current.style.zIndex = (result || loading) ? '0' : '11'
       }
@@ -245,10 +270,8 @@ export default function CrossingSpheres({
       const bBlur = clamp(baseBlur - merge * 8 + speedB * 10, 10, 55)
 
       const TWO_PI = Math.PI * 2
-      const aScale = (loading || resonating) ? 1 : 1 + Math.sin(t * (TWO_PI / 6)) * 0.08
-      const bScale = (loading || resonating) ? 1 : 1 + Math.sin((t - 3) * (TWO_PI / 6)) * 0.08
 
-      // 3D lighting — gradient tracks cursor relative to sphere (more pronounced)
+      // 3D lighting — gradient tracks cursor relative to sphere
       const aGX = clamp(50 + (mx - nAx) * 0.60, 15, 85)
       const aGY = clamp(50 + (my - nAy) * 0.60, 15, 85)
       const bGX = clamp(50 + (mx - nBx) * 0.60, 15, 85)
@@ -259,19 +282,51 @@ export default function CrossingSpheres({
       const cRx = (resonating || loading || result) ? 0 : ((my - 50) * 0.15 + scroll * 20) * tF
       const cRy = (resonating || loading || result) ? 0 : (mx - 50) * -0.12 * tF
 
-      // Sphere 3D rotation on scroll — more dramatic spin
-      const arx = -scroll * 28 * tF;  const ary = scroll * 18 * tF
-      const brx =  scroll * 28 * tF;  const bry = -scroll * 18 * tF
+      // Sphere 3D rotation — suppressed during loading/result/resonating
+      const arx = (loading || result || resonating) ? 0 : -scroll * 28 * tF
+      const ary = (loading || result || resonating) ? 0 :  scroll * 18 * tF
+      const brx = (loading || result || resonating) ? 0 :  scroll * 28 * tF
+      const bry = (loading || result || resonating) ? 0 : -scroll * 18 * tF
       const az  = merge * 40;  const bz = merge * 28
 
-      // Opacity — subdued during loading/result, vivid in idle
-      const baseOp = result
-        ? (flashRef.current ? 0.45 : 0.05)
-        : loading
-        ? (isMobile || isTablet ? 0.10 : 0.14)
-        : isMobile ? 0.14 : isTablet ? 0.22 : 0.28
+      // ── Per-sphere opacity and scale ──────────────────────────────────────
+      let opA: number, opB: number, scA: number, scB: number
 
-      // Sphere size — small during loading (background FX only), large in idle
+      if (result) {
+        opA = opB = flashRef.current ? 0.45 : 0.05
+        scA = scB = 1
+      } else if (loading) {
+        const baseLoad = isMobile || isTablet ? 0.10 : 0.14
+        if (lt < APPROACH_END) {
+          // Both approaching — equal and visible
+          opA = opB = baseLoad
+          scA = scB = 1
+        } else if (lt < MERGE_END) {
+          // Merge phase — B fades, A swells
+          const mp = clamp((lt - APPROACH_END) / MERGE_DUR, 0, 1)
+          const me = easeOut(mp)
+          opA = baseLoad + me * 0.18
+          opB = baseLoad * (1 - me)
+          scA = 1 + me * 0.45
+          scB = 1 - me * 0.65
+        } else {
+          // Post-merge — A alone, slow breathing pulse
+          const pulse = 0.5 + Math.sin((lt - MERGE_END) * (TWO_PI / 2.5)) * 0.5
+          opA = baseLoad + 0.08 + pulse * 0.12
+          opB = 0
+          scA = 1.25 + pulse * 0.22
+          scB = 0
+        }
+      } else if (resonating) {
+        opA = opB = isMobile ? 0.14 : isTablet ? 0.22 : 0.28
+        scA = scB = 1
+      } else {
+        opA = opB = isMobile ? 0.14 : isTablet ? 0.22 : 0.28
+        scA = 1 + Math.sin(t * (TWO_PI / 6)) * 0.08
+        scB = 1 + Math.sin((t - 3) * (TWO_PI / 6)) * 0.08
+      }
+
+      // Sphere size — small during loading, large in idle
       const SZ = loading
         ? (isMobile ? '90px' : isTablet ? '110px' : 'clamp(110px, 12vw, 160px)')
         : isMobile ? '160px'
@@ -292,9 +347,9 @@ export default function CrossingSpheres({
         el.style.left   = `calc(${nAx}% - ${HALF})`
         el.style.top    = `calc(${nAy}% - ${HALF})`
         el.style.filter = `blur(${aBlur}px)`
-        el.style.opacity = String(baseOp)
+        el.style.opacity = String(opA)
         el.style.background = `radial-gradient(circle at ${aGX}% ${aGY}%, #FFE599 0%, #D4A843 28%, #C9A84C 50%, transparent 72%)`
-        el.style.transform  = `translateZ(${az}px) rotateX(${arx}deg) rotateY(${ary}deg) scale(${aScale})`
+        el.style.transform  = `translateZ(${az}px) rotateX(${arx}deg) rotateY(${ary}deg) scale(${scA})`
         el.style.cursor = (loading || result || resonating || isMobile) ? 'default' : 'grab'
         el.style.pointerEvents = (loading || result || resonating || isMobile) ? 'none' : 'auto'
       }
@@ -306,9 +361,9 @@ export default function CrossingSpheres({
         el.style.left   = `calc(${nBx}% - ${HALF})`
         el.style.top    = `calc(${nBy}% - ${HALF})`
         el.style.filter = `blur(${bBlur}px)`
-        el.style.opacity = String(baseOp)
+        el.style.opacity = String(opB)
         el.style.background = `radial-gradient(circle at ${bGX}% ${bGY}%, #A8C8FF 0%, #5A8FD4 28%, #4A7CC9 50%, transparent 72%)`
-        el.style.transform  = `translateZ(${bz}px) rotateX(${brx}deg) rotateY(${bry}deg) scale(${bScale})`
+        el.style.transform  = `translateZ(${bz}px) rotateX(${brx}deg) rotateY(${bry}deg) scale(${scB})`
         el.style.cursor = (loading || result || resonating || isMobile) ? 'default' : 'grab'
         el.style.pointerEvents = (loading || result || resonating || isMobile) ? 'none' : 'auto'
       }
@@ -317,9 +372,20 @@ export default function CrossingSpheres({
         sceneRef.current.style.transform = `rotateX(${cRx}deg) rotateY(${cRy}deg)`
       }
 
-      // Center glow
+      // Center convergence glow — flares during merge
       if (centerRef.current) {
-        const cOp = resonating ? 0.20 : loading ? 0.16 : merge * 0.16
+        let cOp: number
+        if (resonating) {
+          cOp = 0.20
+        } else if (loading && lt >= APPROACH_END && lt < MERGE_END) {
+          // Merge flash
+          const mp = clamp((lt - APPROACH_END) / MERGE_DUR, 0, 1)
+          cOp = 0.16 + easeOut(mp) * 0.28
+        } else if (loading) {
+          cOp = 0.16
+        } else {
+          cOp = merge * 0.16
+        }
         centerRef.current.style.opacity = String(cOp)
       }
 
