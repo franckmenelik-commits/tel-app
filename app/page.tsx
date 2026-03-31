@@ -473,6 +473,15 @@ export default function TELPage() {
   const demoQuestion = (lang === 'en' && demo.questionNoOneHasAskedEN) ? demo.questionNoOneHasAskedEN : demo.questionNoOneHasAsked
   const [showExplorer, setShowExplorer] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+
+  useEffect(() => {
+    if (!showExplorer) return
+    const close = (e: MouseEvent) => {
+      if (!(e.target as Element).closest('[data-explorer]')) setShowExplorer(false)
+    }
+    document.addEventListener('mousedown', close)
+    return () => document.removeEventListener('mousedown', close)
+  }, [showExplorer])
   const [prefillSources, setPrefillSources] = useState<string[]>([])
 
   return (
@@ -565,11 +574,11 @@ export default function TELPage() {
               <nav className="hidden md:flex items-center" style={{ marginRight: '8px', gap: '20px' }}>
                 {/* Explorer dropdown */}
                 <div
+                  data-explorer
                   style={{ position: 'relative' }}
-                  onMouseEnter={() => setShowExplorer(true)}
-                  onMouseLeave={() => setShowExplorer(false)}
                 >
                   <button
+                    onClick={() => setShowExplorer(v => !v)}
                     style={{ fontSize: '12px', color: '#666666', background: 'none', border: 'none', cursor: 'pointer', transition: 'color 200ms ease', padding: 0 }}
                     onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = '#888' }}
                     onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = '#666666' }}
