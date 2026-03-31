@@ -148,9 +148,15 @@ export async function POST(request: Request) {
         const result = await crossNarratives(inputs, contexte, callbacks)
         send({ type: 'complete', data: result })
       } catch (err) {
-        const message = err instanceof Error ? err.message : 'Erreur inconnue'
-        console.error('[TEL /api/cross]', message)
-        send({ type: 'error', message })
+        const raw = err instanceof Error ? err.message : 'Erreur inconnue'
+        console.error('[TEL /api/cross]', raw)
+        const lower = raw.toLowerCase()
+        const friendly = lower.includes('credit') || lower.includes('balance') || lower.includes('insufficient')
+          ? 'Crédits API épuisés. Réessayez dans quelques minutes.'
+          : lower.includes('timeout') || lower.includes('abort')
+          ? 'Le croisement a pris trop de temps. Essayez avec des sources plus courtes.'
+          : raw
+        send({ type: 'error', message: friendly })
       } finally {
         try {
           controller.close()

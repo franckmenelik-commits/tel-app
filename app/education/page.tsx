@@ -130,12 +130,10 @@ export default function EducationPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ sujet: sujet.trim(), origines: selectedOrigins, niveau }),
       })
-      if (!res.ok) {
-        const body = await res.json().catch(() => ({}))
-        throw new Error(body.error || `HTTP ${res.status}`)
-      }
-      const data: EducationResult = await res.json()
-      setResult(data)
+      const data = await res.json()
+      if (!res.ok || data.error) throw new Error(data.error || `HTTP ${res.status}`)
+      if (!data.cartes) throw new Error('Réponse inattendue du serveur.')
+      setResult(data as EducationResult)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erreur inconnue')
     } finally {

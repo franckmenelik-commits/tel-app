@@ -73,7 +73,9 @@ async function readSSEStream(
     buffer = lines.pop() ?? ''
     for (const line of lines) {
       if (line.startsWith('data: ')) {
-        try { onEvent(JSON.parse(line.slice(6)) as SSEEvent) } catch { /* skip */ }
+        let parsed: SSEEvent
+        try { parsed = JSON.parse(line.slice(6)) as SSEEvent } catch { continue }
+        onEvent(parsed) // let errors from onEvent propagate — caught by runCrossing's try/catch
       }
     }
   }
@@ -231,6 +233,7 @@ export default function TELPage() {
         throw new Error(body.error || `HTTP ${res.status}`)
       }
       const data = await res.json()
+      if (data.error) throw new Error(data.error)
       const card: InsightCardType = data.insight
       if (!card) throw new Error('Aucun insight reçu')
       if (data.discovery) {
