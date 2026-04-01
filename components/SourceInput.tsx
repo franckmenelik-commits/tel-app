@@ -2,8 +2,9 @@
 
 import { useState, useCallback, useRef, useEffect } from 'react'
 import type { SouffleContexte } from '@/lib/types'
-import { detectInputMode, getModeLabel } from '@/lib/detect-mode'
+import { detectInputMode } from '@/lib/detect-mode'
 import type { InputMode } from '@/lib/detect-mode'
+import { useLanguage, t } from '@/lib/i18n'
 
 interface SourceInputProps {
   onCross: (inputs: string[], contexte: SouffleContexte) => void
@@ -44,14 +45,6 @@ function getModeColor(mode: InputMode): string {
   }
 }
 
-const CONTEXTES: { value: SouffleContexte; label: string; niveaux: string; description: string }[] = [
-  { value: 'exploration', label: 'Exploration', niveaux: '•', description: 'Découverte libre, 2 sources' },
-  { value: 'culturel_profond', label: 'Croisement profond', niveaux: '••', description: '3+ sources, complexité culturelle' },
-  { value: 'institutionnel', label: 'Décision institutionnelle', niveaux: '•••', description: 'Politique, organisation, gouvernance' },
-  { value: 'langue_en_danger', label: 'Langue en danger', niveaux: '•••', description: 'Langues menacées, mémoire culturelle' },
-  { value: 'vecu_traumatique', label: 'Vécu fragile', niveaux: '•••', description: 'Mémoire douloureuse, dignité humaine' },
-]
-
 export default function SourceInput({ onCross, isLoading, prefill }: SourceInputProps) {
   const [mode, setMode] = useState<'cross' | 'resonate'>('cross')
   const [vecu, setVecu] = useState('')
@@ -91,6 +84,23 @@ export default function SourceInput({ onCross, isLoading, prefill }: SourceInput
 
   const [error, setError] = useState<string | null>(null)
   const [showContexte, setShowContexte] = useState(false)
+  const [lang] = useLanguage()
+
+  const CONTEXTES = [
+    { value: 'exploration' as const,      label: t('ctx.exploration.label', lang),   niveaux: '•',   description: t('ctx.exploration.desc', lang) },
+    { value: 'culturel_profond' as const, label: t('ctx.cultural.label', lang),      niveaux: '••',  description: t('ctx.cultural.desc', lang) },
+    { value: 'institutionnel' as const,   label: t('ctx.institutional.label', lang), niveaux: '•••', description: t('ctx.institutional.desc', lang) },
+    { value: 'langue_en_danger' as const, label: t('ctx.language.label', lang),      niveaux: '•••', description: t('ctx.language.desc', lang) },
+    { value: 'vecu_traumatique' as const, label: t('ctx.trauma.label', lang),        niveaux: '•••', description: t('ctx.trauma.desc', lang) },
+  ]
+
+  const getLangModeLabel = (mode: InputMode): string => {
+    if (mode === 'free_text') return t('hint.mode.freetext', lang)
+    if (mode === 'keyword') return t('hint.mode.keyword', lang)
+    if (mode === 'crossing') return t('hint.mode.crossing', lang)
+    return 'URL'
+  }
+
   const inputRefs = useRef<(HTMLTextAreaElement | null)[]>([])
 
   const updateInput = useCallback((index: number, value: string) => {
@@ -122,7 +132,7 @@ export default function SourceInput({ onCross, isLoading, prefill }: SourceInput
   const handleCross = useCallback(() => {
     const validInputs = inputs.map(i => i.trim()).filter(i => i.length > 0)
     if (validInputs.length < 1) {
-      setError('Entrez au moins une source, un mot-clé, ou un croisement (A × B).')
+      setError(t('input.error', lang))
       return
     }
     setError(null)
@@ -134,7 +144,7 @@ export default function SourceInput({ onCross, isLoading, prefill }: SourceInput
 
   async function handleResonate() {
     if (vecu.trim().length < 30) {
-      setResonanceError('Décrivez votre vécu en au moins 30 caractères.')
+      setResonanceError(t('resonate.error', lang))
       return
     }
     setResonanceError(null)
@@ -166,8 +176,8 @@ export default function SourceInput({ onCross, isLoading, prefill }: SourceInput
       {/* ── Mode tabs ── */}
       <div className="flex gap-1 mb-5" style={{ borderBottom: '1px solid rgba(255,255,255,0.047)', paddingBottom: '0' }}>
         {([
-          { key: 'cross', label: 'Croiser des sources' },
-          { key: 'resonate', label: '◎ Mon vécu' },
+          { key: 'cross', label: t('input.tab.cross', lang) },
+          { key: 'resonate', label: `◎ ${t('mode.resonate', lang)}` },
         ] as const).map(tab => (
           <button
             key={tab.key}
@@ -193,13 +203,13 @@ export default function SourceInput({ onCross, isLoading, prefill }: SourceInput
       {mode === 'resonate' && (
         <div>
           <p style={{ fontSize: '12px', color: '#444', lineHeight: 1.6, marginBottom: '16px', fontStyle: 'italic' }}>
-            Décrivez votre situation, votre expérience, ou ce que vous traversez. TEL trouvera des résonances dans la mémoire du monde.
+            {t('resonate.desc', lang)}
           </p>
           <textarea
             value={vecu}
             onChange={e => { setVecu(e.target.value); setResonanceError(null) }}
             rows={5}
-            placeholder="Décrivez votre situation, votre expérience, ou ce que vous traversez…"
+            placeholder={t('mode.resonate.placeholder', lang)}
             disabled={resonanceLoading}
             style={{
               width: '100%',
@@ -238,7 +248,7 @@ export default function SourceInput({ onCross, isLoading, prefill }: SourceInput
               marginBottom: '24px',
             }}
           >
-            {resonanceLoading ? 'Recherche de résonances dans le monde…' : 'Trouver des résonances'}
+            {resonanceLoading ? t('mode.resonate.loading', lang) : t('mode.resonate.btn', lang)}
           </button>
 
           {/* Résultat */}
@@ -247,7 +257,7 @@ export default function SourceInput({ onCross, isLoading, prefill }: SourceInput
               {/* Structure profonde */}
               <div style={{ padding: '20px', borderRadius: '8px', background: SURFACE, border: '1px solid rgba(201,168,76,0.12)' }}>
                 <p style={{ fontSize: '10px', letterSpacing: '0.15em', textTransform: 'uppercase' as const, color: GOLD, opacity: 0.7, marginBottom: '10px' }}>
-                  Structure profonde de votre vécu
+                  {t('resonate.deepstruct', lang)}
                 </p>
                 <p style={{ fontSize: '14px', lineHeight: 1.75, color: '#e0e0e0', fontFamily: 'Georgia, serif', fontStyle: 'italic' }}>
                   {resonanceResult.structureProfonde}
@@ -258,15 +268,15 @@ export default function SourceInput({ onCross, isLoading, prefill }: SourceInput
               {resonanceResult.resonances.map((r, i) => (
                 <div key={i} style={{ padding: '20px', borderRadius: '8px', background: SURFACE, border: `1px solid ${BORDER}` }}>
                   <p style={{ fontSize: '10px', letterSpacing: '0.12em', textTransform: 'uppercase' as const, color: '#666', marginBottom: '6px' }}>
-                    Résonance {i + 1} — {r.contexte}
+                    {t('resonate.resonance', lang)} {i + 1} — {r.contexte}
                   </p>
                   <p style={{ fontSize: '15px', color: '#e0e0e0', fontWeight: 500, marginBottom: '10px' }}>{r.titre}</p>
                   <p style={{ fontSize: '13px', lineHeight: 1.7, color: '#aaa', marginBottom: '8px' }}>
-                    <span style={{ color: GOLD, opacity: 0.7, marginRight: '6px' }}>Ce qui résonne :</span>
+                    <span style={{ color: GOLD, opacity: 0.7, marginRight: '6px' }}>{t('resonate.resonates', lang)}</span>
                     {r.lienStructurel}
                   </p>
                   <p style={{ fontSize: '13px', lineHeight: 1.7, color: '#666', fontStyle: 'italic' }}>
-                    <span style={{ opacity: 0.7, marginRight: '6px' }}>Ce qui diffère :</span>
+                    <span style={{ opacity: 0.7, marginRight: '6px' }}>{t('resonate.differs', lang)}</span>
                     {r.difference}
                   </p>
                 </div>
@@ -275,7 +285,7 @@ export default function SourceInput({ onCross, isLoading, prefill }: SourceInput
               {/* Révélation */}
               <div style={{ padding: '20px', borderRadius: '8px', background: 'rgba(201,168,76,0.03)', border: '1px solid rgba(201,168,76,0.12)' }}>
                 <p style={{ fontSize: '10px', letterSpacing: '0.15em', textTransform: 'uppercase' as const, color: GOLD, opacity: 0.7, marginBottom: '10px' }}>
-                  Ce que ce croisement révèle
+                  {t('resonate.reveals', lang)}
                 </p>
                 <p style={{ fontSize: '14px', lineHeight: 1.75, color: '#e0e0e0', fontFamily: 'Georgia, serif' }}>
                   {resonanceResult.revelationCroisee}
@@ -285,7 +295,7 @@ export default function SourceInput({ onCross, isLoading, prefill }: SourceInput
               {/* Question */}
               <div style={{ padding: '20px', borderRadius: '8px', background: 'rgba(255,255,255,0.015)', border: `1px solid ${BORDER}` }}>
                 <p style={{ fontSize: '10px', letterSpacing: '0.15em', textTransform: 'uppercase' as const, color: GOLD, opacity: 0.7, marginBottom: '10px' }}>
-                  Question inexposée
+                  {t('resonate.question', lang)}
                 </p>
                 <p style={{ fontSize: '15px', lineHeight: 1.75, color: '#f0f0f0', fontFamily: 'Georgia, serif', fontStyle: 'italic' }}>
                   {resonanceResult.questionInexposee}
@@ -308,13 +318,13 @@ export default function SourceInput({ onCross, isLoading, prefill }: SourceInput
       <div className="flex flex-wrap gap-3 mb-5" style={{ fontSize: '11px', color: '#333' }}>
         {[
           { mode: 'url' as InputMode, example: 'youtube.com/…' },
-          { mode: 'keyword' as InputMode, example: 'décolonisation' },
-          { mode: 'crossing' as InputMode, example: 'Darwin × bouddhisme' },
-          { mode: 'free_text' as InputMode, example: 'Texte (>50 mots)' },
+          { mode: 'keyword' as InputMode, example: t('hint.keyword.example', lang) },
+          { mode: 'crossing' as InputMode, example: t('hint.crossing.example', lang) },
+          { mode: 'free_text' as InputMode, example: t('hint.text.example', lang) },
         ].map(({ mode, example }) => (
           <span key={mode} className="flex items-center gap-1">
             <span style={{ color: getModeColor(mode) }}>{getModeIcon(mode)}</span>
-            <span style={{ color: '#444' }}>{getModeLabel(mode)}</span>
+            <span style={{ color: '#444' }}>{getLangModeLabel(mode)}</span>
             <span style={{ color: '#2a2a2a' }}>— {example}</span>
           </span>
         ))}
@@ -403,7 +413,7 @@ export default function SourceInput({ onCross, isLoading, prefill }: SourceInput
                       letterSpacing: '0.06em',
                     }}
                   >
-                    {isUrl ? urlMeta!.label : getModeLabel(detected.mode)}
+                    {isUrl ? urlMeta!.label : getLangModeLabel(detected.mode)}
                   </span>
                   {detected.mode === 'crossing' && detected.crossingTerms && (
                     <span
@@ -452,7 +462,7 @@ export default function SourceInput({ onCross, isLoading, prefill }: SourceInput
           onMouseEnter={e => { e.currentTarget.style.color = '#666' }}
           onMouseLeave={e => { e.currentTarget.style.color = '#333' }}
         >
-          + ajouter une source
+          {t('input.add', lang)}
         </button>
       )}
 
@@ -470,7 +480,7 @@ export default function SourceInput({ onCross, isLoading, prefill }: SourceInput
           }}
         >
           <span style={{ display: 'inline-block', transform: showContexte ? 'rotate(90deg)' : 'none', transition: 'transform 200ms ease', fontSize: '8px' }}>▶</span>
-          <span>Contexte SOUFFLE</span>
+          <span>{t('contexte.label', lang)}</span>
           <span style={{
             color: contexteChoisi.niveaux === '•••' ? '#C9A84C'
               : contexteChoisi.niveaux === '••' ? 'rgba(201,168,76,0.55)'
@@ -485,7 +495,7 @@ export default function SourceInput({ onCross, isLoading, prefill }: SourceInput
         {showContexte && (
           <div className="mt-2 p-3 rounded-lg" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.047)' }}>
             <p style={{ fontSize: '12px', color: '#333', fontStyle: 'italic', marginBottom: '10px', lineHeight: 1.6 }}>
-              Le contexte détermine le niveau SOUFFLE activé.
+              {t('contexte.hint', lang)}
             </p>
             <div className="flex flex-col gap-1">
               {CONTEXTES.map((c) => (
@@ -547,14 +557,14 @@ export default function SourceInput({ onCross, isLoading, prefill }: SourceInput
           if (!isLoading) e.currentTarget.style.background = '#C9A84C'
         }}
       >
-        {isLoading ? '— LOGOS travaille —' : nonEmptyCount === 1 ? 'Laisser TEL vous surprendre' : 'Croiser les vécus'}
+        {isLoading ? t('input.loading', lang) : nonEmptyCount === 1 ? t('input.surprise', lang) : t('input.cross', lang)}
       </button>
 
       {/* ── Status ── */}
       <p style={{ textAlign: 'center', fontSize: '11px', color: '#222', marginTop: '10px' }}>
-        {nonEmptyCount} source{nonEmptyCount !== 1 ? 's' : ''}
+        {nonEmptyCount} {t('input.sources', lang)}{nonEmptyCount !== 1 ? 's' : ''}
         {inputs.length > nonEmptyCount && (
-          <span style={{ color: '#1a1a1a' }}> · {inputs.length - nonEmptyCount} en attente</span>
+          <span style={{ color: '#1a1a1a' }}> · {inputs.length - nonEmptyCount} {t('input.waiting', lang)}</span>
         )}
       </p>
 

@@ -470,6 +470,7 @@ export default function TELPage() {
   const demoSourceA = demo.sources[0]
   const demoSourceB = demo.sources[1]
   const demoQuestion = (lang === 'en' && demo.questionNoOneHasAskedEN) ? demo.questionNoOneHasAskedEN : demo.questionNoOneHasAsked
+  const demoTheme = (lang === 'en' && demo.themeEN) ? demo.themeEN : demo.theme
   const [showExplorer, setShowExplorer] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
@@ -828,7 +829,7 @@ export default function TELPage() {
                     &ldquo;{demoQuestion}&rdquo;
                   </p>
                   <p style={{ fontSize: '11px', marginTop: '12px', color: '#333' }}>
-                    — {demo.theme}
+                    — {demoTheme}
                   </p>
                   <p style={{ fontSize: '10px', marginTop: '8px', color: '#C9A84C', opacity: 0.5, letterSpacing: '0.1em' }}>
                     {t('carousel.explore', lang)}

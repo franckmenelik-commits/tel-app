@@ -246,6 +246,37 @@ export const TRANSLATIONS = {
   'init.loading.3':   { fr: "Identification des perspectives manquantes...",   en: 'Identifying missing perspectives...' },
   'init.loading.4':   { fr: 'Construction des arguments par audience...',      en: 'Building arguments by audience...' },
   'init.loading.5':   { fr: "Formulation du plan d'action...",                 en: 'Formulating the action plan...' },
+
+  // ── SourceInput tabs + resonate ────────────────────────────────────────────
+  'input.tab.cross':        { fr: 'Croiser des sources',              en: 'Cross sources' },
+  'resonate.deepstruct':    { fr: 'Structure profonde de votre vécu', en: 'Deep structure of your experience' },
+  'resonate.resonance':     { fr: 'Résonance',                         en: 'Resonance' },
+  'resonate.resonates':     { fr: 'Ce qui résonne :',                  en: 'What resonates:' },
+  'resonate.differs':       { fr: 'Ce qui diffère :',                  en: 'What differs:' },
+  'resonate.reveals':       { fr: 'Ce que ce croisement révèle',       en: 'What this crossing reveals' },
+  'resonate.question':      { fr: 'Question inexposée',                en: 'Unexposed question' },
+  'resonate.error':         { fr: 'Décrivez votre vécu en au moins 30 caractères.', en: 'Describe your experience in at least 30 characters.' },
+  'resonate.desc':          { fr: 'Décrivez votre situation, votre expérience, ou ce que vous traversez. TEL trouvera des résonances dans la mémoire du monde.', en: 'Describe your situation, your experience, or what you are going through. TEL will find resonances in the memory of the world.' },
+
+  // ── SOUFFLE context labels ─────────────────────────────────────────────────
+  'ctx.exploration.label':    { fr: 'Exploration',               en: 'Exploration' },
+  'ctx.exploration.desc':     { fr: 'Découverte libre, 2 sources', en: 'Free discovery, 2 sources' },
+  'ctx.cultural.label':       { fr: 'Croisement profond',         en: 'Deep crossing' },
+  'ctx.cultural.desc':        { fr: '3+ sources, complexité culturelle', en: '3+ sources, cultural depth' },
+  'ctx.institutional.label':  { fr: 'Décision institutionnelle',  en: 'Institutional decision' },
+  'ctx.institutional.desc':   { fr: 'Politique, organisation, gouvernance', en: 'Policy, organization, governance' },
+  'ctx.language.label':       { fr: 'Langue en danger',           en: 'Endangered language' },
+  'ctx.language.desc':        { fr: 'Langues menacées, mémoire culturelle', en: 'Endangered languages, cultural memory' },
+  'ctx.trauma.label':         { fr: 'Vécu fragile',               en: 'Fragile experience' },
+  'ctx.trauma.desc':          { fr: 'Mémoire douloureuse, dignité humaine', en: 'Painful memory, human dignity' },
+
+  // ── Mode hints ────────────────────────────────────────────────────────────
+  'hint.keyword.example':  { fr: 'décolonisation',       en: 'decolonization' },
+  'hint.crossing.example': { fr: 'Darwin × bouddhisme',  en: 'Darwin × buddhism' },
+  'hint.text.example':     { fr: 'Texte (>50 mots)',      en: 'Text (>50 words)' },
+  'hint.mode.freetext':    { fr: 'Texte libre',           en: 'Free text' },
+  'hint.mode.keyword':     { fr: 'Mot-clé',               en: 'Keyword' },
+  'hint.mode.crossing':    { fr: 'Croisement ×',          en: 'Crossing ×' },
 } as const
 
 export type TranslationKey = keyof typeof TRANSLATIONS

@@ -154,6 +154,7 @@ export interface MapCoordinate {
 export interface InsightCard {
   id: string
   theme: string
+  themeEN?: string
   sources: SourceMeta[]
   revealedPattern: string
   convergenceZones: string[]

@@ -18,6 +18,7 @@ function makeId(prefix: string): string {
 export const DEMO_MOUMOUE_LUMUMBA: InsightCard = {
   id: 'demo-moumoue-lumumba',
   theme: 'Résistances coloniales — la blessure partagée',
+  themeEN: 'Colonial resistance — the shared wound',
   sources: [
     {
       url: 'https://fr.wikipedia.org/wiki/F%C3%A9lix-Roland_Moumi%C3%A9',
@@ -72,6 +73,7 @@ export const DEMO_MOUMOUE_LUMUMBA: InsightCard = {
 export const DEMO_BOHR_HOPI: InsightCard = {
   id: 'demo-bohr-hopi',
   theme: 'L\'observation crée-t-elle la réalité ?',
+  themeEN: 'Does observation create reality?',
   sources: [
     {
       url: 'https://en.wikipedia.org/wiki/Copenhagen_interpretation',
@@ -125,6 +127,7 @@ export const DEMO_BOHR_HOPI: InsightCard = {
 export const DEMO_MPESA_SILICON: InsightCard = {
   id: 'demo-mpesa-silicon',
   theme: 'Innovation financière — qui a inventé quoi, et pour qui ?',
+  themeEN: 'Financial innovation — who invented what, and for whom?',
   sources: [
     {
       url: 'https://en.wikipedia.org/wiki/M-Pesa',
@@ -178,6 +181,7 @@ export const DEMO_MPESA_SILICON: InsightCard = {
 export const DEMO_RECONCILIATION: InsightCard = {
   id: 'demo-reconciliation',
   theme: 'Réconciliation après l\'atrocité — peut-on vraiment guérir ?',
+  themeEN: 'Reconciliation after atrocity — can we truly heal?',
   sources: [
     {
       url: 'https://en.wikipedia.org/wiki/Gacaca_court',
@@ -241,6 +245,7 @@ export const DEMO_RECONCILIATION: InsightCard = {
 export const DEMO_WITTGENSTEIN_PIRAHA: InsightCard = {
   id: 'demo-wittgenstein-piraha',
   theme: 'Les limites du langage sont-elles les limites du monde ?',
+  themeEN: 'Are the limits of language the limits of the world?',
   sources: [
     {
       url: 'https://en.wikipedia.org/wiki/Ludwig_Wittgenstein',
@@ -294,6 +299,7 @@ export const DEMO_WITTGENSTEIN_PIRAHA: InsightCard = {
 export const DEMO_COMPAS_JUSTICE: InsightCard = {
   id: 'demo-compas-justice',
   theme: 'L\'algorithme COMPAS prédit-il la récidive — ou fabrique-t-il l\'incarcération ?',
+  themeEN: 'Does the COMPAS algorithm predict recidivism — or manufacture incarceration?',
   sources: [
     {
       url: 'https://en.wikipedia.org/wiki/COMPAS_(software)',
@@ -343,6 +349,7 @@ export const DEMO_COMPAS_JUSTICE: InsightCard = {
 export const DEMO_REVOLUTION_HAITI: InsightCard = {
   id: 'demo-revolution-haiti',
   theme: 'La Révolution française a-t-elle libéré tout le monde ?',
+  themeEN: 'Did the French Revolution free everyone?',
   sources: [
     {
       url: 'https://fr.wikipedia.org/wiki/R%C3%A9volution_fran%C3%A7aise',
@@ -393,6 +400,7 @@ export const DEMO_REVOLUTION_HAITI: InsightCard = {
 export const DEMO_BURNOUT_ZEN: InsightCard = {
   id: 'demo-burnout-zen',
   theme: 'Le burn-out est-il une maladie — ou la réponse saine à un système pathologique ?',
+  themeEN: 'Is burnout a disease — or the healthy response to a pathological system?',
   sources: [
     {
       url: 'https://en.wikipedia.org/wiki/Occupational_burnout',
@@ -443,6 +451,7 @@ export const DEMO_BURNOUT_ZEN: InsightCard = {
 export const DEMO_INSTAGRAM_DUDH: InsightCard = {
   id: 'demo-instagram-dudh',
   theme: 'En signant les CGU Instagram, abandonnez-vous vos droits fondamentaux ?',
+  themeEN: 'By signing Instagram\'s terms of service, do you give up your fundamental rights?',
   sources: [
     {
       url: 'https://en.wikipedia.org/wiki/Instagram',
@@ -493,6 +502,7 @@ export const DEMO_INSTAGRAM_DUDH: InsightCard = {
 export const DEMO_MONEY_DETTE: InsightCard = {
   id: 'demo-money-dette',
   theme: 'La dette du Sud Global est-elle économique — ou psychologique ?',
+  themeEN: 'Is the Global South\'s debt economic — or psychological?',
   sources: [
     {
       url: 'https://en.wikipedia.org/wiki/The_Psychology_of_Money',
