@@ -3,7 +3,8 @@
 // TEL — The Experience Layer
 // app/initiative/page.tsx — Transformez un problème en plan d'action
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
+import { useLanguage, t } from '@/lib/i18n'
 import type { InitiativeReport } from '@/app/api/initiative/route'
 
 // ─── Design tokens ────────────────────────────────────────────────────────────
@@ -14,15 +15,6 @@ const GOLD    = '#C9A84C'
 const TEXT1   = '#e0e0e0'
 const TEXT2   = '#888888'
 const TEXT3   = '#444444'
-
-// ─── Loading messages ─────────────────────────────────────────────────────────
-const LOADING_MSGS = [
-  'Analyse du problème...',
-  'Recherche de précédents mondiaux...',
-  'Identification des perspectives manquantes...',
-  'Construction des arguments par audience...',
-  'Formulation du plan d\'action...',
-]
 
 // ─── Checkbox ─────────────────────────────────────────────────────────────────
 function Check({ checked, onChange, label }: { checked: boolean; onChange: () => void; label: string }) {
@@ -105,6 +97,15 @@ export default function InitiativePage() {
   const [report, setReport]       = useState<InitiativeReport | null>(null)
   const [error, setError]         = useState('')
   const msgTimer = useRef<ReturnType<typeof setInterval> | null>(null)
+  const [lang] = useLanguage()
+
+  const LOADING_MSGS = [
+    t('init.loading.1', lang),
+    t('init.loading.2', lang),
+    t('init.loading.3', lang),
+    t('init.loading.4', lang),
+    t('init.loading.5', lang),
+  ]
 
   const startMsgRotation = () => {
     setMsgIdx(0)
@@ -125,7 +126,7 @@ export default function InitiativePage() {
 
   const handleSubmit = async () => {
     if (!probleme.trim() || probleme.trim().length < 30) {
-      setError('Décrivez votre problème en au moins 30 caractères.')
+      setError(t('init.error', lang))
       return
     }
     setError('')
@@ -225,9 +226,9 @@ export default function InitiativePage() {
         {report && (
           <div style={{ display: 'flex', gap: '8px' }}>
             <button onClick={handlePDF} style={ghostBtn}>PDF</button>
-            <button onClick={handleShare} style={ghostBtn}>Partager</button>
-            <button onClick={handleVideoScript} style={ghostBtn}>Script vidéo</button>
-            <button onClick={handleReset} style={{ ...ghostBtn, color: TEXT3, borderColor: TEXT3 }}>Nouveau</button>
+            <button onClick={handleShare} style={ghostBtn}>{t('init.share', lang)}</button>
+            <button onClick={handleVideoScript} style={ghostBtn}>{t('init.script', lang)}</button>
+            <button onClick={handleReset} style={{ ...ghostBtn, color: TEXT3, borderColor: TEXT3 }}>{t('init.new', lang)}</button>
           </div>
         )}
       </div>
@@ -240,7 +241,7 @@ export default function InitiativePage() {
             fontSize: '10px', letterSpacing: '0.18em', color: GOLD,
             fontFamily: 'system-ui, sans-serif', fontWeight: 600,
             textTransform: 'uppercase', marginBottom: '12px',
-          }}>TEL INITIATIVE</p>
+          }}>{t('init.title', lang)}</p>
           <h1 style={{
             fontSize: 'clamp(26px, 4vw, 38px)',
             fontWeight: 300, color: TEXT1,
@@ -248,11 +249,10 @@ export default function InitiativePage() {
             letterSpacing: '-0.02em', lineHeight: 1.2,
             marginBottom: '12px',
           }}>
-            Transformez un problème<br />en plan d'action.
+            {t('init.heading', lang).split('\n').map((line, i) => i === 0 ? <span key={i}>{line}<br /></span> : <span key={i}>{line}</span>)}
           </h1>
           <p style={{ fontSize: '14px', color: TEXT2, fontFamily: 'system-ui, sans-serif', lineHeight: 1.6 }}>
-            Décrivez un problème social. TEL l'analyse, cherche des précédents mondiaux,<br />
-            identifie les voix absentes et construit votre argumentaire.
+            {t('init.desc', lang)}
           </p>
         </div>
 
@@ -262,7 +262,7 @@ export default function InitiativePage() {
             <textarea
               value={probleme}
               onChange={e => setProbleme(e.target.value)}
-              placeholder="Décrivez un problème social que vous voulez résoudre... Exemple : Les femmes paient 12x plus cher pour leur santé mentale à Montréal."
+              placeholder={t('init.placeholder', lang)}
               rows={6}
               style={{
                 width: '100%', padding: '18px', borderRadius: '12px',
@@ -285,12 +285,12 @@ export default function InitiativePage() {
               <Check
                 checked={precedents}
                 onChange={() => setPrecedents(v => !v)}
-                label="Chercher des précédents mondiaux"
+                label={t('init.check.prec', lang)}
               />
               <Check
                 checked={perspectives}
                 onChange={() => setPerspectives(v => !v)}
-                label="Générer les perspectives manquantes"
+                label={t('init.check.persp', lang)}
               />
             </div>
 
@@ -309,7 +309,7 @@ export default function InitiativePage() {
                 transition: 'all 200ms ease',
               }}
             >
-              {loading ? LOADING_MSGS[msgIdx] : 'Lancer l\'initiative'}
+              {loading ? LOADING_MSGS[msgIdx] : t('init.launch', lang)}
             </button>
 
             {error && (
@@ -346,33 +346,33 @@ export default function InitiativePage() {
               border: `1px solid rgba(201,168,76,0.15)`, borderRadius: '10px',
               marginBottom: '32px',
             }}>
-              <p style={{ fontSize: '11px', color: GOLD, letterSpacing: '0.1em', fontFamily: 'system-ui, sans-serif', textTransform: 'uppercase', marginBottom: '6px' }}>Problème analysé</p>
+              <p style={{ fontSize: '11px', color: GOLD, letterSpacing: '0.1em', fontFamily: 'system-ui, sans-serif', textTransform: 'uppercase', marginBottom: '6px' }}>{t('init.problem', lang)}</p>
               <p style={{ fontSize: '13px', color: TEXT2, fontFamily: 'Georgia, serif', lineHeight: 1.6 }}>{probleme}</p>
             </div>
 
             {/* 1 — DIAGNOSTIC */}
-            <Section title="01 — Diagnostic">
+            <Section title={t('init.s1', lang)}>
               <Body size={15}>{report.diagnostic.reformulation}</Body>
               <div style={{ marginTop: '20px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                 <div>
-                  <Label>Enjeu central</Label>
+                  <Label>{t('init.s1.central', lang)}</Label>
                   <Body size={13}>{report.diagnostic.enjeuCentral}</Body>
                 </div>
                 <div>
-                  <Label>Populations affectées</Label>
+                  <Label>{t('init.s1.affected', lang)}</Label>
                   <Body size={13}>{report.diagnostic.populationsAffectees}</Body>
                 </div>
               </div>
               {report.diagnostic.donnees && (
                 <div style={{ marginTop: '16px', padding: '14px 16px', background: 'rgba(255,255,255,0.03)', borderRadius: '8px', borderLeft: `2px solid ${GOLD}` }}>
-                  <Label>Données & contexte</Label>
+                  <Label>{t('init.s1.data', lang)}</Label>
                   <Body size={13}>{report.diagnostic.donnees}</Body>
                 </div>
               )}
             </Section>
 
             {/* 2 — PRÉCÉDENTS */}
-            <Section title="02 — Précédents mondiaux" color="#4A9EFF">
+            <Section title={t('init.s2', lang)} color="#4A9EFF">
               <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                 {report.precedents.map((p, i) => (
                   <div key={i} style={{
@@ -395,12 +395,12 @@ export default function InitiativePage() {
                           background: 'rgba(74,124,201,0.12)', padding: '2px 7px', borderRadius: '20px',
                           border: '1px solid rgba(74,124,201,0.25)',
                           textTransform: 'uppercase',
-                        }}>Rare</span>
+                        }}>{t('init.rare', lang)}</span>
                       )}
                     </div>
                     <Body size={13}>{p.description}</Body>
                     <div style={{ marginTop: '8px', display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
-                      <span style={{ fontSize: '11px', color: '#00B894', fontFamily: 'system-ui, sans-serif', fontWeight: 600, marginTop: '1px', whiteSpace: 'nowrap' }}>→ Résultat</span>
+                      <span style={{ fontSize: '11px', color: '#00B894', fontFamily: 'system-ui, sans-serif', fontWeight: 600, marginTop: '1px', whiteSpace: 'nowrap' }}>{t('init.s2.result', lang)}</span>
                       <Body size={13}>{p.resultat}</Body>
                     </div>
                   </div>
@@ -409,7 +409,7 @@ export default function InitiativePage() {
             </Section>
 
             {/* 3 — PERSPECTIVES MANQUANTES */}
-            <Section title="03 — Perspectives manquantes" color="#E84393">
+            <Section title={t('init.s3', lang)} color="#E84393">
               <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                 {report.perspectivesManquantes.map((pv, i) => (
                   <div key={i} style={{
@@ -421,7 +421,7 @@ export default function InitiativePage() {
                     </p>
                     <Body size={13}>{pv.silence}</Body>
                     <p style={{ fontSize: '12px', color: TEXT3, fontFamily: 'system-ui, sans-serif', marginTop: '6px', fontStyle: 'italic' }}>
-                      Angle révélé : {pv.angle}
+                      {t('init.s3.angle', lang)} {pv.angle}
                     </p>
                   </div>
                 ))}
@@ -429,13 +429,13 @@ export default function InitiativePage() {
             </Section>
 
             {/* 4 — ARGUMENTS PAR AUDIENCE */}
-            <Section title="04 — Arguments par audience" color="#6C5CE7">
+            <Section title={t('init.s4', lang)} color="#6C5CE7">
               {(
                 [
-                  { key: 'depute',    label: '🏛 Pour un député ou élu' },
-                  { key: 'media',     label: '📰 Pour un journaliste' },
-                  { key: 'fondation', label: '💡 Pour une fondation' },
-                  { key: 'citoyen',   label: '🗣 Pour un citoyen' },
+                  { key: 'depute',    label: t('init.s4.a1', lang) },
+                  { key: 'media',     label: t('init.s4.a2', lang) },
+                  { key: 'fondation', label: t('init.s4.a3', lang) },
+                  { key: 'citoyen',   label: t('init.s4.a4', lang) },
                 ] as const
               ).map(({ key, label }) => (
                 <div key={key} style={{ marginBottom: '20px' }}>
@@ -449,7 +449,7 @@ export default function InitiativePage() {
             </Section>
 
             {/* 5 — PREMIÈRES ÉTAPES */}
-            <Section title="05 — 30 jours pour démarrer" color="#00B894">
+            <Section title={t('init.s5', lang)} color="#00B894">
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 {report.premieresEtapes.map((e, i) => (
                   <div key={i} style={{
@@ -491,9 +491,9 @@ export default function InitiativePage() {
 
             {/* 6 — COALITION POTENTIELLE */}
             {report.coalitionPotentielle?.length > 0 && (
-              <Section title="06 — Coalition potentielle" color="#C9A84C">
+              <Section title={t('init.s6', lang)} color="#C9A84C">
                 <p style={{ fontSize: '12px', color: TEXT3, fontFamily: 'system-ui, sans-serif', marginBottom: '16px' }}>
-                  Ces acteurs travaillent déjà sur ce problème — vous pouvez les contacter dès aujourd'hui.
+                  {t('init.s6.desc', lang)}
                 </p>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
                   {report.coalitionPotentielle.map((c, i) => (
@@ -524,7 +524,7 @@ export default function InitiativePage() {
                               whiteSpace: 'nowrap',
                             }}
                           >
-                            Visiter →
+                            {t('init.s6.visit', lang)}
                           </a>
                         )}
                       </div>
@@ -533,7 +533,7 @@ export default function InitiativePage() {
                         fontSize: '12px', color: GOLD, fontFamily: 'system-ui, sans-serif',
                         marginTop: '8px', fontStyle: 'italic',
                       }}>
-                        Pourquoi les contacter : {c.pourquoi}
+                        {t('init.s6.why', lang)} {c.pourquoi}
                       </p>
                     </div>
                   ))}
@@ -546,11 +546,11 @@ export default function InitiativePage() {
               display: 'flex', gap: '10px', justifyContent: 'center',
               marginTop: '40px', flexWrap: 'wrap',
             }}>
-              <button onClick={handlePDF} style={solidBtn}>Exporter PDF</button>
-              <button onClick={handleShare} style={ghostBtn}>Partager</button>
-              <button onClick={handleVideoScript} style={ghostBtn}>Script vidéo</button>
+              <button onClick={handlePDF} style={solidBtn}>{t('init.export', lang)}</button>
+              <button onClick={handleShare} style={ghostBtn}>{t('init.share', lang)}</button>
+              <button onClick={handleVideoScript} style={ghostBtn}>{t('init.script', lang)}</button>
               <button onClick={handleReset} style={{ ...ghostBtn, color: TEXT3, borderColor: TEXT3 }}>
-                Nouveau problème
+                {t('init.new', lang)}
               </button>
             </div>
           </div>

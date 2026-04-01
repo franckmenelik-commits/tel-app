@@ -15,6 +15,7 @@ interface CrossingSpheresProps {
   isLoading?: boolean
   hasResult?: boolean
   isResonating?: boolean
+  isIdle?: boolean
 }
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -48,6 +49,7 @@ export default function CrossingSpheres({
   isLoading    = false,
   hasResult    = false,
   isResonating = false,
+  isIdle       = false,
 }: CrossingSpheresProps) {
 
   // ── DOM refs — no React state in the RAF loop ─────────────────────────────
@@ -56,6 +58,7 @@ export default function CrossingSpheres({
   const sphereARef = useRef<HTMLDivElement>(null)
   const sphereBRef = useRef<HTMLDivElement>(null)
   const centerRef  = useRef<HTMLDivElement>(null)
+  const earthRef   = useRef<HTMLDivElement>(null)
   const resoRefs   = [
     useRef<HTMLDivElement>(null),
     useRef<HTMLDivElement>(null),
@@ -79,6 +82,7 @@ export default function CrossingSpheres({
   const loadingRef      = useRef(isLoading)
   const resultRef       = useRef(hasResult)
   const resonatingRef   = useRef(isResonating)
+  const idleRef         = useRef(isIdle)
   const loadingStartRef = useRef<number | null>(null)
   const flashRef        = useRef(false)
   const raf             = useRef<number>(0)
@@ -87,6 +91,7 @@ export default function CrossingSpheres({
   useEffect(() => { loadingRef.current    = isLoading    }, [isLoading])
   useEffect(() => { resultRef.current     = hasResult    }, [hasResult])
   useEffect(() => { resonatingRef.current = isResonating }, [isResonating])
+  useEffect(() => { idleRef.current       = isIdle       }, [isIdle])
 
   // ── Loading start — record time, clear drag pins ──────────────────────────
   useEffect(() => {
@@ -224,25 +229,56 @@ export default function CrossingSpheres({
           tBx = cx; tBy = cy
         }
       } else {
+        const idle = idleRef.current
         const bAx = lerp(A0.x, CX, merge)
         const bAy = lerp(A0.y, CX, merge)
         const bBx = lerp(B0.x, CX, merge)
         const bBy = lerp(B0.y, CX, merge)
         const pull = 1 - merge
 
-        // COUNTERBALANCE:
-        // Sphere A attracted toward cursor
-        // Sphere B attracted toward OPPOSITE of cursor
-        // → Moving mouse left pushes A left, B right — they diverge
-        if (pinA.current) { tAx = pinA.current.x; tAy = pinA.current.y }
-        else {
-          tAx = lerp(bAx, mx,       0.22 * pull)
-          tAy = lerp(bAy, my,       0.16 * pull)
-        }
-        if (pinB.current) { tBx = pinB.current.x; tBy = pinB.current.y }
-        else {
-          tBx = lerp(bBx, 100 - mx, 0.14 * pull)
-          tBy = lerp(bBy, 100 - my, 0.10 * pull)
+        if (idle && merge < 0.05) {
+          // Earth orbit mode — spheres orbit center at scroll=0
+          const orbitR = isMobile ? 18 : 22
+          const speedA_orbit = 0.4
+          const speedB_orbit = -0.28
+          const angA = t * speedA_orbit
+          const angB = t * speedB_orbit + Math.PI
+          if (pinA.current) { tAx = pinA.current.x; tAy = pinA.current.y }
+          else { tAx = 50 + Math.cos(angA) * orbitR; tAy = 50 + Math.sin(angA) * orbitR * 0.55 }
+          if (pinB.current) { tBx = pinB.current.x; tBy = pinB.current.y }
+          else { tBx = 50 + Math.cos(angB) * orbitR; tBy = 50 + Math.sin(angB) * orbitR * 0.55 }
+        } else if (idle && merge < 0.6) {
+          // Transition out of orbit — blend between orbit and normal positions
+          const blendT = merge / 0.6
+          const orbitR = isMobile ? 18 : 22
+          const speedA_orbit = 0.4
+          const speedB_orbit = -0.28
+          const angA = t * speedA_orbit
+          const angB = t * speedB_orbit + Math.PI
+          const orbitAx = 50 + Math.cos(angA) * orbitR
+          const orbitAy = 50 + Math.sin(angA) * orbitR * 0.55
+          const orbitBx = 50 + Math.cos(angB) * orbitR
+          const orbitBy = 50 + Math.sin(angB) * orbitR * 0.55
+          const normalAx = lerp(bAx, mx, 0.22 * pull)
+          const normalAy = lerp(bAy, my, 0.16 * pull)
+          const normalBx = lerp(bBx, 100 - mx, 0.14 * pull)
+          const normalBy = lerp(bBy, 100 - my, 0.10 * pull)
+          if (pinA.current) { tAx = pinA.current.x; tAy = pinA.current.y }
+          else { tAx = lerp(orbitAx, normalAx, blendT); tAy = lerp(orbitAy, normalAy, blendT) }
+          if (pinB.current) { tBx = pinB.current.x; tBy = pinB.current.y }
+          else { tBx = lerp(orbitBx, normalBx, blendT); tBy = lerp(orbitBy, normalBy, blendT) }
+        } else {
+          // Normal idle — counterbalance with cursor
+          if (pinA.current) { tAx = pinA.current.x; tAy = pinA.current.y }
+          else {
+            tAx = lerp(bAx, mx, 0.22 * pull)
+            tAy = lerp(bAy, my, 0.16 * pull)
+          }
+          if (pinB.current) { tBx = pinB.current.x; tBy = pinB.current.y }
+          else {
+            tBx = lerp(bBx, 100 - mx, 0.14 * pull)
+            tBy = lerp(bBy, 100 - my, 0.10 * pull)
+          }
         }
       }
 
@@ -389,6 +425,15 @@ export default function CrossingSpheres({
         centerRef.current.style.opacity = String(cOp)
       }
 
+      // ── Earth — visible only in idle at scroll=0 ──────────────────────────────
+      if (earthRef.current) {
+        const idle = idleRef.current
+        const earthOp = (idle && !loading && !result && !resonating)
+          ? Math.max(0, 1 - merge * 3) * (isMobile ? 0.06 : 0.10)
+          : 0
+        earthRef.current.style.opacity = String(earthOp)
+      }
+
       // ── Resonance spheres ─────────────────────────────────────────────────
       const CYCLE  = 9
       const tMod   = t % CYCLE
@@ -456,6 +501,25 @@ export default function CrossingSpheres({
           transform: 'rotateX(0deg) rotateY(0deg)',
         }}
       >
+        {/* Earth — center glow, visible in idle at scroll=0 */}
+        <div
+          ref={earthRef}
+          style={{
+            position: 'absolute',
+            width: 'clamp(160px, 22vw, 320px)',
+            height: 'clamp(160px, 22vw, 320px)',
+            left: 'calc(50% - clamp(80px, 11vw, 160px))',
+            top: 'calc(50% - clamp(80px, 11vw, 160px))',
+            borderRadius: '50%',
+            background: 'radial-gradient(circle at 42% 38%, #4A9EFF 0%, #1A4A8F 30%, #0D2B5E 55%, #040E1F 80%, transparent 100%)',
+            filter: 'blur(8px)',
+            mixBlendMode: 'screen',
+            opacity: 0,
+            willChange: 'opacity',
+            pointerEvents: 'none',
+          }}
+        />
+
         {/* Sphere A — Gold */}
         <div
           ref={sphereARef}

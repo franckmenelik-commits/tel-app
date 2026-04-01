@@ -29,32 +29,6 @@ const LiveMap = dynamic(() => import('@/components/LiveMap'), { ssr: false })
 
 type AppState = 'idle' | 'analysing' | 'enrichissement' | 'loading' | 'result' | 'error'
 
-// ── Rotating loading messages ────────────────────────────────────────────────
-const LOADING_MESSAGES = [
-  'Extraction du contenu des sources…',
-  'Détection des contextes culturels…',
-  'Analyse des arcs narratifs…',
-  'Croisement des perspectives…',
-  'Identification des convergences…',
-  'Détection des divergences irréductibles…',
-  'Recherche d\'angles morts géographiques…',
-  'Formulation du pattern…',
-  'Génération de la question inexposée…',
-]
-
-const DISCOVERY_MESSAGES = [
-  'Analyse de votre source…',
-  'Exploration de 194 pays…',
-  'Détection d\'une connexion improbable…',
-  'Un croisement inattendu émerge…',
-]
-
-// ── Source type display labels ───────────────────────────────────────────────
-const SOURCE_LABELS: Record<string, string> = {
-  youtube: 'YouTube', wikipedia: 'Wikipedia', article: 'Article',
-  podcast: 'Podcast', book: 'Document', free_text: 'Témoignage',
-  crossing: 'Croisement ×', unknown: 'Source',
-}
 
 // ── SSE streaming reader ─────────────────────────────────────────────────────
 async function readSSEStream(
@@ -84,6 +58,31 @@ async function readSSEStream(
 export default function TELPage() {
   // ── Language ────────────────────────────────────────────────────────────────
   const [lang, , langDetected] = useLanguage()
+
+  const LOADING_MESSAGES = [
+    t('loading.extraction', lang),
+    t('loading.cultural', lang),
+    t('loading.narrative', lang),
+    t('loading.crossing', lang),
+    t('loading.convergences', lang),
+    t('loading.divergences', lang),
+    t('loading.blindspots', lang),
+    t('loading.pattern', lang),
+    t('loading.question', lang),
+  ]
+  const DISCOVERY_MESSAGES = [
+    t('discovery.analyse', lang),
+    t('discovery.explore', lang),
+    t('discovery.detect', lang),
+    t('discovery.emerge', lang),
+  ]
+  const SOURCE_LABELS: Record<string, string> = {
+    youtube: 'YouTube', wikipedia: 'Wikipedia', article: 'Article',
+    podcast: 'Podcast', book: 'Document',
+    free_text: t('source.testimony', lang),
+    crossing: t('source.crossing', lang),
+    unknown: 'Source',
+  }
 
   // ── App state ──────────────────────────────────────────────────────────────
   const [appState, setAppState] = useState<AppState>('idle')
@@ -490,6 +489,7 @@ export default function TELPage() {
         isLoading={appState === 'loading' || appState === 'analysing'}
         hasResult={appState === 'result' || appState === 'enrichissement'}
         isResonating={isDiscoveryMode && (appState === 'loading' || appState === 'analysing')}
+        isIdle={appState === 'idle'}
       />
 
       {/* ── Living Map — reduced opacity ── */}
@@ -504,7 +504,7 @@ export default function TELPage() {
           style={{ width: '360px', background: '#111113', borderLeft: '1px solid rgba(255,255,255,0.047)' }}
         >
           <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: '1px solid rgba(255,255,255,0.047)' }}>
-            <span className="tel-label">Session</span>
+            <span className="tel-label">{t('session.title', lang)}</span>
             <button
               onClick={() => setShowingSidebar(false)}
               style={{ color: '#555', cursor: 'pointer', background: 'none', border: 'none', fontSize: '1.2rem', lineHeight: 1 }}
@@ -513,7 +513,7 @@ export default function TELPage() {
           <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-2">
             {sessionHistory.length === 0 && (
               <p className="text-xs text-center mt-8" style={{ color: '#333', fontStyle: 'italic' }}>
-                Aucun croisement dans cette session.
+                {t('session.empty', lang)}
               </p>
             )}
             {sessionHistory.map(item => (
@@ -533,7 +533,7 @@ export default function TELPage() {
               >
                 <p className="text-sm mb-1 leading-snug tel-serif" style={{ color: '#e0e0e0', fontStyle: 'italic' }}>{item.theme}</p>
                 <p className="text-xs" style={{ color: '#444' }}>
-                  {item.sourceCount} sources · {'•'.repeat(item.souffleNiveaux.length)} · {new Date(item.createdAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
+                  {item.sourceCount} sources · {'•'.repeat(item.souffleNiveaux.length)} · {new Date(item.createdAt).toLocaleDateString(lang === 'en' ? 'en-US' : 'fr-FR', { day: 'numeric', month: 'short' })}
                 </p>
               </button>
             ))}
@@ -672,7 +672,7 @@ export default function TELPage() {
                         onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.031)' }}
                         onMouseLeave={e => { e.currentTarget.style.background = 'none' }}
                       >
-                        Se déconnecter
+                        {t('nav.signout', lang)}
                       </button>
                     </div>
                   )}
@@ -777,7 +777,7 @@ export default function TELPage() {
                 lineHeight: 1.7,
                 padding: '0 24px',
               }}>
-                Sometimes the answer isn&rsquo;t hidden. It&rsquo;s just sitting in the space between some people who never talked to each other.
+                {t('hero.citation', lang)}
               </p>
 
               {/* DEMO CAROUSEL */}
@@ -831,7 +831,7 @@ export default function TELPage() {
                     — {demo.theme}
                   </p>
                   <p style={{ fontSize: '10px', marginTop: '8px', color: '#C9A84C', opacity: 0.5, letterSpacing: '0.1em' }}>
-                    {lang === 'en' ? 'Click to explore →' : 'Cliquer pour explorer →'}
+                    {t('carousel.explore', lang)}
                   </p>
                 </button>
 
@@ -883,7 +883,7 @@ export default function TELPage() {
                       onMouseEnter={e => { e.currentTarget.style.color = '#888' }}
                       onMouseLeave={e => { e.currentTarget.style.color = '#333' }}
                     >
-                      Revoir vos {sessionHistory.length} croisement{sessionHistory.length > 1 ? 's' : ''} →
+                      {t('session.review', lang)} {sessionHistory.length} {t('session.crossings', lang)}{sessionHistory.length > 1 ? 's' : ''} →
                     </button>
                   </div>
                 )}
@@ -926,8 +926,8 @@ export default function TELPage() {
             <div className="flex items-center justify-center px-4 py-10" style={{ minHeight: '70vh' }}>
               <div style={{ width: '100%', maxWidth: '680px' }}>
                 <div className="text-center mb-5">
-                  <p className="tel-label mb-1">Enrichissement automatique</p>
-                  <p style={{ fontSize: '13px', color: '#555', fontStyle: 'italic' }}>TEL a trouvé des sources complémentaires</p>
+                  <p className="tel-label mb-1">{t('enrich.title', lang)}</p>
+                  <p style={{ fontSize: '13px', color: '#555', fontStyle: 'italic' }}>{t('enrich.subtitle', lang)}</p>
                 </div>
                 <EnrichissementPanel
                   proposal={enrichissementProposal}
@@ -944,7 +944,7 @@ export default function TELPage() {
             <div className="flex items-center justify-center px-4" style={{ minHeight: '70vh' }}>
               <div className="text-center" style={{ maxWidth: '480px', background: '#111113', border: '1px solid rgba(139,58,58,0.2)', borderRadius: '12px', padding: '40px 32px' }}>
                 <p style={{ fontSize: '16px', color: '#8B3A3A', marginBottom: '12px', fontStyle: 'italic' }}>
-                  Le croisement n&apos;a pas pu avoir lieu.
+                  {t('error.crossing', lang)}
                 </p>
                 <p style={{ fontSize: '14px', color: '#555', lineHeight: 1.7, marginBottom: '24px' }}>
                   {error}
@@ -954,7 +954,7 @@ export default function TELPage() {
                   className="tel-ghost-btn"
                   style={{ padding: '10px 28px' }}
                 >
-                  Réessayer
+                  {t('error.retry', lang)}
                 </button>
               </div>
             </div>
@@ -966,7 +966,7 @@ export default function TELPage() {
               <div style={{ width: '100%', maxWidth: '680px' }}>
                 {discoveryInfo && (
                   <div className="mb-4 px-4 py-3 rounded-lg" style={{ background: 'rgba(201,168,76,0.04)', border: '1px solid rgba(201,168,76,0.1)' }}>
-                    <p className="tel-label mb-1">LOGOS a découvert</p>
+                    <p className="tel-label mb-1">{t('discovery.found', lang)}</p>
                     <p style={{ fontSize: '13px', color: '#666', fontStyle: 'italic', lineHeight: 1.6 }}>
                       <span style={{ color: '#e0e0e0' }}>{discoveryInfo.titre}</span>
                       {' — '}{discoveryInfo.pourquoi}

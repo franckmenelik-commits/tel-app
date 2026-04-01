@@ -4,6 +4,7 @@
 // app/transparency/page.tsx — Audit algorithmique de textes institutionnels
 
 import { useState, useEffect } from 'react'
+import { useLanguage, t } from '@/lib/i18n'
 import { REFERENCE_TEXTS } from '@/lib/reference-texts'
 import { PRELOADED_AUDITS } from '@/lib/preloaded-audits'
 import type { TransparencyReport } from '@/app/api/transparency/route'
@@ -15,25 +16,6 @@ const BORDER = 'rgba(255,255,255,0.047)'
 const TEXT_PRIMARY = '#e0e0e0'
 const TEXT_SECONDARY = '#888888'
 const TEXT_MUTED = '#555555'
-
-// ─── Loading messages ─────────────────────────────────────────────────────────
-
-const LOADING_STEPS = [
-  'Lecture du texte institutionnel…',
-  'Identification du jargon juridique…',
-  'Comparaison avec les droits fondamentaux…',
-  'Détection des clauses invisibles…',
-  'Formulation de la question inexposée…',
-]
-
-// ─── Risk level badge ─────────────────────────────────────────────────────────
-
-const RISK_CONFIG = {
-  faible: { color: '#4CAF50', label: 'RISQUE FAIBLE' },
-  modéré: { color: '#FF9800', label: 'RISQUE MODÉRÉ' },
-  élevé: { color: '#FF5722', label: 'RISQUE ÉLEVÉ' },
-  critique: { color: '#F44336', label: 'RISQUE CRITIQUE' },
-}
 
 // ─── Section component ────────────────────────────────────────────────────────
 
@@ -86,6 +68,22 @@ export default function TransparencyPage() {
   const [report, setReport] = useState<TransparencyReport | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [shareToast, setShareToast] = useState(false)
+  const [lang] = useLanguage()
+
+  const LOADING_STEPS = [
+    t('transp.loading.1', lang),
+    t('transp.loading.2', lang),
+    t('transp.loading.3', lang),
+    t('transp.loading.4', lang),
+    t('transp.loading.5', lang),
+  ]
+
+  const RISK_CONFIG = {
+    faible:   { color: '#4CAF50', label: t('transp.risk.low', lang) },
+    modéré:   { color: '#FF9800', label: t('transp.risk.mod', lang) },
+    élevé:    { color: '#FF5722', label: t('transp.risk.high', lang) },
+    critique: { color: '#F44336', label: t('transp.risk.crit', lang) },
+  }
 
   // Loading message rotation
   useEffect(() => {
@@ -112,11 +110,11 @@ export default function TransparencyPage() {
   // Audit handler
   async function handleAudit() {
     if (!textToAudit.trim() || textToAudit.trim().length < 50) {
-      setError('Le texte à auditer est trop court (minimum 50 caractères).')
+      setError(t('transp.error.short', lang))
       return
     }
     if (selectedRefs.length === 0 && !freeReference.trim()) {
-      setError('Sélectionnez au moins un texte de référence.')
+      setError(t('transp.error.noref', lang))
       return
     }
 
@@ -137,7 +135,7 @@ export default function TransparencyPage() {
 
       const data = await res.json()
       if (!res.ok || !data.success) {
-        throw new Error(data.error || 'Erreur lors de l\'analyse')
+        throw new Error(data.error || t('transp.error.generic', lang))
       }
 
       setReport(data.report)
@@ -196,10 +194,10 @@ export default function TransparencyPage() {
           </a>
           <nav style={{ display: 'flex', gap: '24px' }}>
             {[
-              { href: '/legends', label: 'Légendes' },
-              { href: '/education', label: 'Éducation' },
-              { href: '/manifesto', label: 'Manifeste' },
-              { href: '/careers', label: 'Métiers' },
+              { href: '/legends', label: t('nav.legends', lang) },
+              { href: '/education', label: t('nav.education', lang) },
+              { href: '/manifesto', label: t('nav.manifesto', lang) },
+              { href: '/careers', label: t('nav.careers', lang) },
             ].map(link => (
               <a
                 key={link.href}
@@ -226,7 +224,7 @@ export default function TransparencyPage() {
             marginBottom: '24px',
             fontFamily: '-apple-system, BlinkMacSystemFont, system-ui, sans-serif',
           }}>
-            The Experience Layer · Transparence
+            {t('transp.header', lang)}
           </p>
           <h1 style={{
             fontFamily: 'Georgia, Times New Roman, serif',
@@ -237,7 +235,7 @@ export default function TransparencyPage() {
             color: '#ffffff',
             marginBottom: '20px',
           }}>
-            TEL Transparence
+            {t('transp.title', lang)}
           </h1>
           <p style={{
             fontFamily: 'Georgia, Times New Roman, serif',
@@ -245,7 +243,7 @@ export default function TransparencyPage() {
             lineHeight: 1.7,
             color: TEXT_SECONDARY,
           }}>
-            Rendez lisible ce que les systèmes rendent invisible.
+            {t('transp.subtitle', lang)}
           </p>
         </div>
 
@@ -257,7 +255,7 @@ export default function TransparencyPage() {
               textTransform: 'uppercase' as const, color: TEXT_MUTED,
               marginBottom: '20px', fontFamily: '-apple-system, sans-serif',
             }}>
-              Audits récents
+              {t('transp.recent', lang)}
             </p>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '16px' }}>
               {PRELOADED_AUDITS.map(audit => {
@@ -312,12 +310,12 @@ export default function TransparencyPage() {
                 marginBottom: '12px',
                 fontFamily: '-apple-system, BlinkMacSystemFont, system-ui, sans-serif',
               }}>
-                Collez un texte à auditer
+                {t('transp.label', lang)}
               </label>
               <textarea
                 value={textToAudit}
                 onChange={e => setTextToAudit(e.target.value)}
-                placeholder="Conditions d'utilisation, politique de confidentialité, contrat, ou tout texte institutionnel…"
+                placeholder={t('transp.placeholder', lang)}
                 rows={12}
                 style={{
                   width: '100%',
@@ -339,7 +337,7 @@ export default function TransparencyPage() {
               />
               {textToAudit && (
                 <p style={{ fontSize: '11px', color: TEXT_MUTED, marginTop: '8px', fontFamily: 'system-ui' }}>
-                  {textToAudit.length.toLocaleString()} caractères
+                  {textToAudit.length.toLocaleString()} {t('transp.chars', lang)}
                 </p>
               )}
             </div>
@@ -356,7 +354,7 @@ export default function TransparencyPage() {
                 marginBottom: '16px',
                 fontFamily: '-apple-system, BlinkMacSystemFont, system-ui, sans-serif',
               }}>
-                Croiser avec
+                {t('transp.crosswith', lang)}
               </label>
               <div style={{ display: 'flex', flexDirection: 'column' as const, gap: '8px' }}>
                 {REFERENCE_TEXTS.map(ref => {
@@ -460,7 +458,7 @@ export default function TransparencyPage() {
                     color: TEXT_PRIMARY,
                     fontFamily: '-apple-system, BlinkMacSystemFont, system-ui, sans-serif',
                   }}>
-                    + Ajouter un texte de référence libre
+                    {t('transp.addfree', lang)}
                   </p>
                 </button>
 
@@ -468,7 +466,7 @@ export default function TransparencyPage() {
                   <textarea
                     value={freeReference}
                     onChange={e => setFreeReference(e.target.value)}
-                    placeholder="Collez ici votre texte de référence (convention collective, règlement interne, charte éthique…)"
+                    placeholder={t('transp.freeph', lang)}
                     rows={6}
                     style={{
                       width: '100%',
@@ -523,7 +521,7 @@ export default function TransparencyPage() {
                   letterSpacing: '0.02em',
                 }}
               >
-                {loading ? 'Analyse en cours…' : 'Auditer ce texte'}
+                {loading ? t('transp.auditing', lang) : t('transp.audit', lang)}
               </button>
             </div>
           </div>
@@ -583,7 +581,7 @@ export default function TransparencyPage() {
                 gap: '6px',
               }}
             >
-              ← Nouvel audit
+              {t('transp.back', lang)}
             </button>
 
             {/* Report card */}
@@ -609,7 +607,7 @@ export default function TransparencyPage() {
                       marginBottom: '8px',
                       fontFamily: '-apple-system, BlinkMacSystemFont, system-ui, sans-serif',
                     }}>
-                      Audit TEL Transparence
+                      {t('transp.audit.label', lang)}
                     </p>
                     <h2 style={{
                       fontFamily: 'Georgia, Times New Roman, serif',
@@ -665,20 +663,20 @@ export default function TransparencyPage() {
               {/* Sections */}
               <div style={{ padding: '40px' }}>
                 <ReportSection
-                  label="Ce que le texte dit réellement"
+                  label={t('transp.says', lang)}
                   content={report.whatItSays}
                 />
                 <div style={{ height: '1px', background: BORDER, margin: '8px 0 32px' }} />
 
                 <ReportSection
-                  label="Ce que le texte cache"
+                  label={t('transp.hides', lang)}
                   content={report.whatItHides}
                   accent="#FF9800"
                 />
                 <div style={{ height: '1px', background: BORDER, margin: '8px 0 32px' }} />
 
                 <ReportSection
-                  label="Ce qui contredit les références"
+                  label={t('transp.contradicts', lang)}
                   content={report.whatContradictsReferences}
                   accent="#FF5722"
                 />
@@ -702,7 +700,7 @@ export default function TransparencyPage() {
                     fontFamily: '-apple-system, BlinkMacSystemFont, system-ui, sans-serif',
                     opacity: 0.8,
                   }}>
-                    L'Indicible
+                    {t('transp.unspeakable', lang)}
                   </p>
                   <div style={{
                     fontFamily: 'Georgia, Times New Roman, serif',
@@ -734,7 +732,7 @@ export default function TransparencyPage() {
                     marginBottom: '16px',
                     fontFamily: '-apple-system, BlinkMacSystemFont, system-ui, sans-serif',
                   }}>
-                    Question Inexposée
+                    {t('transp.question', lang)}
                   </p>
                   <p style={{
                     fontFamily: 'Georgia, Times New Roman, serif',
@@ -749,7 +747,7 @@ export default function TransparencyPage() {
 
                 {/* Versions institutionnelles */}
                 <p style={{ fontSize: '11px', color: '#444444', lineHeight: 1.6, marginBottom: '32px', fontFamily: 'system-ui' }}>
-                  Cet audit est une version publique. Les versions institutionnelles incluent analyse clause par clause, recommandations légales et plan d&apos;action pour la mise en conformité.
+                  {t('transp.disclaimer', lang)}
                 </p>
 
                 {/* Action buttons */}
@@ -784,7 +782,7 @@ export default function TransparencyPage() {
                       transition: 'all 150ms ease',
                     }}
                   >
-                    {shareToast ? '✓ Lien copié' : 'Partager'}
+                    {shareToast ? t('transp.copied', lang) : t('transp.share', lang)}
                   </button>
                 </div>
               </div>

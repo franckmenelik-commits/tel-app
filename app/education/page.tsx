@@ -5,6 +5,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { useLanguage, t } from '@/lib/i18n'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -15,14 +16,6 @@ const ORIGINS_LIST = [
   'Allemagne', 'Canada anglophone', 'États-Unis',
 ]
 
-const NIVEAUX = ['Primaire', 'Secondaire', 'Cégep / Lycée', 'Universitaire']
-
-const LOADING_MSGS = [
-  'Analyse du sujet depuis chaque perspective…',
-  'Croisement des contextes culturels…',
-  'Détection des angles morts du programme…',
-  'Génération des questions de dialogue…',
-]
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -60,6 +53,21 @@ function Divider() {
 
 export default function EducationPage() {
   const router = useRouter()
+  const [lang] = useLanguage()
+
+  const LOADING_MSGS = [
+    t('edu.loading.1', lang),
+    t('edu.loading.2', lang),
+    t('edu.loading.3', lang),
+    t('edu.loading.4', lang),
+  ]
+
+  const NIVEAUX = [
+    { value: 'Primaire',       label: t('edu.level.primary', lang) },
+    { value: 'Secondaire',     label: t('edu.level.secondary', lang) },
+    { value: 'Cégep / Lycée',  label: t('edu.level.cegep', lang) },
+    { value: 'Universitaire',  label: t('edu.level.university', lang) },
+  ]
 
   // Form state
   const [sujet, setSujet] = useState('')
@@ -118,9 +126,9 @@ export default function EducationPage() {
   const selectedSet = new Set(selectedOrigins)
 
   const handleSubmit = async () => {
-    if (!sujet.trim()) { setError('Entrez le sujet du cours.'); return }
-    if (selectedOrigins.length < 2) { setError('Sélectionnez au moins 2 origines.'); return }
-    if (!niveau) { setError('Sélectionnez un niveau.'); return }
+    if (!sujet.trim()) { setError(t('edu.error.subject', lang)); return }
+    if (selectedOrigins.length < 2) { setError(t('edu.error.origins', lang)); return }
+    if (!niveau) { setError(t('edu.error.level', lang)); return }
     setError(null)
     setIsLoading(true)
     setResult(null)
@@ -215,7 +223,7 @@ export default function EducationPage() {
             ← TEL
           </button>
           <span className="text-xs uppercase tracking-widest" style={{ color: '#222', fontFamily: 'ui-monospace, monospace', letterSpacing: '0.22em' }}>
-            TEL · Éducation
+            {t('edu.header', lang)}
           </span>
           <div style={{ width: '60px' }} />
         </header>
@@ -225,13 +233,13 @@ export default function EducationPage() {
           {/* ── Hero ── */}
           <div className="text-center mb-14">
             <p className="text-xs uppercase tracking-widest mb-4" style={{ color: '#333', fontFamily: 'ui-monospace, monospace', letterSpacing: '0.25em' }}>
-              LOGOS · Éducation
+              {t('edu.label', lang)}
             </p>
             <h1 className="text-3xl md:text-4xl mb-4" style={{ fontFamily: 'Georgia, serif', fontStyle: 'italic', lineHeight: 1.3 }}>
-              TEL Éducation
+              {t('edu.title', lang)}
             </h1>
             <p className="text-base leading-relaxed" style={{ color: '#666', fontFamily: 'Georgia, serif', fontStyle: 'italic', lineHeight: 1.8 }}>
-              Chaque élève porte une perspective que les autres ne voient pas.
+              {t('edu.subtitle', lang)}
             </p>
           </div>
 
@@ -241,12 +249,12 @@ export default function EducationPage() {
 
               {/* Sujet */}
               <div className="mb-7">
-                <SectionLabel>Sujet du cours</SectionLabel>
+                <SectionLabel>{t('edu.form.subject', lang)}</SectionLabel>
                 <input
                   type="text"
                   value={sujet}
                   onChange={e => setSujet(e.target.value)}
-                  placeholder="La Révolution française, la photosynthèse, les droits humains…"
+                  placeholder={t('edu.form.subject.ph', lang)}
                   className="w-full px-4 py-3 rounded-xl text-sm outline-none"
                   style={{
                     background: 'rgba(255,255,255,0.03)',
@@ -260,19 +268,19 @@ export default function EducationPage() {
 
               {/* Niveau */}
               <div className="mb-7">
-                <SectionLabel>Niveau</SectionLabel>
+                <SectionLabel>{t('edu.form.level', lang)}</SectionLabel>
                 <div className="flex flex-wrap gap-2">
-                  {NIVEAUX.map(n => (
-                    <button key={n} onClick={() => setNiveau(n)}
+                  {NIVEAUX.map(({ value, label }) => (
+                    <button key={value} onClick={() => setNiveau(value)}
                       className="px-4 py-2 rounded-lg text-xs transition-all duration-200"
                       style={{
-                        background: niveau === n ? 'rgba(201,168,76,0.12)' : 'rgba(255,255,255,0.025)',
-                        border: niveau === n ? '1px solid rgba(201,168,76,0.4)' : '1px solid rgba(255,255,255,0.06)',
-                        color: niveau === n ? '#C9A84C' : '#555',
+                        background: niveau === value ? 'rgba(201,168,76,0.12)' : 'rgba(255,255,255,0.025)',
+                        border: niveau === value ? '1px solid rgba(201,168,76,0.4)' : '1px solid rgba(255,255,255,0.06)',
+                        color: niveau === value ? '#C9A84C' : '#555',
                         fontFamily: 'ui-monospace, monospace',
                         cursor: 'pointer',
                       }}>
-                      {n}
+                      {label}
                     </button>
                   ))}
                 </div>
@@ -281,10 +289,10 @@ export default function EducationPage() {
               {/* Origines */}
               <div className="mb-7">
                 <SectionLabel>
-                  Origines culturelles de votre classe
+                  {t('edu.form.origins', lang)}
                   {selectedOrigins.length >= 2 && (
                     <span style={{ color: '#555', marginLeft: '8px', letterSpacing: '0.04em' }}>
-                      — {selectedOrigins.length} sélectionnées
+                      — {selectedOrigins.length} {t('edu.form.selected', lang)}
                     </span>
                   )}
                 </SectionLabel>
@@ -328,7 +336,7 @@ export default function EducationPage() {
                         type="text"
                         value={autreText}
                         onChange={e => setAutreText(e.target.value)}
-                        placeholder="Pays ou culture…"
+                        placeholder={t('edu.form.other.ph', lang)}
                         autoFocus
                         className="px-3 py-1.5 rounded-lg text-xs outline-none"
                         style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(201,168,76,0.25)', color: '#F5ECD7', fontFamily: 'ui-monospace, monospace', width: '140px' }}
@@ -337,7 +345,7 @@ export default function EducationPage() {
                       <button onClick={addAutre}
                         className="px-3 py-1.5 rounded-lg text-xs"
                         style={{ background: 'rgba(201,168,76,0.12)', border: '1px solid rgba(201,168,76,0.3)', color: '#C9A84C', fontFamily: 'ui-monospace, monospace', cursor: 'pointer' }}>
-                        Ajouter
+                        {t('edu.form.other.add', lang)}
                       </button>
                     </div>
                   ) : (
@@ -346,12 +354,12 @@ export default function EducationPage() {
                       style={{ background: 'rgba(255,255,255,0.015)', border: '1px dashed rgba(255,255,255,0.08)', color: '#333', fontFamily: 'ui-monospace, monospace', cursor: 'pointer' }}
                       onMouseEnter={e => { e.currentTarget.style.color = '#C9A84C'; e.currentTarget.style.borderColor = 'rgba(201,168,76,0.2)' }}
                       onMouseLeave={e => { e.currentTarget.style.color = '#333'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)' }}>
-                      + Autre
+                      {t('edu.form.other.btn', lang)}
                     </button>
                   )}
                 </div>
                 <p className="text-xs" style={{ color: '#1f1f1f', fontFamily: 'ui-monospace, monospace' }}>
-                  Minimum 2 origines
+                  {t('edu.form.min', lang)}
                 </p>
               </div>
 
@@ -375,7 +383,7 @@ export default function EducationPage() {
                 }}
                 onMouseEnter={e => { e.currentTarget.style.background = 'linear-gradient(135deg, rgba(201,168,76,0.18), rgba(201,168,76,0.32))' }}
                 onMouseLeave={e => { e.currentTarget.style.background = 'linear-gradient(135deg, rgba(201,168,76,0.1), rgba(201,168,76,0.2))' }}>
-                Révéler les perspectives cachées
+                {t('edu.cta', lang)}
               </button>
             </div>
           )}
@@ -413,13 +421,13 @@ export default function EducationPage() {
                   style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', color: '#555', fontFamily: 'ui-monospace, monospace', cursor: 'pointer' }}
                   onMouseEnter={e => { e.currentTarget.style.color = '#C9A84C'; e.currentTarget.style.borderColor = 'rgba(201,168,76,0.25)' }}
                   onMouseLeave={e => { e.currentTarget.style.color = '#555'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.07)' }}>
-                  ← Nouvelle analyse
+                  {t('edu.reset', lang)}
                 </button>
                 <div className="flex items-center gap-2">
                   <button onClick={handleGenerateScript}
                     className="text-xs px-4 py-2 rounded-lg transition-all duration-200"
                     style={{ background: 'rgba(201,168,76,0.08)', border: '1px solid rgba(201,168,76,0.2)', color: '#C9A84C', fontFamily: 'ui-monospace, monospace', cursor: 'pointer' }}>
-                    Script pédagogique
+                    {t('edu.script', lang)}
                   </button>
                   <button onClick={() => window.print()}
                     className="text-xs px-4 py-2 rounded-lg transition-all duration-200"
@@ -434,7 +442,7 @@ export default function EducationPage() {
                       color: shareToast ? '#1A6B3C' : '#555',
                       fontFamily: 'ui-monospace, monospace', cursor: 'pointer',
                     }}>
-                    {shareToast ? 'Lien copié' : 'Partager'}
+                    {shareToast ? t('edu.copied', lang) : t('edu.share', lang)}
                   </button>
                 </div>
               </div>
@@ -442,7 +450,7 @@ export default function EducationPage() {
               {/* Header */}
               <div className="mb-10 text-center">
                 <p className="text-xs uppercase tracking-widest mb-3" style={{ color: '#333', fontFamily: 'ui-monospace, monospace', letterSpacing: '0.2em' }}>
-                  {niveau} · {selectedOrigins.length} perspectives
+                  {niveau} · {selectedOrigins.length} {t('edu.perspectives', lang)}
                 </p>
                 <h2 className="text-2xl md:text-3xl" style={{ fontFamily: 'Georgia, serif', fontStyle: 'italic', color: '#F5ECD7', lineHeight: 1.3 }}>
                   {sujet}
@@ -450,7 +458,7 @@ export default function EducationPage() {
               </div>
 
               {/* Perspective cards */}
-              <SectionLabel>Perspectives culturelles</SectionLabel>
+              <SectionLabel>{t('edu.section.perspectives', lang)}</SectionLabel>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-12">
                 {result.cartes.map((carte, i) => (
                   <div key={i} className="p-5 rounded-xl" style={{ background: '#0F0F18', border: '1px solid rgba(201,168,76,0.15)', backdropFilter: 'blur(12px)' }}>
@@ -478,7 +486,7 @@ export default function EducationPage() {
                     {/* Revelation */}
                     <div className="pt-3 mb-3" style={{ borderTop: '1px solid rgba(201,168,76,0.08)' }}>
                       <p className="text-xs mb-1" style={{ color: '#555', fontFamily: 'ui-monospace, monospace', letterSpacing: '0.08em' }}>
-                        CE QUE CELA RÉVÈLE
+                        {t('edu.section.reveals', lang)}
                       </p>
                       <p className="text-xs" style={{ color: '#C9A84C', fontFamily: 'Georgia, serif', fontStyle: 'italic', lineHeight: 1.6 }}>
                         {carte.revelation}
@@ -489,7 +497,7 @@ export default function EducationPage() {
                     {carte.tension && (
                       <div className="pt-3" style={{ borderTop: '1px solid rgba(139,58,58,0.12)' }}>
                         <p className="text-xs mb-1" style={{ color: '#555', fontFamily: 'ui-monospace, monospace', letterSpacing: '0.08em' }}>
-                          POINT DE TENSION
+                          {t('edu.section.tension', lang)}
                         </p>
                         <p className="text-xs" style={{ color: '#8B6A50', fontFamily: 'Georgia, serif', fontStyle: 'italic', lineHeight: 1.6 }}>
                           {carte.tension}
@@ -504,9 +512,9 @@ export default function EducationPage() {
 
               {/* Questions pour la classe */}
               <div className="mb-10">
-                <SectionLabel>Questions pour votre classe</SectionLabel>
+                <SectionLabel>{t('edu.section.questions', lang)}</SectionLabel>
                 <p className="text-xs mb-5" style={{ color: '#2a2a2a', fontFamily: 'Georgia, serif', fontStyle: 'italic' }}>
-                  Aucune bonne réponse — seulement des perspectives
+                  {t('edu.section.questions.sub', lang)}
                 </p>
                 <ol className="flex flex-col gap-4">
                   {result.questionsDialogue.map((q, i) => (
@@ -526,7 +534,7 @@ export default function EducationPage() {
 
               {/* Angles morts du programme */}
               <div className="mb-10">
-                <SectionLabel>Angles morts du programme standard</SectionLabel>
+                <SectionLabel>{t('edu.section.blindspots', lang)}</SectionLabel>
                 <div className="p-5 rounded-xl" style={{ background: 'rgba(139,90,43,0.06)', border: '1px solid rgba(139,90,43,0.2)' }}>
                   <ul className="flex flex-col gap-3">
                     {result.anglesMortsProgramme.map((a, i) => (
@@ -544,7 +552,7 @@ export default function EducationPage() {
               {/* Footer */}
               <div className="pt-6 text-center" style={{ borderTop: '1px solid rgba(255,255,255,0.03)' }}>
                 <p className="text-xs" style={{ color: '#1a1a1a', fontFamily: 'ui-monospace, monospace' }}>
-                  TEL Éducation · theexperiencelayer.org
+                  {t('edu.footer', lang)}
                 </p>
               </div>
             </div>
@@ -562,7 +570,7 @@ export default function EducationPage() {
             <div className="w-full max-w-2xl rounded-2xl flex flex-col" style={{ background: 'rgba(10,10,15,0.98)', border: '1px solid rgba(201,168,76,0.2)', maxHeight: '80vh' }}>
               <div className="flex items-center justify-between p-5 pb-3" style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
                 <p className="text-xs uppercase tracking-widest" style={{ color: '#C9A84C', fontFamily: 'ui-monospace, monospace' }}>
-                  Script pédagogique
+                  {t('edu.script.modal', lang)}
                 </p>
                 <div className="flex items-center gap-2">
                   <button
@@ -578,7 +586,7 @@ export default function EducationPage() {
                       color: scriptCopied ? '#1A6B3C' : '#C9A84C',
                       fontFamily: 'ui-monospace, monospace', cursor: 'pointer',
                     }}>
-                    {scriptCopied ? 'Copié' : 'Copier'}
+                    {scriptCopied ? t('edu.script.copied', lang) : t('edu.script.copy', lang)}
                   </button>
                   <button onClick={() => setScriptModal(null)}
                     className="w-7 h-7 rounded-full flex items-center justify-center"

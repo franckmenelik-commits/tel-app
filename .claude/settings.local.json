@@ -43,7 +43,12 @@
       "Bash(npx tsx:*)",
       "Bash(python3 -c \":*)",
       "Bash(python3 -:*)",
-      "Bash(npx tsc:*)"
+      "Bash(npx tsc:*)",
+      "Bash(gouvernance\"\\), nomme mécanismes précis \\(qui décide, qui paie, qui est exclu\\):*)",
+      "WebFetch(domain:claude.ai)",
+      "Bash(gh auth:*)",
+      "Bash(gh repo:*)",
+      "Bash(git config:*)"
     ]
   }
 }
