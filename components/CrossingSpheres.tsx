@@ -136,7 +136,6 @@ export default function CrossingSpheres({
 
     const onDown = (e: PointerEvent) => {
       if (resultRef.current || loadingRef.current || resonatingRef.current) return
-      if (window.innerWidth < 768) return  // no drag on mobile
       const mx = (e.clientX / window.innerWidth)  * 100
       const my = (e.clientY / window.innerHeight) * 100
       const dA = Math.hypot(mx - pA.current.x, my - pA.current.y)
@@ -167,6 +166,7 @@ export default function CrossingSpheres({
       }
       if (released === 'A') histA.current = []
       else histB.current = []
+      document.body.style.cursor = ''
       // Pin stays — sphere remains where you dropped it until next state change
     }
 
@@ -282,9 +282,20 @@ export default function CrossingSpheres({
         }
       }
 
-      // ── Dynamic z-index ───────────────────────────────────────────────────
+      // ── Dynamic z-index — always behind content (z-index 1) ─────────────
       if (containerRef.current) {
-        containerRef.current.style.zIndex = (result || loading) ? '0' : '11'
+        containerRef.current.style.zIndex = '1'
+      }
+
+      // ── Cursor hint on body — no pointerEvents needed on spheres ─────────
+      if (!isMobile) {
+        const nearA = Math.hypot(mx - pA.current.x, my - pA.current.y) < 26
+        const nearB = Math.hypot(mx - pB.current.x, my - pB.current.y) < 26
+        const canGrab = !loading && !result && !resonating
+        document.body.style.cursor = drag.current
+          ? 'grabbing'
+          : (canGrab && (nearA || nearB)) ? 'grab'
+          : ''
       }
 
       // ── Spring physics ────────────────────────────────────────────────────
@@ -354,24 +365,24 @@ export default function CrossingSpheres({
           scB = 0
         }
       } else if (resonating) {
-        opA = opB = isMobile ? 0.14 : isTablet ? 0.22 : 0.28
+        opA = opB = isMobile ? 0.22 : isTablet ? 0.24 : 0.28
         scA = scB = 1
       } else {
-        opA = opB = isMobile ? 0.14 : isTablet ? 0.22 : 0.28
+        opA = opB = isMobile ? 0.22 : isTablet ? 0.24 : 0.28
         scA = 1 + Math.sin(t * (TWO_PI / 6)) * 0.08
         scB = 1 + Math.sin((t - 3) * (TWO_PI / 6)) * 0.08
       }
 
       // Sphere size — small during loading, large in idle
       const SZ = loading
-        ? (isMobile ? '90px' : isTablet ? '110px' : 'clamp(110px, 12vw, 160px)')
-        : isMobile ? '160px'
+        ? (isMobile ? '100px' : isTablet ? '110px' : 'clamp(110px, 12vw, 160px)')
+        : isMobile ? '200px'
         : isTablet ? 'clamp(180px, 24vw, 280px)'
         : 'clamp(240px, 32vw, 400px)'
 
       const HALF = loading
-        ? (isMobile ? '45px' : isTablet ? '55px' : 'clamp(55px, 6vw, 80px)')
-        : isMobile ? '80px'
+        ? (isMobile ? '50px' : isTablet ? '55px' : 'clamp(55px, 6vw, 80px)')
+        : isMobile ? '100px'
         : isTablet ? 'clamp(90px, 12vw, 140px)'
         : 'clamp(120px, 16vw, 200px)'
 
@@ -386,8 +397,7 @@ export default function CrossingSpheres({
         el.style.opacity = String(opA)
         el.style.background = `radial-gradient(circle at ${aGX}% ${aGY}%, #FFE599 0%, #D4A843 28%, #C9A84C 50%, transparent 72%)`
         el.style.transform  = `translateZ(${az}px) rotateX(${arx}deg) rotateY(${ary}deg) scale(${scA})`
-        el.style.cursor = (loading || result || resonating || isMobile) ? 'default' : 'grab'
-        el.style.pointerEvents = (loading || result || resonating || isMobile) ? 'none' : 'auto'
+        el.style.pointerEvents = 'none'
       }
 
       if (sphereBRef.current) {
@@ -400,8 +410,7 @@ export default function CrossingSpheres({
         el.style.opacity = String(opB)
         el.style.background = `radial-gradient(circle at ${bGX}% ${bGY}%, #A8C8FF 0%, #5A8FD4 28%, #4A7CC9 50%, transparent 72%)`
         el.style.transform  = `translateZ(${bz}px) rotateX(${brx}deg) rotateY(${bry}deg) scale(${scB})`
-        el.style.cursor = (loading || result || resonating || isMobile) ? 'default' : 'grab'
-        el.style.pointerEvents = (loading || result || resonating || isMobile) ? 'none' : 'auto'
+        el.style.pointerEvents = 'none'
       }
 
       if (sceneRef.current) {
@@ -486,7 +495,7 @@ export default function CrossingSpheres({
       ref={containerRef}
       style={{
         position: 'fixed', inset: 0,
-        zIndex: 11,
+        zIndex: 1,
         overflow: 'hidden',
         pointerEvents: 'none',
         perspective: '900px',
