@@ -3,6 +3,8 @@
 
 import * as cheerio from 'cheerio'
 import type { SourceType, ExtractedSource, InputMode } from './types'
+import { fetchTopComments, formatCommentsForPrompt } from './youtube-comments'
+import { fetchBookPortrait } from './exa'
 
 const USER_AGENT =
   'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
@@ -97,6 +99,28 @@ async function extractYouTube(url: string): Promise<{ title: string; content: st
   return {
     title,
     content: `[Note: Transcription non disponible — croisement basé sur les métadonnées YouTube. Niveau de confiance réduit.]\n\nTitre : ${title}\n\nDescription : ${description}\n\nIdentifiant vidéo : ${videoId}\nURL : ${url}`,
+  }
+}
+
+async function extractYouTubeWithComments(url: string): Promise<{ title: string; content: string; publicVoices: import('./types').PublicVoice[] }> {
+  const { title, content } = await extractYouTube(url)
+  const videoId = extractYouTubeVideoId(url)
+
+  if (!videoId) {
+    return { title, content, publicVoices: [] }
+  }
+
+  const comments = await fetchTopComments(videoId, 20)
+  const commentsBlock = formatCommentsForPrompt(comments)
+
+  return {
+    title,
+    content: content + (commentsBlock ? '\n' + commentsBlock : ''),
+    publicVoices: comments.slice(0, 20).map(c => ({
+      text: c.text.replace(/<[^>]*>/g, '').slice(0, 500),
+      likeCount: c.likeCount,
+      author: c.author,
+    })),
   }
 }
 
@@ -309,18 +333,47 @@ export function extractDirectCrossing(termA: string, termB: string): ExtractedSo
   ]
 }
 
+// ─── Mode Book: Exa thematic portrait ────────────────────────────────────────
+
+export async function extractBook(titleRaw: string): Promise<ExtractedSource> {
+  // Strip prefix if present
+  const title = titleRaw.replace(/^(livre:|book:)\s*/i, '').trim()
+  const portrait = await fetchBookPortrait(title)
+
+  return {
+    url: `book://${encodeURIComponent(title)}`,
+    type: 'book',
+    title: `Œuvre : "${title}"`,
+    content: portrait,
+    geographicContext: 'Portrait thématique compilé via Exa.ai',
+    geographicConfidence: 60,
+    inputMode: 'book',
+  }
+}
+
 // ─── Master extraction ────────────────────────────────────────────────────────
 
 export async function extractContent(url: string): Promise<ExtractedSource> {
   const type = detectSourceType(url)
 
+  if (type === 'youtube') {
+    const { title, content, publicVoices } = await extractYouTubeWithComments(url)
+    return {
+      url,
+      type,
+      title: title.slice(0, 200),
+      content,
+      geographicContext: 'Pending analysis',
+      geographicConfidence: 0,
+      inputMode: 'url',
+      publicVoices: publicVoices.length > 0 ? publicVoices : undefined,
+    }
+  }
+
   let title = ''
   let content = ''
 
   switch (type) {
-    case 'youtube':
-      ;({ title, content } = await extractYouTube(url))
-      break
     case 'wikipedia':
       ;({ title, content } = await extractWikipedia(url))
       break

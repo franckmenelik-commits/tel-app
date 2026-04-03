@@ -24,7 +24,7 @@ export type RepresentationType =
 // Mode B: Free text (>50 words — direct narrative)
 // Mode C: Keyword (auto Wikipedia FR+EN search)
 // Mode D: Crossing (A × B — two concepts, direct LOGOS knowledge)
-export type InputMode = 'url' | 'free_text' | 'keyword' | 'crossing'
+export type InputMode = 'url' | 'free_text' | 'keyword' | 'crossing' | 'book'
 
 // ─── Niveau 2 — Enrichissement ────────────────────────────────────────────────
 
@@ -123,6 +123,13 @@ export interface InsightVectoriel {
   timestamp: Date
 }
 
+// A comment from the public (YouTube, etc.) selected by LOGOS as relevant
+export interface PublicVoice {
+  text: string
+  likeCount: number
+  author?: string
+}
+
 // Raw content extracted from a URL
 export interface ExtractedSource {
   url: string
@@ -132,6 +139,7 @@ export interface ExtractedSource {
   geographicContext: string
   geographicConfidence: number // 0–100
   inputMode?: InputMode
+  publicVoices?: PublicVoice[] // YouTube top comments (when YOUTUBE_API_KEY configured)
 }
 
 // Source metadata stored in the InsightCard
@@ -169,6 +177,8 @@ export interface InsightCard {
   irreconcilable?: string             // Ce que TEL refuse de réconcilier
   anglesMorts?: AnglesMortsAnalyse    // Niveau 3 — added after crossing
   actionables?: Actionables           // Ce que ça permet — generated with insight
+  publicVoices?: PublicVoice[]        // YouTube public reactions selected by LOGOS
+  resonanceCount?: number             // How many Pinecone patterns resonated with this crossing
 }
 
 // Full result returned by /api/cross
@@ -213,6 +223,7 @@ export interface LogosInsightResponse {
   sourceCoordinates: MapCoordinate[]
   irreconcilable?: string             // Ce que TEL refuse de réconcilier
   actionables?: Actionables           // Ce que ça permet
+  publicVoices?: PublicVoice[]        // 1-2 public reactions selected by LOGOS as relevant
 }
 // Backward compat alias
 export type ClaudeInsightResponse = LogosInsightResponse
@@ -277,6 +288,8 @@ export interface SouffleCallbacks {
 export interface CrossPayload {
   inputs: string[]         // URLs, free text, keywords, or "A × B" expressions
   contexte?: SouffleContexte
+  lang?: string            // Browser language ('fr' | 'en') — LOGOS responds in this language
+  register?: string        // Language register ('casual' | 'standard' | 'indepth')
   // Legacy support
   urls?: string[]
 }

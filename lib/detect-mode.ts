@@ -2,7 +2,7 @@
 // lib/detect-mode.ts
 // Détection automatique du mode d'entrée utilisateur
 
-export type InputMode = 'url' | 'free_text' | 'keyword' | 'crossing'
+export type InputMode = 'url' | 'free_text' | 'keyword' | 'crossing' | 'book'
 
 export interface DetectedInput {
   mode: InputMode
@@ -26,6 +26,11 @@ function detectUrlType(url: string): DetectedInput['urlType'] {
 // ─── Main detection function ───────────────────────────────────────────────────
 export function detectInputMode(input: string): DetectedInput {
   const trimmed = input.trim()
+
+  // 0. Book mode — explicit livre:/book: prefix (set by UI toggle)
+  if (trimmed.toLowerCase().startsWith('livre:') || trimmed.toLowerCase().startsWith('book:')) {
+    return { mode: 'book', value: trimmed }
+  }
 
   // 1. URL — starts with http:// or https://
   if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
@@ -88,6 +93,7 @@ export function getModeLabel(mode: InputMode): string {
     case 'free_text': return 'Texte libre'
     case 'keyword': return 'Mot-clé'
     case 'crossing': return 'Croisement ×'
+    case 'book': return 'Livre / Œuvre'
   }
 }
 
@@ -97,5 +103,6 @@ export function getModeDescription(mode: InputMode): string {
     case 'free_text': return 'Témoignage direct (>50 mots)'
     case 'keyword': return 'Recherche Wikipedia FR + EN automatique'
     case 'crossing': return 'Deux concepts — LOGOS les confronte directement'
+    case 'book': return 'Portrait thématique via Exa.ai'
   }
 }

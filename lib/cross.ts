@@ -2,11 +2,12 @@
 // Croisement narratif — orchestrateur principal
 // Gère les 4 modes d'entrée + délègue au système SOUFFLE
 
-import { extractContent, extractFreeText, extractKeyword, extractDirectCrossing } from './extract'
+import { extractContent, extractFreeText, extractKeyword, extractDirectCrossing, extractBook } from './extract'
 import { SOUFFLE } from './souffle'
 import { detectInputMode } from './detect-mode'
 import { autoSearchCrossing } from './auto-search'
 import { analyserAnglesMorts } from './angles-morts'
+import { storePublicPattern, findResonances } from './pinecone'
 import type {
   InsightCard,
   CrossResult,
@@ -63,6 +64,15 @@ async function resolveInputs(
           allSources.push(source)
           globalIndex++
         }
+        break
+      }
+
+      // ── Mode Book: Exa thematic portrait ──────────────────────────────────
+      case 'book': {
+        const source = await extractBook(input)
+        callbacks?.onExtractionDone?.(input, globalIndex, source.title)
+        allSources.push(source)
+        globalIndex++
         break
       }
 
@@ -123,7 +133,9 @@ async function resolveInputs(
 export async function crossNarratives(
   inputs: string[],
   contexte: SouffleContexte = 'exploration',
-  callbacks?: SouffleCallbacks
+  callbacks?: SouffleCallbacks,
+  lang?: string,
+  register?: string
 ): Promise<CrossResult> {
   if (inputs.length < 1) {
     throw new Error('TEL nécessite au moins 1 source pour produire un croisement.')
@@ -151,8 +163,12 @@ export async function crossNarratives(
     }
   }
 
+  // ── Pinecone: query resonances from cultural memory ───────────────────────
+  const combinedText = rawSources.map(s => s.title + ' ' + s.content.slice(0, 500)).join(' ')
+  const resonances = await findResonances(combinedText, 5)
+
   // ── SOUFFLE: enrichissement + croisement + révélation ────────────────────
-  const souffleResult = await SOUFFLE(rawSources, contexte, callbacks)
+  const souffleResult = await SOUFFLE(rawSources, contexte, callbacks, lang, register, resonances)
   const { insight: parsed, sourcesEnrichies, niveauxUtilises, decision } = souffleResult
 
   // ── Niveau 3 — Analyse des angles morts ──────────────────────────────────
@@ -178,6 +194,11 @@ export async function crossNarratives(
     // Angles morts analysis is non-critical — continue without it
   }
 
+  // ── Collect public voices from YouTube sources ────────────────────────────
+  const allPublicVoices = sourcesEnrichies
+    .filter(s => s.publicVoices && s.publicVoices.length > 0)
+    .flatMap(s => s.publicVoices!)
+
   // ── Assemble InsightCard ─────────────────────────────────────────────────
   const insight: InsightCard = {
     id: generateId(),
@@ -201,6 +222,34 @@ export async function crossNarratives(
     irreconcilable: parsed.irreconcilable,
     anglesMorts,
     actionables: parsed.actionables,
+    publicVoices: parsed.publicVoices && parsed.publicVoices.length > 0
+      ? parsed.publicVoices
+      : allPublicVoices.length > 0 ? allPublicVoices.slice(0, 2) : undefined,
+    resonanceCount: resonances.length > 0 ? resonances.length : undefined,
+  }
+
+  // ── Store public pattern in Pinecone (skip personal/vecu contexts) ────────
+  if (contexte !== 'vecu_traumatique') {
+    const patternId = insight.id
+    const domains = [...new Set(sourcesEnrichies.map(s => s.type))]
+    const culturalContexts = sourcesEnrichies
+      .map(s => s.geographicContext)
+      .filter(c => c && c !== 'Pending analysis')
+
+    storePublicPattern({
+      patternId,
+      sources: insight.sources.map(s => ({ title: s.title, type: s.type, url: s.url })),
+      patternText: insight.revealedPattern,
+      question: insight.questionNoOneHasAsked,
+      convergences: insight.convergenceZones,
+      divergences: insight.divergenceZones,
+      missingPerspectives: anglesMorts?.perspectivesManquantes ?? [],
+      domains,
+      culturalContexts,
+      confidence: insight.globalConfidence,
+      language: lang ?? 'fr',
+      createdAt: insight.createdAt.toISOString(),
+    }).catch(err => console.warn('[TEL] Pinecone store error:', err))
   }
 
   return {

@@ -282,9 +282,9 @@ export default function CrossingSpheres({
         }
       }
 
-      // ── Dynamic z-index — always behind content (z-index 1) ─────────────
+      // ── Dynamic z-index — always behind content (z-index 0, below z-10 content) ─
       if (containerRef.current) {
-        containerRef.current.style.zIndex = '1'
+        containerRef.current.style.zIndex = '0'
       }
 
       // ── Cursor hint on body — no pointerEvents needed on spheres ─────────
@@ -495,7 +495,7 @@ export default function CrossingSpheres({
       ref={containerRef}
       style={{
         position: 'fixed', inset: 0,
-        zIndex: 1,
+        zIndex: 0,
         overflow: 'hidden',
         pointerEvents: 'none',
         perspective: '900px',

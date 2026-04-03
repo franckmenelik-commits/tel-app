@@ -36,9 +36,27 @@ Règles:
 - Si vraiment inconnu, dis-le honnêtement.`
 }
 
+// ─── Language + Register instructions ────────────────────────────────────────
+
+export function buildLangInstruction(lang?: string, register?: string): string {
+  const parts: string[] = []
+
+  if (lang === 'en') {
+    parts.push('IMPORTANT: Respond ENTIRELY in English. Every field in the JSON must be written in English — no French words whatsoever.')
+  }
+
+  if (register === 'casual') {
+    parts.push("REGISTER: Write as if explaining to a smart friend, not an academic. Short sentences. Concrete examples. No jargon — replace technical terms with everyday equivalents. Warm, direct, human tone.")
+  } else if (register === 'indepth') {
+    parts.push("REGISTER: Write for a university or research audience. Use precise disciplinary terminology. Reference relevant theoretical frameworks. Rigorous, dense, academic tone.")
+  }
+
+  return parts.length > 0 ? '\n' + parts.join('\n') + '\n' : ''
+}
+
 // ─── NIVEAU 1 — L'ÉCOUTE : croisement simple ─────────────────────────────────
 
-export function buildNiveau1CrossingPrompt(sources: ExtractedSource[]): string {
+export function buildNiveau1CrossingPrompt(sources: ExtractedSource[], lang?: string, register?: string): string {
   const sourcesText = sources
     .map(
       (s, i) => `SOURCE ${i + 1}
@@ -48,8 +66,9 @@ Contenu: ${s.content.slice(0, 3000)}`
     )
     .join('\n\n---\n\n')
 
-  return `Tu es LOGOS, le système de croisement narratif de TEL.
+  const langInstruction = buildLangInstruction(lang, register)
 
+  return `Tu es LOGOS, le système de croisement narratif de TEL.${langInstruction}
 TEL ne croise pas des informations — il croise des VÉCUS HUMAINS pour révéler la sagesse collective invisible que ni l'une ni l'autre source ne contient seule.
 
 SOURCES:
@@ -80,15 +99,19 @@ Retourne UNIQUEMENT du JSON valide:
     "individu": "ce qu'une personne ordinaire peut faire avec cet insight — concret et accessible en 1-2 phrases",
     "chercheur": "ce qu'un chercheur, journaliste ou praticien peut explorer — piste concrète et originale",
     "institution": "ce qu'une institution, ONG ou collectif peut mettre en place — recommandation actionnable"
-  }
+  },
+  "publicVoices": [
+    {"text": "commentaire public qui résonne avec le pattern révélé (seulement si des commentaires YouTube ont été fournis)", "likeCount": 0, "author": "nom"}
+  ]
 }
 
-Règles absolues: zéro généralité, tout ancré dans le texte, la divergence est précieuse.`
+Règles absolues: zéro généralité, tout ancré dans le texte, la divergence est précieuse.
+Pour publicVoices: inclure 0-2 commentaires SEULEMENT si des commentaires publics ont été fournis dans les sources et qu'ils résonnent directement avec le pattern révélé. Sinon, omettre le champ.`
 }
 
 // ─── NIVEAU 2 — LA TRAVERSÉE : croisement profond ────────────────────────────
 
-export function buildNiveau2CrossingPrompt(sources: ExtractedSource[]): string {
+export function buildNiveau2CrossingPrompt(sources: ExtractedSource[], lang?: string, register?: string): string {
   const sourcesText = sources
     .map(
       (s, i) => `
@@ -103,8 +126,9 @@ ${s.content.slice(0, 4000)}`
     )
     .join('\n\n')
 
-  return `Tu es LOGOS — le système de croisement narratif de TEL, The Experience Layer.
+  const langInstruction = buildLangInstruction(lang, register)
 
+  return `Tu es LOGOS — le système de croisement narratif de TEL, The Experience Layer.${langInstruction}
 CONVICTION FONDATRICE: "Le problème fondamental de l'humanité n'est pas le manque d'information. C'est le manque de traduction entre les expériences." Wittgenstein: "Les limites de mon langage sont les limites de mon monde." Chaque culture compresse la réalité différemment. LOGOS croise ces compressions pour révéler ce que chaque culture a préservé que les autres ont perdu.
 
 ENGAGEMENT ÉPISTÉMIQUE (épistémologie turque): LOGOS dit toujours COMMENT il sait ce qu'il croit savoir. Source directe ou indirecte. Niveau de confiance. Limites géographiques. Jamais de prétention à l'objectivité totale.
@@ -181,17 +205,21 @@ Retourne UNIQUEMENT du JSON valide (pas de markdown, pas de texte hors JSON):
     "individu": "ce qu'une personne ordinaire peut faire avec cet insight — concret et accessible en 1-2 phrases",
     "chercheur": "ce qu'un chercheur, journaliste ou praticien peut explorer — piste concrète et originale",
     "institution": "ce qu'une institution, ONG ou collectif peut mettre en place — recommandation actionnable"
-  }
-}`
+  },
+  "publicVoices": [
+    {"text": "commentaire public qui résonne avec le pattern révélé (seulement si des commentaires YouTube ont été fournis)", "likeCount": 0, "author": "nom"}
+  ]
+}
+Pour publicVoices: inclure 0-2 commentaires SEULEMENT si des commentaires publics ont été fournis dans les sources et qu'ils résonnent directement avec le pattern révélé. Sinon, omettre le champ.`
 }
 
 // ─── MODE D — CROISEMENT DIRECT (A × B) ──────────────────────────────────────
 // LOGOS utilise sa connaissance directe sans sources externes.
 // Utilisé quand l'utilisateur entre "Darwin × bouddhisme" ou "douleur × musique".
 
-export function buildDirectCrossingPrompt(termA: string, termB: string): string {
-  return `Tu es LOGOS — le système de croisement narratif de TEL, The Experience Layer.
-
+export function buildDirectCrossingPrompt(termA: string, termB: string, lang?: string, register?: string): string {
+  const langInstruction = buildLangInstruction(lang, register)
+  return `Tu es LOGOS — le système de croisement narratif de TEL, The Experience Layer.${langInstruction}
 L'utilisateur a demandé un croisement direct entre deux termes, sans sources externes.
 Tu utilises ta connaissance encyclopédique pour produire un croisement profond.
 
@@ -245,14 +273,17 @@ Retourne UNIQUEMENT du JSON valide:
 
 export function buildNiveau3RevelationPrompt(
   sources: ExtractedSource[],
-  insight: LogosInsightResponse
+  insight: LogosInsightResponse,
+  lang?: string,
+  register?: string
 ): string {
   const sourcesResume = sources
     .map((s, i) => `Source ${i + 1}: "${s.title}" — ${s.geographicContext}`)
     .join('\n')
 
-  return `Tu es LOGOS à son niveau le plus profond — La Révélation.
+  const langInstruction = buildLangInstruction(lang, register)
 
+  return `Tu es LOGOS à son niveau le plus profond — La Révélation.${langInstruction}
 Un croisement de vécus humains a déjà été produit. Tu n'as pas à le refaire.
 Ta mission: approfondir précisément deux éléments pour des vécus fragiles.
 
@@ -293,6 +324,34 @@ Retourne UNIQUEMENT du JSON valide:
   "theUnspeakable": "L'indicible approfondi — ce qui résiste au langage lui-même dans ces vécus spécifiques",
   "questionNoOneHasAsked": "La question genuinement nouvelle — celle que ce croisement particulier rend soudain visible"
 }`
+}
+
+// ─── Resonances context (Pinecone patterns) ──────────────────────────────────
+
+export interface ResonanceContext {
+  id: string
+  score: number
+  question: string
+  patternText: string
+  sourcesLabel: string
+}
+
+export function buildResonancesContextInstruction(resonances: ResonanceContext[]): string {
+  if (resonances.length === 0) return ''
+
+  const items = resonances
+    .slice(0, 5)
+    .map((r, i) => `[Résonance ${i + 1} — score ${Math.round(r.score * 100)}%]\nSources : ${r.sourcesLabel || 'non spécifié'}\nQuestion : ${r.question}\nPattern : ${r.patternText.slice(0, 200)}…`)
+    .join('\n\n')
+
+  return `\n\nMÉMOIRE CULTURELLE TEL — RÉSONANCES EXISTANTES :
+TEL a déjà croisé des sources similaires et a trouvé les patterns suivants.
+Utilise-les comme points de résonance potentiels — pas comme vérité, mais comme pistes.
+Le nouveau croisement peut confirmer, contredire, ou dépasser ces patterns existants.
+
+${items}
+
+FIN DES RÉSONANCES\n`
 }
 
 // ─── TEL TRANSPARENCE — Audit algorithmique ──────────────────────────────────

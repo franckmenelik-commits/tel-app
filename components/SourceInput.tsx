@@ -10,6 +10,8 @@ interface SourceInputProps {
   onCross: (inputs: string[], contexte: SouffleContexte) => void
   isLoading: boolean
   prefill?: string[]
+  register?: string
+  onRegisterChange?: (register: string) => void
 }
 
 function detectUrlMeta(url: string): { icon: string; color: string; label: string } {
@@ -33,6 +35,7 @@ function getModeIcon(mode: InputMode): string {
     case 'free_text': return '❝'
     case 'keyword': return '⊕'
     case 'crossing': return '×'
+    case 'book': return '📖'
   }
 }
 
@@ -42,10 +45,11 @@ function getModeColor(mode: InputMode): string {
     case 'free_text': return '#888'
     case 'keyword': return '#C9A84C'
     case 'crossing': return '#C9A84C'
+    case 'book': return '#4A7FC1'
   }
 }
 
-export default function SourceInput({ onCross, isLoading, prefill }: SourceInputProps) {
+export default function SourceInput({ onCross, isLoading, prefill, register = 'standard', onRegisterChange }: SourceInputProps) {
   const [mode, setMode] = useState<'cross' | 'resonate'>('cross')
   const [vecu, setVecu] = useState('')
   const [resonanceResult, setResonanceResult] = useState<null | {
@@ -59,6 +63,7 @@ export default function SourceInput({ onCross, isLoading, prefill }: SourceInput
   const [resonanceError, setResonanceError] = useState<string | null>(null)
 
   const [inputs, setInputs] = useState<string[]>(['', ''])
+  const [bookModes, setBookModes] = useState<boolean[]>([false, false])
   const [contexte, setContexte] = useState<SouffleContexte>('exploration')
 
   // Pre-fill from carousel click
@@ -114,6 +119,15 @@ export default function SourceInput({ onCross, isLoading, prefill }: SourceInput
 
   const addSource = useCallback(() => {
     setInputs(prev => [...prev, ''])
+    setBookModes(prev => [...prev, false])
+  }, [])
+
+  const toggleBookMode = useCallback((index: number) => {
+    setBookModes(prev => {
+      const next = [...prev]
+      next[index] = !next[index]
+      return next
+    })
   }, [])
 
   const removeSource = useCallback((index: number) => {
@@ -121,6 +135,7 @@ export default function SourceInput({ onCross, isLoading, prefill }: SourceInput
       if (prev.length <= 2) return prev
       return prev.filter((_, i) => i !== index)
     })
+    setBookModes(prev => prev.filter((_, i) => i !== index))
   }, [])
 
   const handlePaste = useCallback((index: number, e: React.ClipboardEvent) => {
@@ -130,14 +145,21 @@ export default function SourceInput({ onCross, isLoading, prefill }: SourceInput
   }, [updateInput])
 
   const handleCross = useCallback(() => {
-    const validInputs = inputs.map(i => i.trim()).filter(i => i.length > 0)
+    const validInputs = inputs
+      .map((input, i) => {
+        const trimmed = input.trim()
+        if (!trimmed) return ''
+        if (bookModes[i]) return `livre:${trimmed}`
+        return trimmed
+      })
+      .filter(i => i.length > 0)
     if (validInputs.length < 1) {
       setError(t('input.error', lang))
       return
     }
     setError(null)
     onCross(validInputs, contexte)
-  }, [inputs, contexte, onCross])
+  }, [inputs, bookModes, contexte, onCross])
 
   const contexteChoisi = CONTEXTES.find((c) => c.value === contexte)!
   const nonEmptyCount = inputs.filter(i => i.trim().length > 0).length
@@ -334,8 +356,9 @@ export default function SourceInput({ onCross, isLoading, prefill }: SourceInput
       <div className="flex flex-col gap-2 mb-3">
         {inputs.map((input, i) => {
           const trimmed = input.trim()
+          const isBook = bookModes[i] ?? false
           const detected = trimmed ? detectInputMode(trimmed) : null
-          const isUrl = detected?.mode === 'url'
+          const isUrl = !isBook && detected?.mode === 'url'
           const urlMeta = isUrl ? detectUrlMeta(trimmed) : null
           const isValid = trimmed.length > 0
 
@@ -345,16 +368,14 @@ export default function SourceInput({ onCross, isLoading, prefill }: SourceInput
               <div
                 className="flex-shrink-0 w-7 h-7 mt-1 rounded-full flex items-center justify-center text-xs"
                 style={{
-                  background: isValid ? 'rgba(201,168,76,0.06)' : 'rgba(255,255,255,0.025)',
-                  color: isValid ? (urlMeta?.color ?? getModeColor(detected?.mode ?? 'keyword')) : '#2a2a2a',
-                  border: `1px solid ${isValid ? 'rgba(201,168,76,0.2)' : 'rgba(255,255,255,0.047)'}`,
+                  background: isBook ? 'rgba(122,171,181,0.08)' : isValid ? 'rgba(201,168,76,0.06)' : 'rgba(255,255,255,0.025)',
+                  color: isBook ? '#7AABB5' : isValid ? (urlMeta?.color ?? getModeColor(detected?.mode ?? 'keyword')) : '#2a2a2a',
+                  border: `1px solid ${isBook ? 'rgba(122,171,181,0.25)' : isValid ? 'rgba(201,168,76,0.2)' : 'rgba(255,255,255,0.047)'}`,
                   fontSize: '0.65rem',
                   transition: 'all 200ms ease',
                 }}
               >
-                {detected
-                  ? (isUrl ? urlMeta!.icon : getModeIcon(detected.mode))
-                  : String(i + 1)}
+                {isBook ? '📖' : detected ? (isUrl ? urlMeta!.icon : getModeIcon(detected.mode)) : String(i + 1)}
               </div>
 
               {/* Input */}
@@ -363,13 +384,15 @@ export default function SourceInput({ onCross, isLoading, prefill }: SourceInput
                 value={input}
                 onChange={(e) => updateInput(i, e.target.value)}
                 onPaste={(e) => handlePaste(i, e)}
-                rows={detected?.mode === 'free_text' ? 4 : 1}
+                rows={!isBook && detected?.mode === 'free_text' ? 4 : 1}
                 placeholder={
-                  i === 0
-                    ? 'URL, mot-clé, "A × B", ou témoignage direct (>50 mots)…'
+                  isBook
+                    ? t('input.book.placeholder', lang)
+                    : i === 0
+                    ? t('input.placeholder1', lang)
                     : i === 1
-                    ? 'Deuxième source — le vécu à croiser'
-                    : `Source ${i + 1}`
+                    ? t('input.placeholder2', lang)
+                    : `${t('input.sources', lang)} ${i + 1}`
                 }
                 disabled={isLoading}
                 style={{
@@ -401,9 +424,24 @@ export default function SourceInput({ onCross, isLoading, prefill }: SourceInput
                 }}
               />
 
-              {/* Type label */}
-              {isValid && detected && (
-                <div className="flex-shrink-0 flex flex-col items-end gap-1 mt-1">
+              {/* Book toggle + type label */}
+              <div className="flex-shrink-0 flex flex-col items-end gap-1 mt-1">
+                <button
+                  onClick={() => toggleBookMode(i)}
+                  title={t('input.mode.book', lang)}
+                  style={{
+                    fontSize: '10px', padding: '3px 7px', borderRadius: '4px',
+                    background: isBook ? 'rgba(122,171,181,0.12)' : 'transparent',
+                    border: `1px solid ${isBook ? 'rgba(122,171,181,0.35)' : 'rgba(255,255,255,0.06)'}`,
+                    color: isBook ? '#7AABB5' : '#333',
+                    cursor: 'pointer',
+                    transition: 'all 200ms ease',
+                    whiteSpace: 'nowrap' as const,
+                  }}
+                >
+                  {t('input.book.toggle', lang)}
+                </button>
+                {!isBook && isValid && detected && (
                   <span
                     className="hidden sm:block whitespace-nowrap"
                     style={{
@@ -415,16 +453,16 @@ export default function SourceInput({ onCross, isLoading, prefill }: SourceInput
                   >
                     {isUrl ? urlMeta!.label : getLangModeLabel(detected.mode)}
                   </span>
-                  {detected.mode === 'crossing' && detected.crossingTerms && (
-                    <span
-                      className="hidden sm:block whitespace-nowrap"
-                      style={{ color: '#2a2a2a', fontSize: '10px' }}
-                    >
-                      {detected.crossingTerms[0]} × {detected.crossingTerms[1]}
-                    </span>
-                  )}
-                </div>
-              )}
+                )}
+                {!isBook && detected?.mode === 'crossing' && detected.crossingTerms && (
+                  <span
+                    className="hidden sm:block whitespace-nowrap"
+                    style={{ color: '#2a2a2a', fontSize: '10px' }}
+                  >
+                    {detected.crossingTerms[0]} × {detected.crossingTerms[1]}
+                  </span>
+                )}
+              </div>
 
               {/* Remove button */}
               {inputs.length > 2 && !isLoading && (
@@ -559,6 +597,37 @@ export default function SourceInput({ onCross, isLoading, prefill }: SourceInput
       >
         {isLoading ? t('input.loading', lang) : nonEmptyCount === 1 ? t('input.surprise', lang) : t('input.cross', lang)}
       </button>
+
+      {/* ── Language register pills ── */}
+      {onRegisterChange && (
+        <div className="flex items-center justify-center gap-2 mt-4">
+          {([
+            { value: 'casual',   label: t('register.casual', lang) },
+            { value: 'standard', label: t('register.standard', lang) },
+            { value: 'indepth',  label: t('register.indepth', lang) },
+          ] as const).map(({ value, label }) => (
+            <button
+              key={value}
+              onClick={() => onRegisterChange(value)}
+              style={{
+                padding: '5px 14px',
+                borderRadius: '20px',
+                fontSize: '11px',
+                border: `1px solid ${register === value ? 'rgba(201,168,76,0.5)' : 'rgba(255,255,255,0.08)'}`,
+                background: register === value ? 'rgba(201,168,76,0.08)' : 'transparent',
+                color: register === value ? '#C9A84C' : '#333',
+                cursor: 'pointer',
+                transition: 'all 200ms ease',
+                letterSpacing: '0.04em',
+              }}
+              onMouseEnter={e => { if (register !== value) { e.currentTarget.style.color = '#666'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.18)' } }}
+              onMouseLeave={e => { if (register !== value) { e.currentTarget.style.color = '#333'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)' } }}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* ── Status ── */}
       <p style={{ textAlign: 'center', fontSize: '11px', color: '#222', marginTop: '10px' }}>

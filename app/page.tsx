@@ -59,6 +59,15 @@ export default function TELPage() {
   // ── Language ────────────────────────────────────────────────────────────────
   const [lang, , langDetected] = useLanguage()
 
+  // ── Language register (from localStorage) ──────────────────────────────────
+  const [register, setRegister] = useState<string>('standard')
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem('tel:register')
+      if (stored === 'casual' || stored === 'standard' || stored === 'indepth') setRegister(stored)
+    } catch { /* ok */ }
+  }, [])
+
   const LOADING_MESSAGES = [
     t('loading.extraction', lang),
     t('loading.cultural', lang),
@@ -304,7 +313,7 @@ export default function TELPage() {
         const res = await fetch('/api/cross', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ inputs, contexte }),
+          body: JSON.stringify({ inputs, contexte, lang, register }),
         })
         if (!res.ok) {
           const contentType = res.headers.get('content-type') || ''
@@ -874,7 +883,7 @@ export default function TELPage() {
               <section ref={formRef} className="tel-animate px-6 pb-20 md:px-10" style={{ maxWidth: '680px', margin: '0 auto' }}>
                 <div style={{ background: '#111113', border: '1px solid rgba(255,255,255,0.047)', borderRadius: '12px', padding: '32px' }}>
                   <p className="tel-label text-center mb-6">{t('action.newcrossing', lang)}</p>
-                  <SourceInput onCross={handleCross} isLoading={false} prefill={prefillSources} />
+                  <SourceInput onCross={handleCross} isLoading={false} prefill={prefillSources} register={register} onRegisterChange={(r) => { setRegister(r); try { localStorage.setItem('tel:register', r) } catch { /* ok */ } }} />
                 </div>
                 {sessionHistory.length > 0 && (
                   <div className="text-center mt-4">
@@ -981,6 +990,7 @@ export default function TELPage() {
                   resonances={currentResonances}
                   onCombler={handleCombler}
                   onMetaCroisement={handleMetaCroisement}
+                  lang={lang}
                 />
               </div>
             </div>

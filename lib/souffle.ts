@@ -24,6 +24,8 @@ import {
   buildNiveau2CrossingPrompt,
   buildNiveau3RevelationPrompt,
   buildDirectCrossingPrompt,
+  buildResonancesContextInstruction,
+  type ResonanceContext,
 } from './prompt'
 
 // ─── CONFIG ───────────────────────────────────────────────────────────────────
@@ -253,7 +255,10 @@ async function croiserNarratives(
   decision: SouffleDecision,
   statut: SouffleStatut,
   niveauxUtilises: Set<SouffleNiveau>,
-  callbacks?: SouffleCallbacks
+  callbacks?: SouffleCallbacks,
+  lang?: string,
+  register?: string,
+  resonances?: ResonanceContext[]
 ): Promise<LogosInsightResponse> {
   // Detect if all sources are from direct crossing mode
   const isDirectCrossing = sources.every(s => s.inputMode === 'crossing')
@@ -261,24 +266,26 @@ async function croiserNarratives(
   let prompt: string
   let ordre: Array<{ niveau: SouffleNiveau; fn: AppelFn }>
 
+  const resonancesCtx = buildResonancesContextInstruction(resonances ?? [])
+
   if (isDirectCrossing && sources.length === 2) {
     // Mode D: Direct crossing — use dedicated prompt
     const termA = sources[0].title.replace('Concept : "', '').replace('"', '')
     const termB = sources[1].title.replace('Concept : "', '').replace('"', '')
-    prompt = buildDirectCrossingPrompt(termA, termB)
+    prompt = buildDirectCrossingPrompt(termA, termB, lang, register) + resonancesCtx
     // For direct crossing, prefer N2 or N3 (more knowledgeable)
     ordre = []
     if (statut.niveau2) ordre.push({ niveau: 2, fn: appelNiveau2 })
     if (statut.niveau3) ordre.push({ niveau: 3, fn: appelNiveau3 })
     if (statut.niveau1) ordre.push({ niveau: 1, fn: appelNiveau1 })
   } else if (decision.niveauPrincipal === 1) {
-    prompt = buildNiveau1CrossingPrompt(sources)
+    prompt = buildNiveau1CrossingPrompt(sources, lang, register) + resonancesCtx
     ordre = []
     if (statut.niveau1) ordre.push({ niveau: 1, fn: appelNiveau1 })
     if (statut.niveau2) ordre.push({ niveau: 2, fn: appelNiveau2 })
     if (statut.niveau3) ordre.push({ niveau: 3, fn: appelNiveau3 })
   } else {
-    prompt = buildNiveau2CrossingPrompt(sources)
+    prompt = buildNiveau2CrossingPrompt(sources, lang, register) + resonancesCtx
     ordre = []
     if (statut.niveau2) ordre.push({ niveau: 2, fn: appelNiveau2 })
     if (statut.niveau3) ordre.push({ niveau: 3, fn: appelNiveau3 })
@@ -319,12 +326,14 @@ async function croiserNarratives(
 async function approfondirRevelation(
   sources: ExtractedSource[],
   insight: LogosInsightResponse,
-  niveauxUtilises: Set<SouffleNiveau>
+  niveauxUtilises: Set<SouffleNiveau>,
+  lang?: string,
+  register?: string
 ): Promise<LogosInsightResponse> {
   if (!process.env.ANTHROPIC_API_KEY) return insight
 
   try {
-    const prompt = buildNiveau3RevelationPrompt(sources, insight)
+    const prompt = buildNiveau3RevelationPrompt(sources, insight, lang, register)
     const texte = await appelNiveau3(prompt)
     niveauxUtilises.add(3)
 
@@ -355,7 +364,10 @@ export interface SouffleResult {
 export async function SOUFFLE(
   sources: ExtractedSource[],
   contexte: SouffleContexte = 'exploration',
-  callbacks?: SouffleCallbacks
+  callbacks?: SouffleCallbacks,
+  lang?: string,
+  register?: string,
+  resonances?: ResonanceContext[]
 ): Promise<SouffleResult> {
   // 1. Vérifier quels niveaux sont disponibles
   const statut = await getSouffleStatut()
@@ -385,12 +397,15 @@ export async function SOUFFLE(
     decision,
     statut,
     niveauxUtilisesSet,
-    callbacks
+    callbacks,
+    lang,
+    register,
+    resonances
   )
 
   // 5. Phase 3 — Révélation (si contexte premium et Claude disponible)
   if (decision.niveaux.includes(3)) {
-    insight = await approfondirRevelation(sourcesEnrichies, insight, niveauxUtilisesSet)
+    insight = await approfondirRevelation(sourcesEnrichies, insight, niveauxUtilisesSet, lang, register)
   }
 
   return {

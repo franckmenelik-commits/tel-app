@@ -101,6 +101,10 @@ export async function POST(request: Request) {
       ? body.contexte
       : 'exploration'
 
+  // ── Language + Register ──────────────────────────────────────────────────
+  const lang: string | undefined = typeof body.lang === 'string' ? body.lang : undefined
+  const register: string | undefined = typeof body.register === 'string' ? body.register : undefined
+
   // ── SSE Stream ───────────────────────────────────────────────────────────
   const stream = new ReadableStream({
     async start(controller) {
@@ -145,7 +149,7 @@ export async function POST(request: Request) {
       }
 
       try {
-        const result = await crossNarratives(inputs, contexte, callbacks)
+        const result = await crossNarratives(inputs, contexte, callbacks, lang, register)
         send({ type: 'complete', data: result })
       } catch (err) {
         const raw = err instanceof Error ? err.message : 'Erreur inconnue'

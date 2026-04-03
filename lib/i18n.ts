@@ -56,6 +56,13 @@ export const TRANSLATIONS = {
   'source.testimony': { fr: 'Témoignage',   en: 'Testimony' },
   'source.crossing':  { fr: 'Croisement ×', en: 'Crossing ×' },
 
+  // ── Book / Œuvre input mode ──────────────────────────────────────────────────
+  'input.mode.book':           { fr: 'Livre / Œuvre',                  en: 'Book / Work' },
+  'input.book.placeholder':    { fr: 'Titre du livre, film, série…',   en: 'Title of book, film, series…' },
+  'input.book.toggle':         { fr: '📖 Livre',                       en: '📖 Book' },
+  'hint.mode.book':            { fr: 'Livre / Œuvre',                  en: 'Book / Work' },
+  'hint.book.example':         { fr: 'Les Misérables, 1984…',          en: 'The Great Gatsby, 1984…' },
+
   // ── Mode Croise-moi ──────────────────────────────────────────────────────────
   'mode.resonate':       { fr: 'Mon vécu',   en: 'My experience' },
   'mode.resonate.label': { fr: 'VÉCU PERSONNEL', en: 'PERSONAL EXPERIENCE' },
@@ -96,10 +103,6 @@ export const TRANSLATIONS = {
   'how.step2.desc':  { fr: "Contextes culturels, arcs narratifs, angles morts géographiques. Trois niveaux d'analyse.", en: 'Cultural contexts, narrative arcs, geographic blind spots. Three levels of analysis.' },
   'how.step3.title': { fr: 'Un insight émerge', en: 'An insight emerges' },
   'how.step3.desc':  { fr: "Convergences, divergences irréductibles — et la question que personne n'avait encore osé formuler.", en: "Convergences, irreducible divergences — and the question no one had yet dared to ask." },
-
-  // ── Card ─────────────────────────────────────────────────────────────────────
-  'card.expand':   { fr: 'Voir l\'analyse complète →', en: 'See full analysis →' },
-  'card.collapse': { fr: '← Réduire', en: '← Collapse' },
 
   // ── Actions ──────────────────────────────────────────────────────────────────
   'action.share':       { fr: 'Partager — copier le lien',  en: 'Share — copy link' },
@@ -246,6 +249,82 @@ export const TRANSLATIONS = {
   'init.loading.3':   { fr: "Identification des perspectives manquantes...",   en: 'Identifying missing perspectives...' },
   'init.loading.4':   { fr: 'Construction des arguments par audience...',      en: 'Building arguments by audience...' },
   'init.loading.5':   { fr: "Formulation du plan d'action...",                 en: 'Formulating the action plan...' },
+
+  // ── InsightCard section labels ───────────────────────────────────────────────
+  'card.logos':               { fr: 'LOGOS · Insight Card',                     en: 'LOGOS · Insight Card' },
+  'card.question.label':      { fr: "Question que personne n'a encore posée",   en: "The question no one has asked yet" },
+  'card.expand':              { fr: "Voir l'analyse complète →",                 en: 'See full analysis →' },
+  'card.collapse':            { fr: '← Réduire',                                en: '← Collapse' },
+  'card.section.sources':     { fr: 'Sources croisées',                         en: 'Crossed sources' },
+  'card.section.pattern':     { fr: 'Le pattern révélé',                        en: 'The revealed pattern' },
+  'card.section.convergences':{ fr: 'Zones de convergence',                     en: 'Convergence zones' },
+  'card.section.divergences': { fr: 'Zones de divergence irréductible',         en: 'Irreducible divergence zones' },
+  'card.irreconcilable':      { fr: 'Ce que TEL refuse de réconcilier',         en: 'What TEL refuses to reconcile' },
+  'card.section.confidence':  { fr: 'Niveau de confiance global',               en: 'Global confidence level' },
+  'card.confidence.label':    { fr: 'Confiance du croisement',                  en: 'Crossing confidence' },
+  'card.section.geo':         { fr: 'Représentativité géographique',            en: 'Geographic representativity' },
+  'card.section.unspeakable': { fr: "L'indicible",                              en: 'The unspeakable' },
+  'card.section.unspeakable.sub': { fr: 'Ce que ce croisement ne peut pas capturer', en: 'What this crossing cannot capture' },
+  'card.section.blindspots':  { fr: 'Angles morts détectés',                    en: 'Detected blind spots' },
+  'card.section.balance':     { fr: 'Équilibre',                                en: 'Balance' },
+  'card.section.missing':     { fr: 'Perspectives manquantes',                  en: 'Missing perspectives' },
+  'card.section.avoided':     { fr: 'Questions évitées par les sources',        en: 'Questions avoided by sources' },
+  'card.fill.blindspots':     { fr: '↗ Combler ces angles morts',               en: '↗ Fill these blind spots' },
+  'card.section.resonances':  { fr: 'Résonances de session',                    en: 'Session resonances' },
+  'card.meta.crossing':       { fr: '∞ Créer un méta-croisement',               en: '∞ Create a meta-crossing' },
+  'card.section.actionables': { fr: 'Ce que ça permet',                         en: 'What this enables' },
+  'card.individual':          { fr: 'Individu',                                 en: 'Individual' },
+  'card.researcher':          { fr: 'Chercheur · Praticien',                    en: 'Researcher · Practitioner' },
+  'card.institution':         { fr: 'Institution · Collectif',                  en: 'Institution · Collective' },
+  'card.public.disclaimer':   {
+    fr: "Cette Insight Card est une version publique. Les versions institutionnelles incluent scénarios d'action et recommandations ciblées.",
+    en: 'This Insight Card is a public version. Institutional versions include action scenarios and targeted recommendations.',
+  },
+  'card.section.use':         { fr: 'Utiliser cet insight',                     en: 'Use this insight' },
+  'card.use.script':          { fr: '▶ Script vidéo',                           en: '▶ Video script' },
+  'card.use.present':         { fr: '⊞ Présenter',                              en: '⊞ Present' },
+  'card.use.gamma':           { fr: 'Gamma',                                    en: 'Gamma' },
+  'card.use.pdf':             { fr: '▣ PDF',                                    en: '▣ PDF' },
+  'card.use.deepen':          { fr: '↗ Approfondir',                            en: '↗ Deepen' },
+  'card.use.counter':         { fr: '⁻ Et si faux ?',                           en: '⁻ What if wrong?' },
+  'card.use.counter.title':   { fr: 'Et si c\'était faux ?',                    en: 'What if this is wrong?' },
+  'card.use.digdeeper':       { fr: 'Creuser un angle',                         en: 'Dig deeper' },
+  'card.counter.label':       { fr: 'Et si c\'était faux ?',                    en: 'What if this is wrong?' },
+  'card.share.copied':        { fr: 'Lien copié',                               en: 'Link copied' },
+  'card.share.label':         { fr: 'Partager — copier le lien',                en: 'Share — copy link' },
+  'card.feedback.thanks':     { fr: 'Merci — votre retour contribue à l\'intelligence de TEL.', en: 'Thank you — your feedback contributes to TEL\'s intelligence.' },
+  'card.close':               { fr: 'Fermer',                                   en: 'Close' },
+  'card.script.label':        { fr: 'Script vidéo',                             en: 'Video script' },
+  'card.script.copy':         { fr: 'Copier',                                   en: 'Copy' },
+  'card.script.copied':       { fr: 'Copié',                                    en: 'Copied' },
+  'card.debate.label':        { fr: 'Script de confrontation',                  en: 'Confrontation script' },
+  'card.debate.copy':         { fr: 'Copier',                                   en: 'Copy' },
+  'card.debate.copied':       { fr: 'Copié',                                    en: 'Copied' },
+  'card.counter.script':      { fr: '▶ Script',                                 en: '▶ Script' },
+  'card.counter.present':     { fr: '⊞ Présenter',                              en: '⊞ Present' },
+  'card.counter.share':       { fr: '⊕ Partager',                              en: '⊕ Share' },
+  'card.counter.debate':      { fr: 'Générer le script de confrontation →',     en: 'Generate confrontation script →' },
+  'card.generate.debate':     { fr: 'Générer le script de confrontation →',     en: 'Generate confrontation script →' },
+  'card.gamma.copied':        { fr: '✓ Copié pour Gamma',                       en: '✓ Copied for Gamma' },
+  'card.source.type.testimony': { fr: 'Témoignage',                            en: 'Testimony' },
+  'card.source.type.crossing':  { fr: 'Croisement ×',                          en: 'Crossing ×' },
+  'card.angle.geo':           { fr: 'Géographique',                             en: 'Geographic' },
+  'card.angle.temporal':      { fr: 'Temporel',                                 en: 'Temporal' },
+  'card.angle.gender':        { fr: 'Posture / Genre',                          en: 'Posture / Gender' },
+  'card.angle.silence':       { fr: 'Silence',                                  en: 'Silence' },
+
+  // ── Public voices (YouTube comments) ────────────────────────────────────────
+  'card.section.voices':      { fr: 'VOIX DU PUBLIC',                          en: 'PUBLIC VOICES' },
+  'card.voices.desc':         { fr: 'Réactions sélectionnées par LOGOS comme résonnant avec ce pattern', en: 'Reactions selected by LOGOS as resonating with this pattern' },
+
+  // ── Resonance memory indicator ────────────────────────────────────────────────
+  'card.resonances.found':    { fr: 'TEL a trouvé',                            en: 'TEL found' },
+  'card.resonances.in.memory': { fr: 'résonance(s) dans sa mémoire culturelle', en: 'resonance(s) in its cultural memory' },
+
+  // ── Language register ────────────────────────────────────────────────────────
+  'register.casual':    { fr: 'Accessible', en: 'Casual' },
+  'register.standard':  { fr: 'Standard',   en: 'Standard' },
+  'register.indepth':   { fr: 'Approfondi', en: 'In-depth' },
 
   // ── SourceInput tabs + resonate ────────────────────────────────────────────
   'input.tab.cross':        { fr: 'Croiser des sources',              en: 'Cross sources' },

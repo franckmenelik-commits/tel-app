@@ -3,49 +3,19 @@
 import { useEffect, useState } from 'react'
 import ConfidenceBar from './ConfidenceBar'
 import type { InsightCard as InsightCardType, Resonance } from '@/lib/types'
+import { t, type Lang } from '@/lib/i18n'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const SOURCE_TYPE_LABELS: Record<string, string> = {
+const SOURCE_TYPE_STATIC: Record<string, string> = {
   youtube: 'YouTube',
   wikipedia: 'Wikipedia',
   instagram: 'Instagram',
   article: 'Article',
   podcast: 'Podcast',
   book: 'Document',
-  free_text: 'Témoignage',
-  crossing: 'Croisement ×',
   unknown: 'Source',
 }
-
-const ANGLE_TYPE_LABELS: Record<string, string> = {
-  geographique: 'Géographique',
-  temporel: 'Temporel',
-  genre_posture: 'Posture / Genre',
-  silence: 'Silence',
-}
-
-const SCRIPT_LOADING_MSGS = [
-  'Structuration de la narration…',
-  "Écriture de l'accroche…",
-  'Séquençage des plans visuels…',
-  'Calibrage du rythme…',
-  'Formulation de la question ouverte…',
-]
-
-const DEBATE_LOADING_MSGS = [
-  "Construction de l'acte 1…",
-  'Inversion de la perspective…',
-  'Mise en tension…',
-  "Écriture de la conclusion ouverte…",
-]
-
-const COUNTER_LOADING_MSGS = [
-  'Recherche de perspectives contradictoires…',
-  'Analyse des failles du pattern…',
-  'Construction du contre-argument…',
-  'Évaluation de la robustesse…',
-]
 
 // ─── Short-ID share helpers ────────────────────────────────────────────────────
 
@@ -119,6 +89,7 @@ interface InsightCardProps {
   resonances?: Resonance[]
   onCombler?: (inputs: string[]) => void
   onMetaCroisement?: (ids: string[]) => void
+  lang?: Lang
 }
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
@@ -264,7 +235,34 @@ export default function InsightCard({
   resonances = [],
   onCombler,
   onMetaCroisement,
+  lang = 'fr',
 }: InsightCardProps) {
+  const L = lang  // short alias
+
+  const SOURCE_TYPE_LABELS: Record<string, string> = {
+    ...SOURCE_TYPE_STATIC,
+    free_text: t('card.source.type.testimony', L),
+    crossing: t('card.source.type.crossing', L),
+  }
+
+  const ANGLE_TYPE_LABELS: Record<string, string> = {
+    geographique: t('card.angle.geo', L),
+    temporel: t('card.angle.temporal', L),
+    genre_posture: t('card.angle.gender', L),
+    silence: t('card.angle.silence', L),
+  }
+
+  const SCRIPT_LOADING_MSGS = lang === 'en'
+    ? ['Structuring the narrative…', 'Writing the hook…', 'Sequencing visual shots…', 'Calibrating the rhythm…', 'Formulating the open question…']
+    : ['Structuration de la narration…', "Écriture de l'accroche…", 'Séquençage des plans visuels…', 'Calibrage du rythme…', 'Formulation de la question ouverte…']
+
+  const DEBATE_LOADING_MSGS = lang === 'en'
+    ? ['Building act 1…', 'Inverting the perspective…', 'Building tension…', 'Writing the open conclusion…']
+    : ["Construction de l'acte 1…", 'Inversion de la perspective…', 'Mise en tension…', "Écriture de la conclusion ouverte…"]
+
+  const COUNTER_LOADING_MSGS = lang === 'en'
+    ? ['Searching contradictory perspectives…', 'Analysing pattern flaws…', 'Building the counter-argument…', 'Evaluating robustness…']
+    : ['Recherche de perspectives contradictoires…', 'Analyse des failles du pattern…', 'Construction du contre-argument…', 'Évaluation de la robustesse…']
   const [visibleSections, setVisibleSections] = useState<number[]>([])
 
   const [isGeneratingScript, setIsGeneratingScript] = useState(false)
@@ -341,7 +339,7 @@ export default function InsightCard({
   }, [isGeneratingCounter])
 
   const date = card.createdAt instanceof Date ? card.createdAt : new Date(card.createdAt)
-  const formattedDate = date.toLocaleDateString('fr-FR', {
+  const formattedDate = date.toLocaleDateString(L === 'en' ? 'en-US' : 'fr-FR', {
     day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit',
   })
 
@@ -350,6 +348,8 @@ export default function InsightCard({
   const hasAnglesMorts = anglesMorts && anglesMorts.anglesDetectes.length > 0
   const hasResonances = resonances.length > 0
   const hasActionables = !!card.actionables
+  const hasPublicVoices = !!card.publicVoices && card.publicVoices.length > 0
+  const hasResonanceMemory = !!card.resonanceCount && card.resonanceCount > 0
 
   // ── Action handlers ────────────────────────────────────────────────────────
 
@@ -410,7 +410,9 @@ export default function InsightCard({
     convergenceZones: [],
     divergenceZones: [],
     actionables: undefined,
-    questionNoOneHasAsked: "Et si ce croisement était fondamentalement biaisé ?",
+    questionNoOneHasAsked: L === 'en'
+      ? "What if this crossing is fundamentally biased?"
+      : "Et si ce croisement était fondamentalement biaisé ?",
   })
 
   const handleCounterScript = async () => {
@@ -514,7 +516,7 @@ export default function InsightCard({
         >
           <div className="flex-1 pr-4">
             <p style={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.15em', color: TEXT_PRIMARY, opacity: 0.4, marginBottom: '8px' }}>
-              LOGOS · Insight Card
+              {t('card.logos', L)}
             </p>
             <h2 className="tel-italic" style={{ fontSize: '18px', lineHeight: 1.35, color: '#ffffff' }}>
               {card.theme}
@@ -526,7 +528,7 @@ export default function InsightCard({
             style={{ border: `1px solid ${BORDER}`, color: '#444', background: 'transparent', fontSize: '1rem', cursor: 'pointer', transition: 'all 200ms ease' }}
             onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.12)'; e.currentTarget.style.color = TEXT_MUTED }}
             onMouseLeave={(e) => { e.currentTarget.style.borderColor = BORDER; e.currentTarget.style.color = '#444' }}
-            title="Fermer"
+            title={t('card.close', L)}
           >×</button>
         </div>
 
@@ -535,7 +537,7 @@ export default function InsightCard({
 
           {/* SOURCES CROISÉES */}
           <Section index={0} visible={isVisible(0)}>
-            <SectionLabel>Sources croisées</SectionLabel>
+            <SectionLabel>{t('card.section.sources', L)}</SectionLabel>
             <div className="flex flex-col gap-2">
               {(card.sources ?? []).map((source, i) => (
                 <div key={i} className="flex items-start gap-3 p-3 rounded-lg" style={{ background: 'rgba(255,255,255,0.02)', border: `1px solid ${BORDER}` }}>
@@ -559,23 +561,46 @@ export default function InsightCard({
 
           <Divider />
 
+          {/* RESONANCE MEMORY INDICATOR */}
+          {hasResonanceMemory && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px', padding: '8px 14px', borderRadius: '6px', background: 'rgba(100,100,200,0.04)', border: '1px solid rgba(100,100,200,0.1)' }}>
+              <span style={{ fontSize: '12px', color: '#7777BB' }}>◈</span>
+              <p style={{ fontSize: '11px', color: '#555', letterSpacing: '0.04em' }}>
+                {t('card.resonances.found', L)} <span style={{ color: '#7777BB', fontWeight: 500 }}>{card.resonanceCount}</span> {t('card.resonances.in.memory', L)}
+              </p>
+            </div>
+          )}
+
           {/* LA QUESTION — affichée en premier, en or, grande */}
           <Section index={1} visible={isVisible(1)}>
-            <div style={{ padding: '20px', borderRadius: '8px', background: 'rgba(201,168,76,0.04)', border: '1px solid rgba(201,168,76,0.15)', marginBottom: '8px' }}>
-              <p style={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.15em', color: GOLD, opacity: 0.7, marginBottom: '12px', fontFamily: '-apple-system, sans-serif' }}>
-                Question que personne n&apos;a encore posée
+            <div style={{ padding: '32px 24px', borderRadius: '8px', background: 'rgba(201,168,76,0.04)', border: '1px solid rgba(201,168,76,0.15)', marginBottom: '16px', textAlign: 'center' }}>
+              <p style={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.15em', color: GOLD, opacity: 0.7, marginBottom: '16px', fontFamily: '-apple-system, sans-serif' }}>
+                {t('card.question.label', L)}
               </p>
-              <p className="tel-italic" style={{ fontSize: '20px', lineHeight: 1.7, color: GOLD, fontFamily: 'Georgia, serif' }}>
+              <p className="tel-italic" style={{ fontSize: 'clamp(20px, 3vw, 24px)', lineHeight: 1.65, color: GOLD, fontFamily: 'Georgia, serif' }}>
                 {card.questionNoOneHasAsked}
               </p>
             </div>
+
+            {/* Condensed pattern preview — visible when NOT expanded */}
+            {!expanded && card.revealedPattern && (
+              <p style={{ fontSize: '15px', lineHeight: 1.75, color: 'rgba(255,255,255,0.55)', fontFamily: 'system-ui, sans-serif', marginBottom: '16px' }}>
+                {(() => {
+                  const sentences = card.revealedPattern.split(/(?<=[.!?])\s+/)
+                  const preview = sentences.slice(0, 3).join(' ')
+                  const words = preview.split(/\s+/)
+                  return words.length > 150 ? words.slice(0, 150).join(' ') + '…' : (sentences.length > 3 ? preview + '…' : preview)
+                })()}
+              </p>
+            )}
+
             <button
               onClick={() => setExpanded(v => !v)}
-              style={{ marginTop: '12px', background: 'none', border: 'none', cursor: 'pointer', color: '#555', fontSize: '12px', letterSpacing: '0.06em', padding: 0, transition: 'color 200ms ease' }}
-              onMouseEnter={e => { e.currentTarget.style.color = '#888' }}
-              onMouseLeave={e => { e.currentTarget.style.color = '#555' }}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.35)', fontSize: '12px', letterSpacing: '0.06em', padding: 0, transition: 'color 200ms ease' }}
+              onMouseEnter={e => { e.currentTarget.style.color = 'rgba(255,255,255,0.6)' }}
+              onMouseLeave={e => { e.currentTarget.style.color = 'rgba(255,255,255,0.35)' }}
             >
-              {expanded ? '← Réduire' : 'Voir l\'analyse complète →'}
+              {expanded ? t('card.collapse', L) : t('card.expand', L)}
             </button>
           </Section>
 
@@ -585,7 +610,7 @@ export default function InsightCard({
 
           {/* LE PATTERN RÉVÉLÉ */}
           <Section index={1} visible={true}>
-            <SectionLabel>Le pattern révélé</SectionLabel>
+            <SectionLabel>{t('card.section.pattern', L)}</SectionLabel>
             <p className="tel-serif" style={{ fontSize: '15px', lineHeight: 1.75, color: TEXT_PRIMARY, whiteSpace: 'pre-wrap' }}>
               {card.revealedPattern}
             </p>
@@ -595,7 +620,7 @@ export default function InsightCard({
 
           {/* CONVERGENCES */}
           <Section index={2} visible={isVisible(2)}>
-            <SectionLabel>Zones de convergence</SectionLabel>
+            <SectionLabel>{t('card.section.convergences', L)}</SectionLabel>
             <ul className="flex flex-col gap-2.5">
               {(card.convergenceZones ?? []).map((zone, i) => (
                 <li key={i} className="flex gap-3" style={{ fontSize: '14px', lineHeight: 1.7, color: TEXT_PRIMARY }}>
@@ -610,7 +635,7 @@ export default function InsightCard({
 
           {/* DIVERGENCES */}
           <Section index={3} visible={isVisible(3)}>
-            <SectionLabel>Zones de divergence irréductible</SectionLabel>
+            <SectionLabel>{t('card.section.divergences', L)}</SectionLabel>
             <ul className="flex flex-col gap-2.5">
               {(card.divergenceZones ?? []).map((zone, i) => (
                 <li key={i} className="flex gap-3" style={{ fontSize: '14px', lineHeight: 1.7, color: TEXT_PRIMARY }}>
@@ -632,7 +657,7 @@ export default function InsightCard({
                 }}
               >
                 <p style={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.15em', color: GOLD, opacity: 0.7, marginBottom: '8px' }}>
-                  Ce que TEL refuse de réconcilier
+                  {t('card.irreconcilable', L)}
                 </p>
                 <p className="tel-serif" style={{ fontSize: '14px', lineHeight: 1.75, color: TEXT_PRIMARY }}>
                   {card.irreconcilable}
@@ -645,15 +670,15 @@ export default function InsightCard({
 
           {/* CONFIANCE */}
           <Section index={4} visible={isVisible(4)}>
-            <SectionLabel>Niveau de confiance global</SectionLabel>
-            <ConfidenceBar value={card.globalConfidence} label="Confiance du croisement" showValue={true} size="lg" />
+            <SectionLabel>{t('card.section.confidence', L)}</SectionLabel>
+            <ConfidenceBar value={card.globalConfidence} label={t('card.confidence.label', L)} showValue={true} size="lg" />
           </Section>
 
           <Divider />
 
           {/* GÉO */}
           <Section index={5} visible={isVisible(5)}>
-            <SectionLabel>Représentativité géographique</SectionLabel>
+            <SectionLabel>{t('card.section.geo', L)}</SectionLabel>
             <p className="tel-italic" style={{ fontSize: '14px', lineHeight: 1.75, color: TEXT_MUTED }}>
               {card.geographicRepresentativity}
             </p>
@@ -664,12 +689,12 @@ export default function InsightCard({
           {/* L'INDICIBLE */}
           <Section index={6} visible={isVisible(6)}>
             <div style={{ padding: '20px', borderRadius: '8px', background: 'rgba(255,255,255,0.015)', border: `1px solid ${BORDER}` }}>
-              <SectionLabel>L&apos;indicible</SectionLabel>
+              <SectionLabel>{t('card.section.unspeakable', L)}</SectionLabel>
               <p className="tel-italic" style={{ fontSize: '14px', lineHeight: 1.8, color: TEXT_MUTED }}>
                 &ldquo;{card.theUnspeakable}&rdquo;
               </p>
               <p style={{ fontSize: '11px', marginTop: '10px', color: TEXT_FAINT }}>
-                — Ce que ce croisement ne peut pas capturer
+                — {t('card.section.unspeakable.sub', L)}
               </p>
             </div>
           </Section>
@@ -681,14 +706,14 @@ export default function InsightCard({
               <Section index={8} visible={isVisible(8)}>
                 <div style={{ padding: '20px', borderRadius: '8px', background: 'rgba(139,90,43,0.04)', border: '1px solid rgba(139,90,43,0.18)' }}>
                   <div className="flex items-center justify-between mb-4">
-                    <SectionLabel>Angles morts détectés</SectionLabel>
+                    <SectionLabel>{t('card.section.blindspots', L)}</SectionLabel>
                     <div style={{
                       padding: '3px 10px', borderRadius: '20px', fontSize: '11px',
                       background: anglesMorts!.scoreEquilibre >= 70 ? 'rgba(26,107,60,0.1)' : 'rgba(201,168,76,0.08)',
                       border: `1px solid ${anglesMorts!.scoreEquilibre >= 70 ? 'rgba(26,107,60,0.3)' : 'rgba(201,168,76,0.25)'}`,
                       color: anglesMorts!.scoreEquilibre >= 70 ? '#1A6B3C' : GOLD,
                     }}>
-                      Équilibre {anglesMorts!.scoreEquilibre}%
+                      {t('card.section.balance', L)} {anglesMorts!.scoreEquilibre}%
                     </div>
                   </div>
                   <ul className="flex flex-col gap-3 mb-4">
@@ -708,7 +733,7 @@ export default function InsightCard({
                   </ul>
                   {anglesMorts!.perspectivesManquantes.length > 0 && (
                     <div className="mb-4">
-                      <p style={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.12em', color: TEXT_FAINT, marginBottom: '8px' }}>Perspectives manquantes</p>
+                      <p style={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.12em', color: TEXT_FAINT, marginBottom: '8px' }}>{t('card.section.missing', L)}</p>
                       <div className="flex flex-wrap gap-2">
                         {anglesMorts!.perspectivesManquantes.map((p, i) => (
                           <span key={i} style={{ fontSize: '12px', padding: '3px 10px', borderRadius: '4px', background: 'rgba(255,255,255,0.025)', border: `1px solid ${BORDER}`, color: TEXT_MUTED, fontStyle: 'italic' }}>{p}</span>
@@ -718,7 +743,7 @@ export default function InsightCard({
                   )}
                   {anglesMorts!.questionsEvitees.length > 0 && (
                     <div className="mb-5">
-                      <p style={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.12em', color: TEXT_FAINT, marginBottom: '8px' }}>Questions évitées par les sources</p>
+                      <p style={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.12em', color: TEXT_FAINT, marginBottom: '8px' }}>{t('card.section.avoided', L)}</p>
                       <ul className="flex flex-col gap-1.5">
                         {anglesMorts!.questionsEvitees.map((q, i) => (
                           <li key={i} className="tel-italic" style={{ fontSize: '12px', lineHeight: 1.6, color: TEXT_MUTED }}>· {q}</li>
@@ -737,7 +762,7 @@ export default function InsightCard({
                       onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(139,90,43,0.15)' }}
                       onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(139,90,43,0.08)' }}
                     >
-                      ↗ Combler ces angles morts
+                      {t('card.fill.blindspots', L)}
                     </button>
                   )}
                 </div>
@@ -751,7 +776,7 @@ export default function InsightCard({
               <Divider />
               <Section index={9} visible={isVisible(9)}>
                 <div style={{ padding: '20px', borderRadius: '8px', background: 'rgba(255,255,255,0.015)', border: '1px solid rgba(100,100,200,0.12)' }}>
-                  <SectionLabel>Résonances de session</SectionLabel>
+                  <SectionLabel>{t('card.section.resonances', L)}</SectionLabel>
                   <div className="flex flex-col gap-3">
                     {resonances.map((res, i) => (
                       <div key={i} style={{ padding: '12px', borderRadius: '8px', background: 'rgba(255,255,255,0.015)', border: `1px solid ${BORDER}` }}>
@@ -767,7 +792,7 @@ export default function InsightCard({
                             onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(100,100,200,0.12)'; e.currentTarget.style.color = '#AAAADD' }}
                             onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(100,100,200,0.05)'; e.currentTarget.style.color = '#7777BB' }}
                           >
-                            ∞ Créer un méta-croisement
+                            {t('card.meta.crossing', L)}
                           </button>
                         )}
                       </div>
@@ -784,12 +809,12 @@ export default function InsightCard({
               <Divider />
               <Section index={10} visible={isVisible(10)}>
                 <div style={{ padding: '20px', borderRadius: '8px', background: 'rgba(255,255,255,0.015)', border: '1px solid rgba(80,140,80,0.12)' }}>
-                  <SectionLabel>Ce que ça permet</SectionLabel>
+                  <SectionLabel>{t('card.section.actionables', L)}</SectionLabel>
                   <div className="flex flex-col gap-4">
                     {[
-                      { icon: '◉', label: 'Individu', text: card.actionables!.individu, color: GOLD },
-                      { icon: '◈', label: 'Chercheur · Praticien', text: card.actionables!.chercheur, color: '#7AABB5' },
-                      { icon: '◆', label: 'Institution · Collectif', text: card.actionables!.institution, color: '#9898CC' },
+                      { icon: '◉', label: t('card.individual', L), text: card.actionables!.individu, color: GOLD },
+                      { icon: '◈', label: t('card.researcher', L), text: card.actionables!.chercheur, color: '#7AABB5' },
+                      { icon: '◆', label: t('card.institution', L), text: card.actionables!.institution, color: '#9898CC' },
                     ].map(({ icon, label, text, color }) => (
                       <div key={label} className="flex gap-3">
                         <span style={{ color, flexShrink: 0, marginTop: '3px', fontSize: '10px' }}>{icon}</span>
@@ -801,8 +826,40 @@ export default function InsightCard({
                     ))}
                   </div>
                   <p style={{ fontSize: '11px', color: '#444444', marginTop: '16px', lineHeight: 1.6 }}>
-                    Cette Insight Card est une version publique. Les versions institutionnelles incluent scénarios d&apos;action et recommandations ciblées.
+                    {t('card.public.disclaimer', L)}
                   </p>
+                </div>
+              </Section>
+            </>
+          )}
+
+          {/* VOIX DU PUBLIC */}
+          {hasPublicVoices && (
+            <>
+              <Divider />
+              <Section index={11} visible={isVisible(11)}>
+                <div style={{ padding: '20px', borderRadius: '8px', background: 'rgba(255,255,255,0.015)', border: '1px solid rgba(255,255,255,0.04)' }}>
+                  <SectionLabel>{t('card.section.voices', L)}</SectionLabel>
+                  <p style={{ fontSize: '11px', color: '#333', fontStyle: 'italic', marginBottom: '14px' }}>
+                    {t('card.voices.desc', L)}
+                  </p>
+                  <div className="flex flex-col gap-3">
+                    {card.publicVoices!.slice(0, 2).map((voice, i) => (
+                      <div key={i} style={{ padding: '12px 16px', borderRadius: '6px', background: 'rgba(255,255,255,0.02)', border: `1px solid rgba(255,255,255,0.047)` }}>
+                        <div className="flex items-center justify-between gap-3 mb-2">
+                          <p style={{ fontSize: '10px', color: '#444', letterSpacing: '0.06em' }}>{voice.author || 'Anonymous'}</p>
+                          {voice.likeCount > 0 && (
+                            <span style={{ fontSize: '10px', padding: '2px 8px', borderRadius: '20px', background: 'rgba(255,255,255,0.02)', border: `1px solid rgba(255,255,255,0.06)`, color: '#444' }}>
+                              ♥ {voice.likeCount}
+                            </span>
+                          )}
+                        </div>
+                        <p className="tel-serif" style={{ fontSize: '13px', lineHeight: 1.7, color: '#aaa' }}>
+                          &ldquo;{voice.text.replace(/<[^>]*>/g, '').slice(0, 400)}&rdquo;
+                        </p>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </Section>
             </>
@@ -814,26 +871,26 @@ export default function InsightCard({
           {/* UTILISER CET INSIGHT */}
           <Section index={11} visible={isVisible(11)}>
             <div className="mt-6 no-print" style={{ borderTop: `1px solid ${BORDER}`, paddingTop: '24px' }}>
-              <SectionLabel>Utiliser cet insight</SectionLabel>
+              <SectionLabel>{t('card.section.use', L)}</SectionLabel>
 
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-3">
-                <ActionBtn onClick={() => handleGenerateScript()} loading={isGeneratingScript || counterScriptLoading} title="Générer un script vidéo 3-4 min">
-                  ▶ Script vidéo
+                <ActionBtn onClick={() => handleGenerateScript()} loading={isGeneratingScript || counterScriptLoading} title={L === 'en' ? 'Generate a 3-4 min video script' : 'Générer un script vidéo 3-4 min'}>
+                  {t('card.use.script', L)}
                 </ActionBtn>
-                <ActionBtn onClick={handlePresenter} title="Ouvrir la page Living Insight">
-                  ⊞ Présenter
+                <ActionBtn onClick={handlePresenter} title={L === 'en' ? 'Open the Living Insight page' : 'Ouvrir la page Living Insight'}>
+                  {t('card.use.present', L)}
                 </ActionBtn>
-                <ActionBtn onClick={handleGammaExport} title="Copier le contenu structuré pour Gamma">
-                  {gammaCopied ? '✓ Copié' : 'Gamma'}
+                <ActionBtn onClick={handleGammaExport} title={L === 'en' ? 'Copy structured content for Gamma' : 'Copier le contenu structuré pour Gamma'}>
+                  {gammaCopied ? t('card.gamma.copied', L) : t('card.use.gamma', L)}
                 </ActionBtn>
-                <ActionBtn onClick={() => window.print()} title="Exporter en PDF">
-                  ▣ PDF
+                <ActionBtn onClick={() => window.print()} title={L === 'en' ? 'Export as PDF' : 'Exporter en PDF'}>
+                  {t('card.use.pdf', L)}
                 </ActionBtn>
-                <ActionBtn onClick={handleApprofondir} title="Relancer avec les mêmes sources">
-                  ↗ Approfondir
+                <ActionBtn onClick={handleApprofondir} title={L === 'en' ? 'Relaunch with same sources' : 'Relancer avec les mêmes sources'}>
+                  {t('card.use.deepen', L)}
                 </ActionBtn>
-                <ActionBtn onClick={handleGenerateCounter} loading={isGeneratingCounter} title="Générer le contre-insight">
-                  ⁻ Et si faux ?
+                <ActionBtn onClick={handleGenerateCounter} loading={isGeneratingCounter} title={L === 'en' ? 'Generate the counter-insight' : 'Générer le contre-insight'}>
+                  {t('card.use.counter', L)}
                 </ActionBtn>
               </div>
 
@@ -861,7 +918,7 @@ export default function InsightCard({
                 onMouseEnter={(e) => { if (!shareToast) { e.currentTarget.style.background = 'rgba(255,255,255,0.02)'; e.currentTarget.style.color = TEXT_PRIMARY } }}
                 onMouseLeave={(e) => { if (!shareToast) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = TEXT_MUTED } }}
               >
-                {shareToast ? 'Lien copié' : 'Partager — copier le lien'}
+                {shareToast ? t('card.share.copied', L) : t('card.share.label', L)}
               </button>
 
               {/* Feedback */}
@@ -877,7 +934,7 @@ export default function InsightCard({
                       onMouseEnter={e => { e.currentTarget.style.color = '#1A6B3C'; e.currentTarget.style.borderColor = 'rgba(26,107,60,0.3)' }}
                       onMouseLeave={e => { e.currentTarget.style.color = TEXT_FAINT; e.currentTarget.style.borderColor = BORDER }}
                     >
-                      ◎ Cet insight résonne
+                      ◎ {t('feedback.resonates', L)}
                     </button>
                     <button
                       onClick={() => {
@@ -888,12 +945,12 @@ export default function InsightCard({
                       onMouseEnter={e => { e.currentTarget.style.color = '#8B3A3A'; e.currentTarget.style.borderColor = 'rgba(139,58,58,0.3)' }}
                       onMouseLeave={e => { e.currentTarget.style.color = TEXT_FAINT; e.currentTarget.style.borderColor = BORDER }}
                     >
-                      ◌ Cet insight est inexact
+                      ◌ {t('feedback.inaccurate', L)}
                     </button>
                   </>
                 ) : (
                   <p style={{ flex: 1, textAlign: 'center', fontSize: '11px', color: feedbackState === 'resonates' ? '#1A6B3C' : '#8B5A2B', fontStyle: 'italic', padding: '7px' }}>
-                    Merci — votre retour contribue à l&apos;intelligence de TEL.
+                    {t('card.feedback.thanks', L)}
                   </p>
                 )}
               </div>
@@ -903,7 +960,7 @@ export default function InsightCard({
                 <div className="mt-4 p-4 rounded-lg" style={{ background: 'rgba(80,20,20,0.15)', border: '1px solid rgba(139,58,58,0.2)' }}>
                   <div className="flex items-center justify-between mb-3">
                     <p style={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.15em', color: '#6B3A2A', opacity: 0.8 }}>
-                      Et si c&apos;était faux ?
+                      {t('card.counter.label', L)}
                     </p>
                     {counterInsight && (
                       <button onClick={() => setCounterInsight(null)} style={{ fontSize: '12px', padding: '2px 8px', color: TEXT_FAINT, background: 'transparent', border: `1px solid ${BORDER}`, borderRadius: '4px', cursor: 'pointer' }}>×</button>
@@ -924,17 +981,17 @@ export default function InsightCard({
                       </p>
 
                       <div className="flex flex-wrap gap-2 mb-3">
-                        <SmallBtn onClick={handleCounterScript} title="Script vidéo du contre-insight">
-                          {counterScriptLoading ? '…' : '▶ Script'}
+                        <SmallBtn onClick={handleCounterScript} title={L === 'en' ? 'Counter-insight video script' : 'Script vidéo du contre-insight'}>
+                          {counterScriptLoading ? '…' : t('card.counter.script', L)}
                         </SmallBtn>
-                        <SmallBtn onClick={handleCounterPresenter} title="Présenter le contre-insight">
-                          ⊞ Présenter
+                        <SmallBtn onClick={handleCounterPresenter} title={L === 'en' ? 'Present the counter-insight' : 'Présenter le contre-insight'}>
+                          {t('card.counter.present', L)}
                         </SmallBtn>
                         <SmallBtn onClick={() => window.print()} title="PDF">
                           ▣ PDF
                         </SmallBtn>
-                        <SmallBtn onClick={handleCounterShare} title="Partager le contre-insight">
-                          {counterShareToast ? '✓ Copié' : '⊕ Partager'}
+                        <SmallBtn onClick={handleCounterShare} title={L === 'en' ? 'Share the counter-insight' : 'Partager le contre-insight'}>
+                          {counterShareToast ? '✓ ' + t('card.script.copied', L) : t('card.counter.share', L)}
                         </SmallBtn>
                       </div>
 
@@ -943,9 +1000,9 @@ export default function InsightCard({
                         onClick={handleGenerateDebate}
                         loading={isGeneratingDebate}
                         gold={!!counterInsight && !isGeneratingDebate}
-                        title="Générer le script de confrontation à 2 actes"
+                        title={L === 'en' ? 'Generate 2-act confrontation script' : 'Générer le script de confrontation à 2 actes'}
                       >
-                        Script de confrontation — 2 actes
+                        {t('card.generate.debate', L)}
                       </ActionBtn>
 
                       {isGeneratingDebate && (
@@ -982,13 +1039,13 @@ export default function InsightCard({
         >
           <div className="w-full max-w-2xl rounded-xl flex flex-col" style={{ background: '#111113', border: `1px solid ${BORDER}`, maxHeight: '80vh' }}>
             <div className="flex items-center justify-between p-5 pb-4" style={{ borderBottom: `1px solid ${BORDER}` }}>
-              <p style={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.15em', color: TEXT_PRIMARY, opacity: 0.4 }}>Script vidéo</p>
+              <p style={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.15em', color: TEXT_PRIMARY, opacity: 0.4 }}>{t('card.script.label', L)}</p>
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => handleCopyScript(scriptModal, setScriptCopied)}
                   style={{ fontSize: '12px', padding: '5px 12px', borderRadius: '6px', background: scriptCopied ? 'rgba(26,107,60,0.1)' : 'transparent', border: `1px solid ${scriptCopied ? 'rgba(26,107,60,0.3)' : BORDER}`, color: scriptCopied ? '#1A6B3C' : TEXT_MUTED, cursor: 'pointer', transition: 'all 200ms ease' }}
                 >
-                  {scriptCopied ? '✓ Copié' : 'Copier'}
+                  {scriptCopied ? '✓ ' + t('card.script.copied', L) : t('card.script.copy', L)}
                 </button>
                 <button onClick={() => setScriptModal(null)} style={{ width: '28px', height: '28px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', border: `1px solid ${BORDER}`, color: '#444', background: 'transparent', cursor: 'pointer' }}>×</button>
               </div>
@@ -1011,13 +1068,13 @@ export default function InsightCard({
         >
           <div className="w-full max-w-2xl rounded-xl flex flex-col" style={{ background: '#111113', border: `1px solid ${BORDER}`, maxHeight: '80vh' }}>
             <div className="flex items-center justify-between p-5 pb-4" style={{ borderBottom: `1px solid ${BORDER}` }}>
-              <p style={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.15em', color: TEXT_PRIMARY, opacity: 0.4 }}>Script de confrontation — 2 actes</p>
+              <p style={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.15em', color: TEXT_PRIMARY, opacity: 0.4 }}>{t('card.debate.label', L)}</p>
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => handleCopyScript(debateModal, setDebateCopied)}
                   style={{ fontSize: '12px', padding: '5px 12px', borderRadius: '6px', background: debateCopied ? 'rgba(26,107,60,0.1)' : 'transparent', border: `1px solid ${debateCopied ? 'rgba(26,107,60,0.3)' : BORDER}`, color: debateCopied ? '#1A6B3C' : TEXT_MUTED, cursor: 'pointer', transition: 'all 200ms ease' }}
                 >
-                  {debateCopied ? '✓ Copié' : 'Copier'}
+                  {debateCopied ? '✓ ' + t('card.debate.copied', L) : t('card.debate.copy', L)}
                 </button>
                 <button onClick={() => setDebateModal(null)} style={{ width: '28px', height: '28px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', border: `1px solid ${BORDER}`, color: '#444', background: 'transparent', cursor: 'pointer' }}>×</button>
               </div>

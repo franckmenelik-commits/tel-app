@@ -547,9 +547,64 @@ export const DEMO_MONEY_DETTE: InsightCard = {
   createdAt: new Date('2025-01-10T00:00:00Z'),
 }
 
+// ─── CROISEMENT 0 — Biais des survivants × Abraham Wald ──────────────────────
+// YouTube : "Le biais des survivants" × Wikipedia : Abraham Wald
+// Le biais qui n'est peut-être pas un biais — mais la condition du récit lui-même.
+
+export const DEMO_BIAIS_SURVIVANTS: InsightCard = {
+  id: 'demo-biais-survivants',
+  theme: 'Le biais des survivants — ou la condition du récit ?',
+  themeEN: 'Survivorship bias — or the very condition of narrative?',
+  sources: [
+    {
+      url: 'https://www.youtube.com/watch?v=IgnW4BxMwWE',
+      type: 'youtube',
+      title: 'Le biais des survivants — Pourquoi on ne voit que ce qui survit',
+      geographicContext: 'Francosphère (vulgarisation scientifique)',
+      geographicConfidence: 80,
+    },
+    {
+      url: 'https://en.wikipedia.org/wiki/Abraham_Wald',
+      type: 'wikipedia',
+      title: 'Abraham Wald — Statisticien hongrois-américain',
+      geographicContext: 'États-Unis / Europe centrale (Columbia University, 1943)',
+      geographicConfidence: 95,
+    },
+  ],
+  revealedPattern:
+    'En 1943, Abraham Wald résout un problème militaire en regardant les avions qui ne reviennent pas — ceux que personne ne voit. Son insight : les zones sans impact sur les avions survivants sont précisément celles à blinderplus, car les avions touchés là ne sont jamais rentrés. Le biais des survivants n\'est pas une erreur cognitive parmi d\'autres : c\'est la structure même de tout récit humain. L\'histoire, la science, l\'entrepreneuriat, la biographie — tout ce qu\'on raconte est fait de survivants. Les disparus, les échecs, les silences sont invisibles par définition.',
+  convergenceZones: [
+    'L\'invisible structure le visible — les absents définissent les présents',
+    'Toute sélection produit un angle mort symétrique',
+    'La rigueur consiste à chercher activement ce qui manque, pas à analyser ce qui est là',
+    'Le biais est structurel, pas individuel — il précède le raisonnement',
+  ],
+  divergenceZones: [
+    'Wald opère dans un cadre statistique formel, quantifiable — le biais des survivants populaire est qualitatif',
+    'Wald cherche ce qui manque pour sauver des vies. La vulgarisation utilise le concept pour corriger des croyances',
+    'Dans la stat de Wald, les absents sont connus et dénombrables. Dans la culture, les absents sont souvent inconnus et innombrables',
+    'La solution de Wald est contre-intuitive mais précise. L\'application culturelle du biais reste souvent vague',
+  ],
+  globalConfidence: 82,
+  geographicRepresentativity:
+    'États-Unis (WWII / Columbia) + Francosphère (vulgarisation). Absent : les traditions non-occidentales de pensée qui ont développé des équivalents du biais des survivants sans le nommer ainsi — l\'impermanence bouddhiste, la pensée du négatif en philosophie chinoise.',
+  theUnspeakable:
+    'Ce croisement ne peut pas capturer ce que cela fait d\'être Abraham Wald — un réfugié juif hongrois fuyant les nazis, qui sauve des pilotes américains depuis un bureau de statistiques à New York. Il ne peut pas rendre l\'ironie profonde : un homme dont le peuple était en train d\'être systématiquement éliminé, qui consacre son génie à comprendre les absences. Il ne peut pas dire ce que les avions qui ne sont pas rentrés emportaient avec eux.',
+  questionNoOneHasAsked:
+    'Et si le biais des survivants n\'était pas un biais, mais la condition même du récit ?',
+  questionNoOneHasAskedEN:
+    'What if survivorship bias isn\'t a bias at all — but the very condition of every narrative we tell?',
+  sourceCoordinates: [
+    { lat: 40.8075, lng: -73.9626, region: 'New York (Columbia University)' },
+    { lat: 48.8566, lng: 2.3522, region: 'Paris (Francosphère)' },
+  ],
+  createdAt: new Date('2024-09-01T00:00:00Z'),
+}
+
 // ─── Collection complète ───────────────────────────────────────────────────────
 
 export const ALL_DEMO_CROSSINGS: InsightCard[] = [
+  DEMO_BIAIS_SURVIVANTS,
   DEMO_MOUMOUE_LUMUMBA,
   DEMO_BOHR_HOPI,
   DEMO_MPESA_SILICON,

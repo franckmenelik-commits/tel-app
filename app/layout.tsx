@@ -6,8 +6,8 @@ const UMAMI_SITE_ID = process.env.NEXT_PUBLIC_UMAMI_SITE_ID || ''
 
 export const metadata: Metadata = {
   title: 'TEL — The Experience Layer',
-  description: 'Narrative Intelligence Cross-Culturelle. Des vécus humains croisés pour révéler la sagesse collective invisible.',
-  keywords: ['narrative intelligence', 'cross-cultural', 'lived experience', 'wisdom', 'TEL', 'LOGOS'],
+  description: 'Cross two sources. See what they hide together. The Experience Layer reveals what no single perspective can see alone.',
+  keywords: ['narrative intelligence', 'cross-cultural', 'lived experience', 'wisdom', 'TEL', 'LOGOS', 'AI', 'insights'],
   authors: [{ name: 'The Experience Layer' }],
   manifest: '/manifest.json',
   appleWebApp: {
@@ -16,17 +16,26 @@ export const metadata: Metadata = {
     title: 'TEL',
   },
   openGraph: {
-    title: 'TEL — The Experience Layer',
-    description: 'Babel a dispersé les langages. TEL rassemble les vécus.',
+    title: 'TEL — Cross two sources. See what they hide together.',
+    description: 'The Experience Layer crosses documented human experiences to reveal what no one sees alone.',
     url: APP_URL,
     siteName: 'The Experience Layer',
     type: 'website',
-    locale: 'fr_FR',
+    locale: 'en_US',
+    images: [
+      {
+        url: `${APP_URL}/opengraph-image`,
+        width: 1200,
+        height: 630,
+        alt: 'TEL — Cross two sources. See what they hide together.',
+      },
+    ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'TEL — The Experience Layer',
-    description: 'Babel a dispersé les langages. TEL rassemble les vécus.',
+    title: 'TEL — Cross two sources. See what they hide together.',
+    description: 'The Experience Layer crosses documented human experiences to reveal what no one sees alone.',
+    images: [`${APP_URL}/opengraph-image`],
   },
   robots: {
     index: true,
