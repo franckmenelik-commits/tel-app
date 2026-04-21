@@ -109,6 +109,7 @@ export default function TELPage() {
   const [enrichissementProposal, setEnrichissementProposal] = useState<EnrichissementProposal | null>(null)
   const [pendingInputs, setPendingInputs] = useState<string[]>([])
   const [pendingContexte, setPendingContexte] = useState<SouffleContexte>('exploration')
+  const [isEmpiricalMode, setIsEmpiricalMode] = useState(false)
 
   // ── Auth state ─────────────────────────────────────────────────────────────
   const [user, setUser] = useState<string | null>(null)
