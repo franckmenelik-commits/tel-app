@@ -12,6 +12,8 @@ interface SourceInputProps {
   prefill?: string[]
   register?: string
   onRegisterChange?: (register: string) => void
+  isEmpiricalMode?: boolean
+  onToggleEmpiricalMode?: (value: boolean) => void
 }
 
 function detectUrlMeta(url: string): { icon: string; color: string; label: string } {
@@ -49,7 +51,7 @@ function getModeColor(mode: InputMode): string {
   }
 }
 
-export default function SourceInput({ onCross, isLoading, prefill, register = 'standard', onRegisterChange }: SourceInputProps) {
+export default function SourceInput({ onCross, isLoading, prefill, register = 'standard', onRegisterChange, isEmpiricalMode = false, onToggleEmpiricalMode }: SourceInputProps) {
   const [mode, setMode] = useState<'cross' | 'resonate'>('cross')
   const [vecu, setVecu] = useState('')
   const [resonanceResult, setResonanceResult] = useState<null | {
@@ -629,13 +631,49 @@ export default function SourceInput({ onCross, isLoading, prefill, register = 's
         </div>
       )}
 
-      {/* ── Status ── */}
-      <p style={{ textAlign: 'center', fontSize: '11px', color: '#222', marginTop: '10px' }}>
-        {nonEmptyCount} {t('input.sources', lang)}{nonEmptyCount !== 1 ? 's' : ''}
-        {inputs.length > nonEmptyCount && (
-          <span style={{ color: '#1a1a1a' }}> · {inputs.length - nonEmptyCount} {t('input.waiting', lang)}</span>
-        )}
-      </p>
+      {/* ── Empirical Audit Mode Toggle ── */}
+      {onToggleEmpiricalMode && (
+        <div className="flex justify-center mt-6 mb-2">
+          <button
+            onClick={() => onToggleEmpiricalMode(!isEmpiricalMode)}
+            style={{
+              background: 'transparent',
+              border: 'none',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+            }}
+          >
+            <div 
+              style={{
+                width: '28px',
+                height: '14px',
+                borderRadius: '14px',
+                background: isEmpiricalMode ? '#C9A84C' : 'rgba(255,255,255,0.06)',
+                position: 'relative',
+                transition: 'background 200ms ease',
+              }}
+            >
+              <div 
+                style={{
+                  width: '10px',
+                  height: '10px',
+                  borderRadius: '50%',
+                  background: isEmpiricalMode ? '#09090b' : '#666',
+                  position: 'absolute',
+                  top: '2px',
+                  left: isEmpiricalMode ? '16px' : '2px',
+                  transition: 'left 200ms ease, background 200ms ease',
+                }}
+              />
+            </div>
+            <span style={{ fontSize: '10px', color: isEmpiricalMode ? '#e0e0e0' : '#444', transition: 'color 200ms ease', letterSpacing: '0.05em' }}>
+              🧪 {lang === 'en' ? 'Empirical Audit Mode (Omi)' : 'Mode Audit Empirique (Omi)'}
+            </span>
+          </button>
+        </div>
+      )}
 
       </> /* end mode === 'cross' */}
     </div>

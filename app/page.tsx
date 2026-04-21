@@ -23,6 +23,7 @@ import type {
 } from '@/lib/types'
 import { detecterResonances, sauvegarderSession, chargerSession } from '@/lib/memoire'
 import { useLanguage, t } from '@/lib/i18n'
+import LanguageSelector from '@/components/LanguageSelector'
 
 // Canvas — no SSR
 const LiveMap = dynamic(() => import('@/components/LiveMap'), { ssr: false })
@@ -580,6 +581,7 @@ export default function TELPage() {
             </button>
 
             <div className="flex items-center gap-2">
+              <LanguageSelector />
               {/* Nav — desktop: Explorer dropdown + Manifeste */}
               <nav className="hidden md:flex items-center" style={{ marginRight: '8px', gap: '20px' }}>
                 {/* Explorer dropdown */}
@@ -883,7 +885,15 @@ export default function TELPage() {
               <section ref={formRef} className="tel-animate px-6 pb-20 md:px-10" style={{ maxWidth: '680px', margin: '0 auto' }}>
                 <div style={{ background: '#111113', border: '1px solid rgba(255,255,255,0.047)', borderRadius: '12px', padding: '32px' }}>
                   <p className="tel-label text-center mb-6">{t('action.newcrossing', lang)}</p>
-                  <SourceInput onCross={handleCross} isLoading={false} prefill={prefillSources} register={register} onRegisterChange={(r) => { setRegister(r); try { localStorage.setItem('tel:register', r) } catch { /* ok */ } }} />
+                  <SourceInput 
+                    onCross={handleCross} 
+                    isLoading={false} 
+                    prefill={prefillSources} 
+                    register={register} 
+                    onRegisterChange={(r) => { setRegister(r); try { localStorage.setItem('tel:register', r) } catch { /* ok */ } }}
+                    isEmpiricalMode={isEmpiricalMode}
+                    onToggleEmpiricalMode={setIsEmpiricalMode}
+                  />
                 </div>
                 {sessionHistory.length > 0 && (
                   <div className="text-center mt-4">
@@ -1026,6 +1036,14 @@ export default function TELPage() {
           </div>
         </footer>
       </div>
+
+      {isEmpiricalMode && (appState === 'loading' || appState === 'analysing') && (
+        <div className="fixed bottom-4 left-4 z-50 pointer-events-none" style={{ fontFamily: 'monospace', fontSize: '9px', color: 'rgba(201,168,76,0.6)', lineHeight: 1.4 }}>
+          <div>[SOUFFLE Engine] Asynchronous Proxy Routing Live</div>
+          <div>[Omi Audit] Injecting counter-narrative weights: {pendingContexte}</div>
+          <div className="animate-pulse" style={{ animationDuration: '1s' }}>[SOUFFLE] Computing systemic divergence vectors...</div>
+        </div>
+      )}
     </main>
   )
 }

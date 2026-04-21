@@ -11,9 +11,9 @@ export type Lang = 'fr' | 'en'
 
 export const TRANSLATIONS = {
   // ── Hero ────────────────────────────────────────────────────────────────────
-  'hero.line1':      { fr: 'Croisez deux sources.', en: 'Cross two sources.' },
-  'hero.line2':      { fr: "Voyez ce qu'elles cachent ensemble.", en: 'See what they hide together.' },
-  'hero.desc':       { fr: "Entrez deux sources pour les croiser — ou une seule, et laissez TEL vous surprendre.", en: 'Enter two sources to cross them — or just one, and let TEL surprise you.' },
+  'hero.line1':      { fr: 'Croisez deux réalités.', en: 'Cross two realities.' },
+  'hero.line2':      { fr: "Écoutez ce qu'elles se disent en secret.", en: 'Listen to what they tell each other in secret.' },
+  'hero.desc':       { fr: "TEL fait le pont entre des vécus qui ne se seraient jamais rencontrés.", en: 'TEL builds a bridge between experiences that would never have met.' },
   'hero.cta':        { fr: 'Essayer maintenant', en: 'Try now' },
   'hero.discovery':  { fr: 'CE QUE TEL A DÉJÀ TROUVÉ', en: 'WHAT TEL HAS ALREADY FOUND' },
   'hero.citation':   {
@@ -24,7 +24,7 @@ export const TRANSLATIONS = {
   'carousel.explore':{ fr: 'Cliquer pour explorer →', en: 'Click to explore →' },
 
   // ── Nav ──────────────────────────────────────────────────────────────────────
-  'nav.legends':      { fr: 'Légendes',      en: 'Legends' },
+  'nav.legends':      { fr: 'Genesis',       en: 'Genesis' },
   'nav.education':    { fr: 'Éducation',     en: 'Education' },
   'nav.transparency': { fr: 'Transparence',  en: 'Transparency' },
   'nav.manifesto':    { fr: 'Manifeste',     en: 'Manifesto' },
@@ -36,19 +36,19 @@ export const TRANSLATIONS = {
   'nav.explore':      { fr: 'Explorer',      en: 'Explore' },
 
   // ── Source input ─────────────────────────────────────────────────────────────
-  'input.cross':       { fr: 'Croiser les vécus',            en: 'Cross the experiences' },
-  'input.surprise':    { fr: 'Laisser TEL vous surprendre',  en: 'Let TEL surprise you' },
-  'input.loading':     { fr: '— LOGOS travaille —',          en: '— LOGOS working —' },
-  'input.add':         { fr: '+ ajouter une source',         en: '+ add a source' },
+  'input.cross':       { fr: 'Créer un pont',                en: 'Build a bridge' },
+  'input.surprise':    { fr: 'Laissez TEL chercher',         en: 'Let TEL search' },
+  'input.loading':     { fr: '— TEL réfléchit —',            en: '— TEL thinking —' },
+  'input.add':         { fr: '+ ajouter un vécu',            en: '+ add an experience' },
   'input.placeholder1': {
-    fr: 'URL, mot-clé, "A × B", ou témoignage direct (>50 mots)…',
-    en: 'URL, keyword, "A × B", or direct testimony (>50 words)…',
+    fr: 'Collez un lien, une idée, ou racontez une histoire…',
+    en: 'Paste a link, an idea, or tell a story…',
   },
   'input.placeholder2': {
-    fr: 'Deuxième source — le vécu à croiser',
-    en: 'Second source — the experience to cross',
+    fr: 'Le second vécu à croiser',
+    en: 'The second experience to cross',
   },
-  'input.error':       { fr: 'Entrez au moins une source, un mot-clé, ou un croisement (A × B).', en: 'Enter at least one source, keyword, or crossing (A × B).' },
+  'input.error':       { fr: 'Entrez quelque chose pour commencer le croisement.', en: 'Enter something to start crossing.' },
   'input.sources':     { fr: 'source',       en: 'source' },
   'input.waiting':     { fr: 'en attente',   en: 'waiting' },
 
@@ -57,62 +57,62 @@ export const TRANSLATIONS = {
   'source.crossing':  { fr: 'Croisement ×', en: 'Crossing ×' },
 
   // ── Book / Œuvre input mode ──────────────────────────────────────────────────
-  'input.mode.book':           { fr: 'Livre / Œuvre',                  en: 'Book / Work' },
-  'input.book.placeholder':    { fr: 'Titre du livre, film, série…',   en: 'Title of book, film, series…' },
+  'input.mode.book':           { fr: 'Livre / Film',                   en: 'Book / Film' },
+  'input.book.placeholder':    { fr: 'Titre de l\'œuvre…',             en: 'Title of the work…' },
   'input.book.toggle':         { fr: '📖 Livre',                       en: '📖 Book' },
-  'hint.mode.book':            { fr: 'Livre / Œuvre',                  en: 'Book / Work' },
+  'hint.mode.book':            { fr: 'Livre / Film',                   en: 'Book / Film' },
   'hint.book.example':         { fr: 'Les Misérables, 1984…',          en: 'The Great Gatsby, 1984…' },
 
   // ── Mode Croise-moi ──────────────────────────────────────────────────────────
-  'mode.resonate':       { fr: 'Mon vécu',   en: 'My experience' },
-  'mode.resonate.label': { fr: 'VÉCU PERSONNEL', en: 'PERSONAL EXPERIENCE' },
+  'mode.resonate':       { fr: 'Trouver un pont',   en: 'Find a bridge' },
+  'mode.resonate.label': { fr: 'MON VÉCU',          en: 'MY EXPERIENCE' },
   'mode.resonate.placeholder': {
-    fr: 'Décrivez votre situation, votre expérience, ou ce que vous traversez…',
-    en: 'Describe your situation, your experience, or what you are going through…',
+    fr: 'Racontez ce que vous traversez en ce moment…',
+    en: 'Tell what you are going through right now…',
   },
-  'mode.resonate.btn':   { fr: 'Trouver des résonances', en: 'Find resonances' },
-  'mode.resonate.loading': { fr: 'Recherche de résonances dans le monde…', en: 'Searching for resonances in the world…' },
+  'mode.resonate.btn':   { fr: 'Qui d\'autre vit ça ?', en: 'Who else lives this?' },
+  'mode.resonate.loading': { fr: 'Recherche de personnes qui vous comprennent…', en: 'Searching for people who understand you…' },
 
   // ── Contexte SOUFFLE ─────────────────────────────────────────────────────────
-  'contexte.label':     { fr: 'Contexte SOUFFLE', en: 'SOUFFLE context' },
-  'contexte.hint':      { fr: 'Le contexte détermine le niveau SOUFFLE activé.', en: 'The context determines the SOUFFLE level activated.' },
+  'contexte.label':     { fr: 'Profondeur d\'écoute', en: 'Listening depth' },
+  'contexte.hint':      { fr: 'Jusqu\'où voulez-vous creuser ?', en: 'How deep do you want to dig?' },
 
   // ── Loading messages ─────────────────────────────────────────────────────────
-  'loading.extraction':  { fr: 'Extraction du contenu des sources…',           en: 'Extracting source content…' },
-  'loading.cultural':    { fr: 'Détection des contextes culturels…',           en: 'Detecting cultural contexts…' },
-  'loading.narrative':   { fr: 'Analyse des arcs narratifs…',                  en: 'Analysing narrative arcs…' },
-  'loading.crossing':    { fr: 'Croisement des perspectives…',                  en: 'Crossing perspectives…' },
-  'loading.convergences':{ fr: 'Identification des convergences…',              en: 'Identifying convergences…' },
-  'loading.divergences': { fr: "Détection des divergences irréductibles…",      en: 'Detecting irreducible divergences…' },
-  'loading.blindspots':  { fr: "Recherche d'angles morts géographiques…",       en: 'Searching geographic blind spots…' },
-  'loading.pattern':     { fr: 'Formulation du pattern…',                       en: 'Formulating the pattern…' },
-  'loading.question':    { fr: 'Génération de la question inexposée…',          en: 'Generating the unexposed question…' },
+  'loading.extraction':  { fr: 'Écoute silencieuse des sources…',              en: 'Quietly listening to sources…' },
+  'loading.cultural':    { fr: 'Compréhension de la culture…',                 en: 'Understanding the culture…' },
+  'loading.narrative':   { fr: 'Recherche du point de tension…',               en: 'Looking for the tension point…' },
+  'loading.crossing':    { fr: 'Construction du pont entre les deux…',          en: 'Building the bridge between both…' },
+  'loading.convergences':{ fr: 'Où se rejoignent-ils ?',                        en: 'Where do they meet?' },
+  'loading.divergences': { fr: 'Qu\'est-ce qui refuse de se mélanger ?',        en: 'What refuses to mix?' },
+  'loading.blindspots':  { fr: 'Ce que la société refuse de voir…',             en: 'What society refuses to see…' },
+  'loading.pattern':     { fr: 'Un schéma se dessine…',                         en: 'A pattern is emerging…' },
+  'loading.question':    { fr: 'La question que personne n\'osait poser…',      en: 'The question no one dared to ask…' },
 
   // ── Discovery messages ───────────────────────────────────────────────────────
-  'discovery.analyse':   { fr: 'Analyse de votre source…',          en: 'Analysing your source…' },
-  'discovery.explore':   { fr: 'Exploration de 194 pays…',           en: 'Exploring 194 countries…' },
-  'discovery.detect':    { fr: "Détection d'une connexion improbable…", en: 'Detecting an improbable connection…' },
-  'discovery.emerge':    { fr: 'Un croisement inattendu émerge…',    en: 'An unexpected crossing emerges…' },
-  'discovery.found':     { fr: 'LOGOS a découvert',                  en: 'LOGOS discovered' },
+  'discovery.analyse':   { fr: 'TEL écoute votre source…',          en: 'TEL is listening to your source…' },
+  'discovery.explore':   { fr: 'TEL cherche dans le monde entier…',  en: 'TEL is searching the whole world…' },
+  'discovery.detect':    { fr: 'TEL a senti un lien fragile…',      en: 'TEL felt a fragile connection…' },
+  'discovery.emerge':    { fr: 'Un pont inattendu vient de se créer.', en: 'An unexpected bridge just appeared.' },
+  'discovery.found':     { fr: 'TEL a trouvé',                      en: 'TEL found' },
 
   // ── How it works ─────────────────────────────────────────────────────────────
-  'how.title':       { fr: 'Comment ça fonctionne', en: 'How it works' },
-  'how.step1.title': { fr: 'Entrez vos sources', en: 'Enter your sources' },
-  'how.step1.desc':  { fr: "URL YouTube ou article web, texte libre, mot-clé, ou deux concepts à croiser directement.", en: 'YouTube URL or web article, free text, keyword, or two concepts to cross directly.' },
-  'how.step2.title': { fr: 'LOGOS analyse et croise', en: 'LOGOS analyses and crosses' },
-  'how.step2.desc':  { fr: "Contextes culturels, arcs narratifs, angles morts géographiques. Trois niveaux d'analyse.", en: 'Cultural contexts, narrative arcs, geographic blind spots. Three levels of analysis.' },
-  'how.step3.title': { fr: 'Un insight émerge', en: 'An insight emerges' },
-  'how.step3.desc':  { fr: "Convergences, divergences irréductibles — et la question que personne n'avait encore osé formuler.", en: "Convergences, irreducible divergences — and the question no one had yet dared to ask." },
+  'how.title':       { fr: 'Comment ça marche ?', en: 'How does it work?' },
+  'how.step1.title': { fr: 'Donnez vos sources', en: 'Give your sources' },
+  'how.step1.desc':  { fr: 'Une vidéo, un article, un documentaire, ou vos propres mots.', en: 'A video, an article, a documentary, or your own words.' },
+  'how.step2.title': { fr: 'TEL traverse les cultures', en: 'TEL crosses cultures' },
+  'how.step2.desc':  { fr: 'TEL écoute sans juger. Il cherche les convergences, les blessures communes et ce qui les sépare.', en: 'TEL listens without judging. It looks for convergences, shared wounds and what separates them.' },
+  'how.step3.title': { fr: 'Le pont apparaît', en: 'The bridge appears' },
+  'how.step3.desc':  { fr: 'Un espace de dialogue émerge. Là où il y avait du bruit, TEL pose une question qui guérit.', en: 'A dialogue space emerges. Where there was noise, TEL asks a question that heals.' },
 
   // ── Actions ──────────────────────────────────────────────────────────────────
-  'action.share':       { fr: 'Partager — copier le lien',  en: 'Share — copy link' },
+  'action.share':       { fr: 'Copier le lien',             en: 'Copy the link' },
   'action.copied':      { fr: 'Lien copié',                 en: 'Link copied' },
-  'action.newcrossing': { fr: 'Nouveau croisement',         en: 'New crossing' },
+  'action.newcrossing': { fr: 'Recommencer',                en: 'Start over' },
 
   // ── Feedback ─────────────────────────────────────────────────────────────────
-  'feedback.resonates':  { fr: 'Cet insight résonne',    en: 'This insight resonates' },
-  'feedback.inaccurate': { fr: 'Cet insight est inexact', en: 'This insight is inaccurate' },
-  'feedback.thanks':     { fr: 'Merci',                  en: 'Thank you' },
+  'feedback.resonates':  { fr: 'Je me reconnais',           en: 'I see myself in this' },
+  'feedback.inaccurate': { fr: 'Ce n\'est pas tout à fait ça', en: 'This is not exactly right' },
+  'feedback.thanks':     { fr: 'Merci.',                    en: 'Thank you.' },
 
   // ── History ──────────────────────────────────────────────────────────────────
   'history.title':  { fr: 'Mes croisements',             en: 'My crossings' },
@@ -251,7 +251,7 @@ export const TRANSLATIONS = {
   'init.loading.5':   { fr: "Formulation du plan d'action...",                 en: 'Formulating the action plan...' },
 
   // ── InsightCard section labels ───────────────────────────────────────────────
-  'card.logos':               { fr: 'LOGOS · Insight Card',                     en: 'LOGOS · Insight Card' },
+  'card.logos':               { fr: 'TEL · Insight Card',                       en: 'TEL · Insight Card' },
   'card.question.label':      { fr: "Question que personne n'a encore posée",   en: "The question no one has asked yet" },
   'card.expand':              { fr: "Voir l'analyse complète →",                 en: 'See full analysis →' },
   'card.collapse':            { fr: '← Réduire',                                en: '← Collapse' },
