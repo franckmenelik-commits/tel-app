@@ -573,11 +573,11 @@ export default function InsightCard({
 
           {/* LA QUESTION — affichée en premier, en or, grande */}
           <Section index={1} visible={isVisible(1)}>
-            <div style={{ padding: '32px 24px', borderRadius: '8px', background: 'rgba(201,168,76,0.04)', border: '1px solid rgba(201,168,76,0.15)', marginBottom: '16px', textAlign: 'center' }}>
-              <p style={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.15em', color: GOLD, opacity: 0.7, marginBottom: '16px', fontFamily: '-apple-system, sans-serif' }}>
+            <div className="tel-question-reveal" style={{ padding: '36px 28px', borderRadius: '10px', background: 'rgba(201,168,76,0.04)', border: '1px solid rgba(201,168,76,0.15)', marginBottom: '16px', textAlign: 'center' }}>
+              <p style={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.2em', color: GOLD, opacity: 0.6, marginBottom: '18px', fontFamily: '-apple-system, sans-serif' }}>
                 {t('card.question.label', L)}
               </p>
-              <p className="tel-italic" style={{ fontSize: 'clamp(20px, 3vw, 24px)', lineHeight: 1.65, color: GOLD, fontFamily: 'Georgia, serif' }}>
+              <p className="tel-italic" style={{ fontSize: 'clamp(22px, 3.5vw, 28px)', lineHeight: 1.55, color: GOLD, fontFamily: 'Georgia, serif' }}>
                 {card.questionNoOneHasAsked}
               </p>
             </div>
@@ -618,38 +618,44 @@ export default function InsightCard({
 
           <Divider />
 
-          {/* CONVERGENCES */}
+          {/* CONVERGENCES × DIVERGENCES — SPLITVIEW */}
           <Section index={2} visible={isVisible(2)}>
-            <SectionLabel>{t('card.section.convergences', L)}</SectionLabel>
-            <ul className="flex flex-col gap-2.5">
-              {(card.convergenceZones ?? []).map((zone, i) => (
-                <li key={i} className="flex gap-3" style={{ fontSize: '14px', lineHeight: 1.7, color: TEXT_PRIMARY }}>
-                  <span style={{ color: GOLD, flexShrink: 0, marginTop: '3px', fontSize: '8px' }}>◆</span>
-                  <span className="tel-serif">{zone}</span>
-                </li>
-              ))}
-            </ul>
-          </Section>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-0 md:gap-6">
+              {/* Convergences column */}
+              <div style={{ borderLeft: `2px solid rgba(201,168,76,0.25)`, paddingLeft: '16px' }}>
+                <SectionLabel>{t('card.section.convergences', L)}</SectionLabel>
+                <ul className="flex flex-col gap-2.5">
+                  {(card.convergenceZones ?? []).map((zone, i) => (
+                    <li key={i} className="flex gap-3" style={{ fontSize: '14px', lineHeight: 1.7, color: TEXT_PRIMARY }}>
+                      <span style={{ color: GOLD, flexShrink: 0, marginTop: '3px', fontSize: '8px' }}>◆</span>
+                      <span className="tel-serif">{zone}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
 
-          <Divider />
+              {/* Visual tension separator — mobile only */}
+              <div className="block md:hidden" style={{ height: '1px', background: BORDER_SUBTLE, margin: '20px 0' }} />
 
-          {/* DIVERGENCES */}
-          <Section index={3} visible={isVisible(3)}>
-            <SectionLabel>{t('card.section.divergences', L)}</SectionLabel>
-            <ul className="flex flex-col gap-2.5">
-              {(card.divergenceZones ?? []).map((zone, i) => (
-                <li key={i} className="flex gap-3" style={{ fontSize: '14px', lineHeight: 1.7, color: TEXT_PRIMARY }}>
-                  <span style={{ color: '#6B4226', flexShrink: 0, marginTop: '3px', fontSize: '8px' }}>◇</span>
-                  <span className="tel-serif">{zone}</span>
-                </li>
-              ))}
-            </ul>
+              {/* Divergences column */}
+              <div style={{ borderLeft: '2px solid rgba(139,90,43,0.35)', paddingLeft: '16px' }}>
+                <SectionLabel>{t('card.section.divergences', L)}</SectionLabel>
+                <ul className="flex flex-col gap-3">
+                  {(card.divergenceZones ?? []).map((zone, i) => (
+                    <li key={i} className="flex gap-3 tel-divergence-item" style={{ fontSize: '14px', lineHeight: 1.7, color: TEXT_PRIMARY, borderLeft: 'none', paddingLeft: 0 }}>
+                      <span style={{ color: '#8B5A2B', flexShrink: 0, marginTop: '3px', fontSize: '8px' }}>◇</span>
+                      <span className="tel-serif">{zone}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
 
-            {/* CE QUE TEL REFUSE DE RÉCONCILIER */}
+            {/* CE QUE TEL REFUSE DE RÉCONCILIER — spans full width */}
             {card.irreconcilable && (
               <div
                 style={{
-                  marginTop: '20px',
+                  marginTop: '24px',
                   padding: '16px 20px',
                   borderLeft: `2px solid ${GOLD}`,
                   background: 'rgba(201,168,76,0.03)',
@@ -1021,7 +1027,13 @@ export default function InsightCard({
 
           {/* FOOTER */}
           <Section index={12} visible={isVisible(12)}>
-            <div className="mt-6 pt-4 flex items-center justify-between flex-wrap gap-2" style={{ borderTop: `1px solid ${BORDER_SUBTLE}` }}>
+            {/* Ethical disclaimer */}
+            <p className="tel-ethics-bar">
+              {L === 'en'
+                ? 'This crossing is an exploration, not a truth. The divergences matter as much as the convergences.'
+                : 'Ce croisement est une exploration, pas une vérité. Les divergences comptent autant que les convergences.'}
+            </p>
+            <div className="mt-2 pt-4 flex items-center justify-between flex-wrap gap-2" style={{ borderTop: `1px solid ${BORDER_SUBTLE}` }}>
               <p style={{ fontSize: '10px', color: '#1a1a1a' }}>{card.id}</p>
               <p style={{ fontSize: '10px', color: '#1a1a1a' }}>{formattedDate}</p>
             </div>

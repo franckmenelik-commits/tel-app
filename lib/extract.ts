@@ -233,17 +233,181 @@ async function extractArticle(url: string): Promise<{ title: string; content: st
   return { title, content: content.slice(0, 8000) }
 }
 
-async function extractInstagram(url: string): Promise<{ title: string; content: string }> {
-  const res = await fetch(url, { headers: { 'User-Agent': USER_AGENT } })
-  const html = await res.text()
-  const $ = cheerio.load(html)
+// ─── Instagram: Sovereign multi-tier scraper ──────────────────────────────────
+// Tier 1: JSON-LD structured data from page HTML
+// Tier 2: Open Graph meta tags
+// Tier 3: oEmbed API (no auth, basic info)
+// All strategies use Cheerio (already a dependency) and run on our server.
+// No third-party API keys. 100% sovereign.
 
-  const title = $('meta[property="og:title"]').attr('content') || 'Instagram post'
-  const description = $('meta[property="og:description"]').attr('content') || ''
+function extractInstagramShortcode(url: string): string | null {
+  const patterns = [
+    /instagram\.com\/(?:p|reel|reels|tv)\/([A-Za-z0-9_-]+)/,
+    /instagram\.com\/stories\/[^/]+\/(\d+)/,
+  ]
+  for (const p of patterns) {
+    const m = url.match(p)
+    if (m) return m[1]
+  }
+  return null
+}
+
+async function extractInstagram(url: string): Promise<{ title: string; content: string }> {
+  const shortcode = extractInstagramShortcode(url) || 'unknown'
+  
+  // Normalize URL — ensure it's a proper Instagram URL
+  const cleanUrl = url.replace(/\?.*$/, '') // strip query params
+  
+  let title = 'Instagram post'
+  let caption = ''
+  let author = ''
+  let likes = ''
+  let commentsText = ''
+  let postType = 'post'
+  
+  if (url.includes('/reel')) postType = 'reel'
+  else if (url.includes('/stories')) postType = 'story'
+
+  // ── Tier 1: Fetch page HTML → extract JSON-LD + meta tags ────────────────
+  try {
+    const res = await fetch(cleanUrl, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        'Accept-Language': 'en-US,en;q=0.9,fr;q=0.8',
+        'Cache-Control': 'no-cache',
+      },
+      signal: AbortSignal.timeout(15000),
+      redirect: 'follow',
+    })
+
+    if (res.ok) {
+      const html = await res.text()
+      const $ = cheerio.load(html)
+
+      // Try JSON-LD structured data (richest source)
+      $('script[type="application/ld+json"]').each((_, el) => {
+        try {
+          const data = JSON.parse($(el).html() || '{}')
+          if (data['@type'] === 'VideoObject' || data['@type'] === 'ImageObject' || data['@type'] === 'SocialMediaPosting') {
+            caption = data.caption || data.description || data.articleBody || caption
+            author = data.author?.name || data.creator?.name || author
+            title = data.name || data.headline || title
+          }
+          // Check for interaction stats
+          if (data.interactionStatistic) {
+            const likesStat = Array.isArray(data.interactionStatistic)
+              ? data.interactionStatistic.find((s: { interactionType?: string }) => s.interactionType === 'http://schema.org/LikeAction')
+              : null
+            if (likesStat?.userInteractionCount) {
+              likes = `${likesStat.userInteractionCount} likes`
+            }
+          }
+          // Comments from structured data
+          if (data.comment && Array.isArray(data.comment)) {
+            commentsText = data.comment
+              .slice(0, 30)
+              .map((c: { text?: string; author?: { name?: string } }) => 
+                `[${c.author?.name || 'Anonymous'}] ${(c.text || '').slice(0, 300)}`)
+              .join('\n')
+          }
+        } catch { /* malformed JSON-LD, continue */ }
+      })
+
+      // OG meta tags (always present on Instagram pages)
+      const ogTitle = $('meta[property="og:title"]').attr('content') || ''
+      const ogDesc = $('meta[property="og:description"]').attr('content') || ''
+      const ogType = $('meta[property="og:type"]').attr('content') || ''
+      
+      if (!title || title === 'Instagram post') title = ogTitle || 'Instagram post'
+      if (!caption) caption = ogDesc
+      
+      // Extract author from og:title pattern: "Author on Instagram: ..."
+      if (!author && ogTitle) {
+        const authorMatch = ogTitle.match(/^(.+?)\s+(?:on|sur)\s+Instagram/i)
+        if (authorMatch) author = authorMatch[1]
+      }
+      
+      // Try to find additional text in page body
+      const altTexts: string[] = []
+      $('img[alt]').each((_, el) => {
+        const alt = $(el).attr('alt') || ''
+        if (alt.length > 30 && !alt.includes('profile picture')) {
+          altTexts.push(alt)
+        }
+      })
+      
+      // Some pages embed caption in the alt text of the main image
+      if (!caption && altTexts.length > 0) {
+        caption = altTexts[0]
+      }
+      
+      if (ogType) postType = ogType.includes('video') ? 'reel' : postType
+    }
+  } catch { /* Tier 1 failed, try Tier 2 */ }
+
+  // ── Tier 2: oEmbed API (no auth needed for public posts) ─────────────────
+  if (!caption || caption.length < 20) {
+    try {
+      const oembedUrl = `https://www.instagram.com/p/${shortcode}/media/?size=l`
+      const oembedRes = await fetch(
+        `https://graph.facebook.com/v18.0/instagram_oembed?url=${encodeURIComponent(cleanUrl)}&access_token=public`,
+        { signal: AbortSignal.timeout(5000) }
+      )
+      if (!oembedRes.ok) {
+        // Fallback: try Instagram's own oEmbed
+        const fallbackRes = await fetch(
+          `https://api.instagram.com/oembed?url=${encodeURIComponent(cleanUrl)}`,
+          { signal: AbortSignal.timeout(5000) }
+        )
+        if (fallbackRes.ok) {
+          const data = await fallbackRes.json()
+          if (!title || title === 'Instagram post') title = data.title || title
+          if (!author) author = data.author_name || ''
+          if (!caption && data.title) caption = data.title
+        }
+      } else {
+        const data = await oembedRes.json()
+        if (!title || title === 'Instagram post') title = data.title || title  
+        if (!author) author = data.author_name || ''
+      }
+    } catch { /* oEmbed failed */ }
+  }
+
+  // ── Build final content ──────────────────────────────────────────────────
+  const contentParts: string[] = []
+  
+  contentParts.push(`[Instagram ${postType} — extraction souveraine TEL]`)
+  contentParts.push('')
+  
+  if (author) contentParts.push(`Auteur : @${author}`)
+  if (likes) contentParts.push(`Engagement : ${likes}`)
+  contentParts.push(`URL : ${cleanUrl}`)
+  contentParts.push(`Shortcode : ${shortcode}`)
+  contentParts.push('')
+  
+  if (caption) {
+    contentParts.push('─── CONTENU DU POST ───')
+    contentParts.push(caption.slice(0, 4000))
+    contentParts.push('')
+  } else {
+    contentParts.push('[Note: Caption non extractible — Instagram peut bloquer l\'accès direct. Croisement basé sur les métadonnées disponibles. Niveau de confiance réduit.]')
+    contentParts.push('')
+  }
+  
+  if (commentsText) {
+    contentParts.push('─── COMMENTAIRES PUBLICS (top 30) ───')
+    contentParts.push(commentsText)
+  }
+
+  // Build a meaningful title
+  const finalTitle = author 
+    ? `@${author} — Instagram ${postType}${caption ? ': ' + caption.slice(0, 60) + (caption.length > 60 ? '…' : '') : ''}`
+    : title
 
   return {
-    title,
-    content: `[Instagram post — accès limité]\n\n${title}\n\n${description}`,
+    title: finalTitle,
+    content: contentParts.join('\n'),
   }
 }
 

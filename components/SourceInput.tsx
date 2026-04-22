@@ -38,6 +38,8 @@ function getModeIcon(mode: InputMode): string {
     case 'keyword': return '⊕'
     case 'crossing': return '×'
     case 'book': return '📖'
+    case 'upload': return '▣'
+    case 'voice': return '🎙'
   }
 }
 
@@ -48,6 +50,8 @@ function getModeColor(mode: InputMode): string {
     case 'keyword': return '#C9A84C'
     case 'crossing': return '#C9A84C'
     case 'book': return '#4A7FC1'
+    case 'upload': return '#7AABB5'
+    case 'voice': return '#E85D4A'
   }
 }
 
@@ -63,6 +67,12 @@ export default function SourceInput({ onCross, isLoading, prefill, register = 's
   }>(null)
   const [resonanceLoading, setResonanceLoading] = useState(false)
   const [resonanceError, setResonanceError] = useState<string | null>(null)
+
+  // Voice recording state
+  const [recordingIndex, setRecordingIndex] = useState<number | null>(null)
+  // File upload state  
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null)
+  const [uploadingIndex, setUploadingIndex] = useState<number | null>(null)
 
   const [inputs, setInputs] = useState<string[]>(['', ''])
   const [bookModes, setBookModes] = useState<boolean[]>([false, false])
@@ -145,6 +155,71 @@ export default function SourceInput({ onCross, isLoading, prefill, register = 's
     const text = e.clipboardData.getData('text').trim()
     updateInput(index, text)
   }, [updateInput])
+
+  // ── Voice recording (Web Speech API — fully client-side, sovereign) ──────
+  const startVoiceRecording = useCallback((index: number) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const W = window as any
+    const SpeechRecognitionCtor = W.SpeechRecognition || W.webkitSpeechRecognition
+    if (!SpeechRecognitionCtor) {
+      setError(lang === 'en' ? 'Voice not supported on this browser' : 'Voix non supportée sur ce navigateur')
+      return
+    }
+    const recognition = new SpeechRecognitionCtor()
+    recognition.lang = lang === 'en' ? 'en-US' : 'fr-FR'
+    recognition.interimResults = false
+    recognition.maxAlternatives = 1
+    recognition.continuous = false
+    setRecordingIndex(index)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    recognition.onresult = (event: any) => {
+      const transcript = event.results?.[0]?.[0]?.transcript || ''
+      if (transcript.trim()) {
+        updateInput(index, transcript.trim())
+      }
+      setRecordingIndex(null)
+    }
+    recognition.onerror = () => { setRecordingIndex(null) }
+    recognition.onend = () => { setRecordingIndex(null) }
+    recognition.start()
+  }, [lang, updateInput])
+
+  // ── File upload (drag & drop / click) ───────────────────────────────────
+  const handleFileUpload = useCallback(async (index: number, file: File) => {
+    const ext = file.name.split('.').pop()?.toLowerCase() || ''
+    if (!['pdf', 'txt', 'md', 'text'].includes(ext)) {
+      setError(lang === 'en' ? `Unsupported: .${ext}. Use PDF, TXT, MD` : `Non supporté : .${ext}. Utilisez PDF, TXT, MD`)
+      return
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      setError(lang === 'en' ? 'File too large (max 10MB)' : 'Fichier trop volumineux (max 10MB)')
+      return
+    }
+    setUploadingIndex(index)
+    setError(null)
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+      const res = await fetch('/api/upload', { method: 'POST', body: formData })
+      const data = await res.json()
+      if (!res.ok || !data.success) throw new Error(data.error || 'Upload failed')
+      // Set the source input to the extracted text with upload:// prefix for mode detection
+      updateInput(index, data.text)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Upload error')
+    } finally {
+      setUploadingIndex(null)
+    }
+  }, [lang, updateInput])
+
+  const handleDrop = useCallback((index: number, e: React.DragEvent) => {
+    e.preventDefault()
+    setDragOverIndex(null)
+    const file = e.dataTransfer.files[0]
+    if (file) handleFileUpload(index, file)
+  }, [handleFileUpload])
+
+  const fileInputRefs = useRef<(HTMLInputElement | null)[]>([])
 
   const handleCross = useCallback(() => {
     const validInputs = inputs
@@ -345,6 +420,8 @@ export default function SourceInput({ onCross, isLoading, prefill, register = 's
           { mode: 'keyword' as InputMode, example: t('hint.keyword.example', lang) },
           { mode: 'crossing' as InputMode, example: t('hint.crossing.example', lang) },
           { mode: 'free_text' as InputMode, example: t('hint.text.example', lang) },
+          { mode: 'upload' as InputMode, example: lang === 'en' ? 'drag PDF, TXT' : 'glissez PDF, TXT' },
+          { mode: 'voice' as InputMode, example: lang === 'en' ? 'speak directly' : 'parlez directement' },
         ].map(({ mode, example }) => (
           <span key={mode} className="flex items-center gap-1">
             <span style={{ color: getModeColor(mode) }}>{getModeIcon(mode)}</span>
@@ -365,84 +442,175 @@ export default function SourceInput({ onCross, isLoading, prefill, register = 's
           const isValid = trimmed.length > 0
 
           return (
-            <div key={i} className="relative group flex items-start gap-2">
+            <div key={i} className={`relative group flex items-start gap-2 ${isValid ? 'tel-bubble-filled' : ''}`}>
               {/* Mode badge */}
               <div
-                className="flex-shrink-0 w-7 h-7 mt-1 rounded-full flex items-center justify-center text-xs"
+                className={`flex-shrink-0 w-7 h-7 mt-1 rounded-full flex items-center justify-center text-xs ${recordingIndex === i ? 'tel-voice-recording' : ''}`}
                 style={{
-                  background: isBook ? 'rgba(122,171,181,0.08)' : isValid ? 'rgba(201,168,76,0.06)' : 'rgba(255,255,255,0.025)',
-                  color: isBook ? '#7AABB5' : isValid ? (urlMeta?.color ?? getModeColor(detected?.mode ?? 'keyword')) : '#2a2a2a',
-                  border: `1px solid ${isBook ? 'rgba(122,171,181,0.25)' : isValid ? 'rgba(201,168,76,0.2)' : 'rgba(255,255,255,0.047)'}`,
+                  background: recordingIndex === i ? 'rgba(232,93,74,0.15)'
+                    : isBook ? 'rgba(122,171,181,0.08)'
+                    : isValid ? 'rgba(201,168,76,0.06)'
+                    : 'rgba(255,255,255,0.025)',
+                  color: recordingIndex === i ? '#E85D4A'
+                    : isBook ? '#7AABB5'
+                    : isValid ? (urlMeta?.color ?? getModeColor(detected?.mode ?? 'keyword'))
+                    : '#2a2a2a',
+                  border: `1px solid ${recordingIndex === i ? 'rgba(232,93,74,0.4)' : isBook ? 'rgba(122,171,181,0.25)' : isValid ? 'rgba(201,168,76,0.2)' : 'rgba(255,255,255,0.047)'}`,
                   fontSize: '0.65rem',
                   transition: 'all 200ms ease',
                 }}
               >
-                {isBook ? '📖' : detected ? (isUrl ? urlMeta!.icon : getModeIcon(detected.mode)) : String(i + 1)}
+                {recordingIndex === i ? '●' : isBook ? '📖' : detected ? (isUrl ? urlMeta!.icon : getModeIcon(detected.mode)) : String(i + 1)}
               </div>
 
-              {/* Input */}
-              <textarea
-                ref={(el) => { inputRefs.current[i] = el }}
-                value={input}
-                onChange={(e) => updateInput(i, e.target.value)}
-                onPaste={(e) => handlePaste(i, e)}
-                rows={!isBook && detected?.mode === 'free_text' ? 4 : 1}
-                placeholder={
-                  isBook
-                    ? t('input.book.placeholder', lang)
-                    : i === 0
-                    ? t('input.placeholder1', lang)
-                    : i === 1
-                    ? t('input.placeholder2', lang)
-                    : `${t('input.sources', lang)} ${i + 1}`
-                }
-                disabled={isLoading}
-                style={{
-                  flex: 1,
-                  padding: '10px 14px',
-                  fontSize: '13px',
-                  background: 'rgba(255,255,255,0.025)',
-                  border: `1px solid ${isValid ? 'rgba(201,168,76,0.25)' : 'rgba(255,255,255,0.071)'}`,
-                  borderRadius: '8px',
-                  color: isValid ? '#e0e0e0' : '#444',
-                  lineHeight: 1.6,
-                  minHeight: detected?.mode === 'free_text' ? '96px' : '38px',
-                  resize: 'none',
-                  outline: 'none',
-                  transition: 'border-color 200ms ease',
-                  fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif',
-                }}
-                onFocus={e => { e.currentTarget.style.borderColor = 'rgba(201,168,76,0.4)' }}
-                onBlur={e => { e.currentTarget.style.borderColor = isValid ? 'rgba(201,168,76,0.25)' : 'rgba(255,255,255,0.071)' }}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && !e.shiftKey && detected?.mode !== 'free_text') {
-                    e.preventDefault()
-                    if (i < inputs.length - 1) {
-                      inputRefs.current[i + 1]?.focus()
-                    } else {
-                      handleCross()
-                    }
-                  }
-                }}
-              />
+              {/* Input + drop zone wrapper */}
+              <div
+                className="flex-1 relative"
+                onDragOver={(e) => { e.preventDefault(); setDragOverIndex(i) }}
+                onDragLeave={() => setDragOverIndex(null)}
+                onDrop={(e) => handleDrop(i, e)}
+              >
+                {/* Drop overlay */}
+                {dragOverIndex === i && (
+                  <div style={{
+                    position: 'absolute', inset: 0, zIndex: 10,
+                    background: 'rgba(122,171,181,0.08)',
+                    border: '2px dashed rgba(122,171,181,0.4)',
+                    borderRadius: '8px',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    pointerEvents: 'none',
+                  }}>
+                    <span style={{ fontSize: '12px', color: '#7AABB5', letterSpacing: '0.06em' }}>
+                      {lang === 'en' ? '▣ Drop file here' : '▣ Déposez le fichier ici'}
+                    </span>
+                  </div>
+                )}
 
-              {/* Book toggle + type label */}
-              <div className="flex-shrink-0 flex flex-col items-end gap-1 mt-1">
-                <button
-                  onClick={() => toggleBookMode(i)}
-                  title={t('input.mode.book', lang)}
+                {/* Upload progress indicator */}
+                {uploadingIndex === i && (
+                  <div style={{
+                    position: 'absolute', inset: 0, zIndex: 10,
+                    background: 'rgba(9,9,11,0.85)',
+                    borderRadius: '8px',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    gap: '8px',
+                  }}>
+                    <div className="tel-loading-dot" />
+                    <span style={{ fontSize: '11px', color: '#7AABB5' }}>
+                      {lang === 'en' ? 'Extracting text…' : 'Extraction du texte…'}
+                    </span>
+                  </div>
+                )}
+
+                <textarea
+                  ref={(el) => { inputRefs.current[i] = el }}
+                  value={input}
+                  onChange={(e) => updateInput(i, e.target.value)}
+                  onPaste={(e) => handlePaste(i, e)}
+                  rows={!isBook && detected?.mode === 'free_text' ? 4 : 1}
+                  placeholder={
+                    isBook
+                      ? t('input.book.placeholder', lang)
+                      : i === 0
+                      ? t('input.placeholder1', lang)
+                      : i === 1
+                      ? t('input.placeholder2', lang)
+                      : `${t('input.sources', lang)} ${i + 1}`
+                  }
+                  disabled={isLoading || uploadingIndex === i}
                   style={{
-                    fontSize: '10px', padding: '3px 7px', borderRadius: '4px',
-                    background: isBook ? 'rgba(122,171,181,0.12)' : 'transparent',
-                    border: `1px solid ${isBook ? 'rgba(122,171,181,0.35)' : 'rgba(255,255,255,0.06)'}`,
-                    color: isBook ? '#7AABB5' : '#333',
-                    cursor: 'pointer',
+                    width: '100%',
+                    padding: '10px 14px',
+                    fontSize: '13px',
+                    background: dragOverIndex === i ? 'rgba(122,171,181,0.04)' : 'rgba(255,255,255,0.025)',
+                    border: `1px solid ${dragOverIndex === i ? 'rgba(122,171,181,0.3)' : isValid ? 'rgba(201,168,76,0.25)' : 'rgba(255,255,255,0.071)'}`,
+                    borderRadius: '8px',
+                    color: isValid ? '#e0e0e0' : '#444',
+                    lineHeight: 1.6,
+                    minHeight: detected?.mode === 'free_text' ? '96px' : '38px',
+                    resize: 'none',
+                    outline: 'none',
                     transition: 'all 200ms ease',
-                    whiteSpace: 'nowrap' as const,
+                    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif',
                   }}
-                >
-                  {t('input.book.toggle', lang)}
-                </button>
+                  onFocus={e => { e.currentTarget.style.borderColor = 'rgba(201,168,76,0.4)' }}
+                  onBlur={e => { e.currentTarget.style.borderColor = isValid ? 'rgba(201,168,76,0.25)' : 'rgba(255,255,255,0.071)' }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey && detected?.mode !== 'free_text') {
+                      e.preventDefault()
+                      if (i < inputs.length - 1) {
+                        inputRefs.current[i + 1]?.focus()
+                      } else {
+                        handleCross()
+                      }
+                    }
+                  }}
+                />
+              </div>
+
+              {/* Action buttons: Book toggle + Mic + File + type label */}
+              <div className="flex-shrink-0 flex flex-col items-end gap-1 mt-1">
+                <div className="flex items-center gap-1">
+                  {/* Voice recording button */}
+                  <button
+                    onClick={() => recordingIndex === i ? setRecordingIndex(null) : startVoiceRecording(i)}
+                    title={lang === 'en' ? 'Record voice' : 'Enregistrer la voix'}
+                    disabled={isLoading}
+                    style={{
+                      fontSize: '10px', padding: '3px 7px', borderRadius: '4px',
+                      background: recordingIndex === i ? 'rgba(232,93,74,0.15)' : 'transparent',
+                      border: `1px solid ${recordingIndex === i ? 'rgba(232,93,74,0.4)' : 'rgba(255,255,255,0.06)'}`,
+                      color: recordingIndex === i ? '#E85D4A' : '#333',
+                      cursor: 'pointer',
+                      transition: 'all 200ms ease',
+                    }}
+                  >
+                    🎙
+                  </button>
+                  {/* File upload button */}
+                  <button
+                    onClick={() => fileInputRefs.current[i]?.click()}
+                    title={lang === 'en' ? 'Upload PDF/TXT' : 'Importer PDF/TXT'}
+                    disabled={isLoading || uploadingIndex === i}
+                    style={{
+                      fontSize: '10px', padding: '3px 7px', borderRadius: '4px',
+                      background: 'transparent',
+                      border: '1px solid rgba(255,255,255,0.06)',
+                      color: '#333',
+                      cursor: 'pointer',
+                      transition: 'all 200ms ease',
+                    }}
+                  >
+                    ▣
+                  </button>
+                  <input
+                    ref={(el) => { fileInputRefs.current[i] = el }}
+                    type="file"
+                    accept=".pdf,.txt,.md,.text"
+                    style={{ display: 'none' }}
+                    onChange={(e) => {
+                      const file = e.target.files?.[0]
+                      if (file) handleFileUpload(i, file)
+                      e.target.value = '' // reset for re-upload
+                    }}
+                  />
+                  {/* Book toggle */}
+                  <button
+                    onClick={() => toggleBookMode(i)}
+                    title={t('input.mode.book', lang)}
+                    style={{
+                      fontSize: '10px', padding: '3px 7px', borderRadius: '4px',
+                      background: isBook ? 'rgba(122,171,181,0.12)' : 'transparent',
+                      border: `1px solid ${isBook ? 'rgba(122,171,181,0.35)' : 'rgba(255,255,255,0.06)'}`,
+                      color: isBook ? '#7AABB5' : '#333',
+                      cursor: 'pointer',
+                      transition: 'all 200ms ease',
+                      whiteSpace: 'nowrap' as const,
+                    }}
+                  >
+                    {t('input.book.toggle', lang)}
+                  </button>
+                </div>
                 {!isBook && isValid && detected && (
                   <span
                     className="hidden sm:block whitespace-nowrap"
@@ -575,9 +743,20 @@ export default function SourceInput({ onCross, isLoading, prefill, register = 's
         </p>
       )}
 
-      {/* ── Cross button ── */}
+      {/* ── Cross button — reality collision trigger ── */}
       <button
-        onClick={handleCross}
+        onClick={() => {
+          // Trigger collision animation on all filled source rows
+          const rows = document.querySelectorAll('.tel-bubble-filled')
+          rows.forEach(row => {
+            row.classList.remove('tel-bubble-collide')
+            // Force reflow to restart animation
+            void (row as HTMLElement).offsetWidth
+            row.classList.add('tel-bubble-collide')
+          })
+          // Slight delay for visual impact before actual crossing
+          setTimeout(() => handleCross(), 350)
+        }}
         disabled={isLoading}
         className="w-full py-3 rounded-lg text-sm"
         style={{

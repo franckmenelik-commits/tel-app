@@ -2,7 +2,7 @@
 // lib/detect-mode.ts
 // Détection automatique du mode d'entrée utilisateur
 
-export type InputMode = 'url' | 'free_text' | 'keyword' | 'crossing' | 'book'
+export type InputMode = 'url' | 'free_text' | 'keyword' | 'crossing' | 'book' | 'upload' | 'voice'
 
 export interface DetectedInput {
   mode: InputMode
@@ -30,6 +30,16 @@ export function detectInputMode(input: string): DetectedInput {
   // 0. Book mode — explicit livre:/book: prefix (set by UI toggle)
   if (trimmed.toLowerCase().startsWith('livre:') || trimmed.toLowerCase().startsWith('book:')) {
     return { mode: 'book', value: trimmed }
+  }
+
+  // 0b. Upload mode — set by the file upload handler
+  if (trimmed.startsWith('upload://')) {
+    return { mode: 'upload', value: trimmed }
+  }
+
+  // 0c. Voice mode — set by the speech recognition handler
+  if (trimmed.startsWith('voice://')) {
+    return { mode: 'voice', value: trimmed.slice(8) }
   }
 
   // 1. URL — starts with http:// or https://
@@ -94,6 +104,8 @@ export function getModeLabel(mode: InputMode): string {
     case 'keyword': return 'Mot-clé'
     case 'crossing': return 'Croisement ×'
     case 'book': return 'Livre / Œuvre'
+    case 'upload': return 'Document uploadé'
+    case 'voice': return 'Témoignage vocal'
   }
 }
 
@@ -104,5 +116,7 @@ export function getModeDescription(mode: InputMode): string {
     case 'keyword': return 'Recherche Wikipedia FR + EN automatique'
     case 'crossing': return 'Deux concepts — LOGOS les confronte directement'
     case 'book': return 'Portrait thématique via Exa.ai'
+    case 'upload': return 'PDF, TXT, MD — extrait le texte localement'
+    case 'voice': return 'Transcription vocale via Web Speech API'
   }
 }

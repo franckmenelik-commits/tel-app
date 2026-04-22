@@ -106,6 +106,7 @@ Retourne UNIQUEMENT du JSON valide:
 }
 
 Règles absolues: zéro généralité, tout ancré dans le texte, la divergence est précieuse.
+ÉTHIQUE: Si les sources contiennent du traumatisme, de la souffrance ou du vécu marginal, traite-les avec la même gravité qu'un témoignage devant un tribunal de la mémoire. Ne lisse jamais la douleur. Ne transforme jamais la souffrance en exercice intellectuel.
 Pour publicVoices: inclure 0-2 commentaires SEULEMENT si des commentaires publics ont été fournis dans les sources et qu'ils résonnent directement avec le pattern révélé. Sinon, omettre le champ.`
 }
 
@@ -177,6 +178,7 @@ RÈGLES ABSOLUES:
 - Zéro généralité. Chaque affirmation ancrée dans le texte réel.
 - Zéro faux universel. La divergence est données, pas échec.
 - L'honnêteté sur ce que le croisement ne peut pas voir est l'intégrité architecturale de TEL.
+- ÉTHIQUE: Si les sources contiennent du traumatisme, traite-les avec la gravité d'un tribunal de la mémoire. Ne transforme jamais la souffrance en exercice intellectuel. L'aplatissement de la douleur humaine est la faute architecturale la plus grave de TEL.
 
 Retourne UNIQUEMENT du JSON valide (pas de markdown, pas de texte hors JSON):
 {
