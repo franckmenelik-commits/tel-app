@@ -12,7 +12,7 @@ export const maxDuration = 120
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-interface TransparencyPayload {
+interface AuditPayload {
   textToAudit: string
   referenceIds: string[]
   freeReference?: string
@@ -110,7 +110,7 @@ async function callLLM(prompt: string): Promise<string> {
 // ─── POST handler ─────────────────────────────────────────────────────────────
 
 export async function POST(request: Request) {
-  let body: TransparencyPayload
+  let body: AuditPayload
   try {
     body = await request.json()
   } catch {

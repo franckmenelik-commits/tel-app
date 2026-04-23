@@ -1,7 +1,7 @@
 'use client'
 
 // TEL — The Experience Layer
-// app/transparency/page.tsx — Audit algorithmique de textes institutionnels
+// app/audit/page.tsx — Audit algorithmique de textes institutionnels
 
 import { useState, useEffect, useRef } from 'react'
 import { useLanguage, t } from '@/lib/i18n'

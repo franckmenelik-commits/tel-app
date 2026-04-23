@@ -1,7 +1,7 @@
 'use client'
 
 // TEL — The Experience Layer
-// app/transparency/[slug]/page.tsx — Rapport d'audit partagé
+// app/audit/[slug]/page.tsx — Rapport d'audit partagé
 
 import { useParams, useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
