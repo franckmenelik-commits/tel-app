@@ -41,8 +41,23 @@ Règles:
 export function buildLangInstruction(lang?: string, register?: string): string {
   const parts: string[] = []
 
-  if (lang === 'en') {
-    parts.push('IMPORTANT: Respond ENTIRELY in English. Every field in the JSON must be written in English — no French words whatsoever.')
+  // Language instructions — all 11 supported languages
+  const langInstructions: Record<string, string> = {
+    en: 'IMPORTANT: Respond ENTIRELY in English. Every field in the JSON must be written in English — no French words whatsoever.',
+    fr: '', // Default — no instruction needed
+    de: 'WICHTIG: Antworte VOLLSTÄNDIG auf Deutsch. Jedes Feld im JSON muss auf Deutsch geschrieben sein.',
+    es: 'IMPORTANTE: Responde COMPLETAMENTE en español. Cada campo del JSON debe estar escrito en español.',
+    pt: 'IMPORTANTE: Responda INTEIRAMENTE em português. Cada campo do JSON deve ser escrito em português.',
+    it: 'IMPORTANTE: Rispondi INTERAMENTE in italiano. Ogni campo del JSON deve essere scritto in italiano.',
+    ar: 'مهم: أجب بالكامل باللغة العربية. يجب كتابة كل حقل في JSON باللغة العربية.',
+    hi: 'महत्वपूर्ण: पूरी तरह से हिंदी में जवाब दें। JSON में हर फ़ील्ड हिंदी में लिखी होनी चाहिए।',
+    id: 'PENTING: Jawab SEPENUHNYA dalam Bahasa Indonesia. Setiap field dalam JSON harus ditulis dalam Bahasa Indonesia.',
+    ja: '重要: すべてのフィールドを日本語で記述してください。JSONのすべてのフィールドは日本語で書かれなければなりません。',
+    ko: '중요: JSON의 모든 필드를 한국어로 작성하세요. 모든 응답은 완전히 한국어로 작성되어야 합니다.',
+  }
+
+  if (lang && lang !== 'fr' && langInstructions[lang]) {
+    parts.push(langInstructions[lang])
   }
 
   if (register === 'casual') {

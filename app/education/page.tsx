@@ -129,6 +129,15 @@ export default function EducationPage() {
     if (!sujet.trim()) { setError(t('edu.error.subject', lang)); return }
     if (selectedOrigins.length < 2) { setError(t('edu.error.origins', lang)); return }
     if (!niveau) { setError(t('edu.error.level', lang)); return }
+    
+    // Collision animation
+    const form = document.querySelector('.tel-edu-form')
+    if (form) {
+      form.classList.remove('tel-bubble-collide')
+      void (form as HTMLElement).offsetWidth
+      form.classList.add('tel-bubble-collide')
+    }
+    
     setError(null)
     setIsLoading(true)
     setResult(null)
@@ -136,7 +145,7 @@ export default function EducationPage() {
       const res = await fetch('/api/education', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sujet: sujet.trim(), origines: selectedOrigins, niveau }),
+        body: JSON.stringify({ sujet: sujet.trim(), origines: selectedOrigins, niveau, lang }),
       })
       const data = await res.json()
       if (!res.ok || data.error) throw new Error(data.error || `HTTP ${res.status}`)
@@ -245,7 +254,7 @@ export default function EducationPage() {
 
           {/* ── Form ── */}
           {!result && !isLoading && (
-            <div className="p-6 md:p-8 rounded-2xl" style={{ background: 'rgba(10,10,15,0.92)', border: '1px solid rgba(201,168,76,0.12)', backdropFilter: 'blur(28px)' }}>
+            <div className="tel-edu-form tel-bubble-filled p-6 md:p-8 rounded-2xl" style={{ background: 'rgba(10,10,15,0.92)', border: '1px solid rgba(201,168,76,0.12)', backdropFilter: 'blur(28px)' }}>
 
               {/* Sujet */}
               <div className="mb-7">

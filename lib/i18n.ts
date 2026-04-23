@@ -5,9 +5,25 @@
 // "TEL" ne se traduit jamais. Le contenu généré par LOGOS reste dans
 // la langue des sources — seule l'interface change.
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 
-export type Lang = 'fr' | 'en'
+export type Lang = 'fr' | 'en' | 'de' | 'hi' | 'id' | 'it' | 'ja' | 'ko' | 'pt' | 'es' | 'ar'
+
+export const LANG_LABELS: Record<Lang, string> = {
+  en: 'English',
+  fr: 'Français',
+  de: 'Deutsch',
+  es: 'Español',
+  pt: 'Português',
+  it: 'Italiano',
+  ar: 'العربية',
+  hi: 'हिन्दी',
+  id: 'Indonesia',
+  ja: '日本語',
+  ko: '한국어',
+}
+
+export const ALL_LANGS: Lang[] = ['en', 'fr', 'de', 'es', 'pt', 'it', 'ar', 'hi', 'id', 'ja', 'ko']
 
 export const TRANSLATIONS = {
   // ── Hero ────────────────────────────────────────────────────────────────────
@@ -24,25 +40,34 @@ export const TRANSLATIONS = {
   'carousel.explore':{ fr: 'Cliquer pour explorer →', en: 'Click to explore →' },
 
   // ── Nav ──────────────────────────────────────────────────────────────────────
-  'nav.legends':      { fr: 'Genesis',       en: 'Genesis' },
-  'nav.education':    { fr: 'Éducation',     en: 'Education' },
-  'nav.transparency': { fr: 'Transparence',  en: 'Transparency' },
-  'nav.manifesto':    { fr: 'Manifeste',     en: 'Manifesto' },
-  'nav.careers':      { fr: 'Métiers',       en: 'Careers' },
-  'nav.initiative':   { fr: 'Initiative',    en: 'Initiative' },
-  'nav.history':      { fr: 'Mes croisements', en: 'My crossings' },
+  'nav.legends':      { fr: 'Genesis',       en: 'Genesis', de: 'Genesis', es: 'Génesis', pt: 'Gênesis', it: 'Genesi', ar: 'البداية', hi: 'उत्पत्ति', id: 'Asal Mula', ja: 'ジェネシス', ko: '제네시스' },
+  'nav.education':    { fr: 'Éducation',     en: 'Education', de: 'Bildung', es: 'Educación', pt: 'Educação', it: 'Educazione', ar: 'تعليم', hi: 'शिक्षा', id: 'Pendidikan', ja: '教育', ko: '교육' },
+  'nav.audit':        { fr: 'Audit',         en: 'Audit', de: 'Prüfung', es: 'Auditoría', pt: 'Auditoria', it: 'Audit', ar: 'تدقيق', hi: 'ऑडिट', id: 'Audit', ja: '監査', ko: '감사' },
+  'nav.manifesto':    { fr: 'Manifeste',     en: 'Manifesto', de: 'Manifest', es: 'Manifiesto', pt: 'Manifesto', it: 'Manifesto', ar: 'بيان', hi: 'घोषणापत्र', id: 'Manifesto', ja: 'マニフェスト', ko: '선언문' },
+  'nav.careers':      { fr: 'Métiers',       en: 'Careers', de: 'Karriere', es: 'Empleos', pt: 'Carreiras', it: 'Carriere', ar: 'وظائف', hi: 'करियर', id: 'Karir', ja: 'キャリア', ko: '채용' },
+  'nav.initiative':   { fr: 'Initiative',    en: 'Initiative', de: 'Initiative', es: 'Iniciativa', pt: 'Iniciativa', it: 'Iniziativa', ar: 'مبادرة', hi: 'पहल', id: 'Inisiatif', ja: 'イニシアチブ', ko: '이니셔티브' },
+  'nav.history':      { fr: 'Mes croisements', en: 'My crossings', de: 'Meine Kreuzungen', es: 'Mis cruces', pt: 'Meus cruzamentos', it: 'I miei incroci', ar: 'تقاطعاتي', hi: 'मेरे क्रॉसिंग', id: 'Persilangan saya', ja: '私のクロッシング', ko: '내 크로싱' },
   'nav.signin':       { fr: 'Se connecter',  en: 'Sign in' },
   'nav.signout':      { fr: 'Se déconnecter', en: 'Sign out' },
   'nav.explore':      { fr: 'Explorer',      en: 'Explore' },
 
   // ── Source input ─────────────────────────────────────────────────────────────
-  'input.cross':       { fr: 'Créer un pont',                en: 'Build a bridge' },
-  'input.surprise':    { fr: 'Laissez TEL chercher',         en: 'Let TEL search' },
-  'input.loading':     { fr: '— TEL réfléchit —',            en: '— TEL thinking —' },
+  'input.cross':       { fr: 'Créer un pont',                en: 'Build a bridge', de: 'Eine Brücke bauen', es: 'Construir un puente', pt: 'Construir uma ponte', it: 'Costruire un ponte', ar: 'بناء جسر', hi: 'एक पुल बनाएं', id: 'Bangun jembatan', ja: '橋を架ける', ko: '다리를 놓다' },
+  'input.surprise':    { fr: 'Laissez TEL chercher',         en: 'Let TEL search', de: 'TEL suchen lassen', es: 'Deja que TEL busque', pt: 'Deixe TEL procurar', it: 'Lascia cercare TEL', ar: 'دع TEL يبحث', hi: 'TEL को खोजने दें', id: 'Biarkan TEL mencari', ja: 'TELに検索させる', ko: 'TEL이 검색하게 하기' },
+  'input.loading':     { fr: '— TEL réfléchit —',            en: '— TEL thinking —', de: '— TEL denkt —', es: '— TEL piensa —', pt: '— TEL pensando —', it: '— TEL pensa —', ar: '— TEL يفكر —', hi: '— TEL सोच रहा है —', id: '— TEL berpikir —', ja: '— TEL 思考中 —', ko: '— TEL 생각 중 —' },
   'input.add':         { fr: '+ ajouter un vécu',            en: '+ add an experience' },
   'input.placeholder1': {
     fr: 'Collez un lien, une idée, ou racontez une histoire…',
     en: 'Paste a link, an idea, or tell a story…',
+    de: 'Fügen Sie einen Link, eine Idee ein oder erzählen Sie eine Geschichte…',
+    es: 'Pegue un enlace, una idea, o cuente una historia…',
+    pt: 'Cole um link, uma ideia, ou conte uma história…',
+    it: 'Incolla un link, un\'idea, o racconta una storia…',
+    ar: 'الصق رابطاً أو فكرة أو احكِ قصة…',
+    hi: 'एक लिंक, एक विचार चिपकाएँ, या एक कहानी सुनाएँ…',
+    id: 'Tempel tautan, ide, atau ceritakan sebuah kisah…',
+    ja: 'リンク、アイデアを貼り付けるか、物語を語ってください…',
+    ko: '링크, 아이디어를 붙여넣거나 이야기를 들려주세요…',
   },
   'input.placeholder2': {
     fr: 'Le second vécu à croiser',
@@ -360,34 +385,62 @@ export const TRANSLATIONS = {
 
 export type TranslationKey = keyof typeof TRANSLATIONS
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function t(key: TranslationKey, lang: Lang): string {
-  return TRANSLATIONS[key]?.[lang] ?? TRANSLATIONS[key]?.fr ?? key
+  const entry = TRANSLATIONS[key] as Record<string, string> | undefined
+  if (!entry) return key
+  // Fallback chain: exact lang → en → fr
+  return entry[lang] ?? entry['en'] ?? entry['fr'] ?? key
 }
 
-// ── React hook ───────────────────────────────────────────────────────────────
+// ── Language change event for cross-component reactivity ─────────────────────
+const LANG_EVENT = 'tel:lang:change'
+
+function broadcastLangChange(lang: Lang) {
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent(LANG_EVENT, { detail: lang }))
+  }
+}
+
+// ── React hook — reactive across all components ──────────────────────────────
 
 export function useLanguage(): [Lang, (l: Lang) => void, boolean] {
   const [lang, setLang] = useState<Lang>('fr')
   const [langDetected, setLangDetected] = useState(false)
 
+  // Listen for cross-component language changes
+  useEffect(() => {
+    function onLangChange(e: Event) {
+      const newLang = (e as CustomEvent).detail as Lang
+      if (newLang && newLang !== lang) {
+        setLang(newLang)
+      }
+    }
+    window.addEventListener(LANG_EVENT, onLangChange)
+    return () => window.removeEventListener(LANG_EVENT, onLangChange)
+  }, [lang])
+
+  // Initial detection
   useEffect(() => {
     try {
       const stored = localStorage.getItem('tel:lang') as Lang | null
-      if (stored === 'fr' || stored === 'en') {
+      if (stored && ALL_LANGS.includes(stored)) {
         setLang(stored)
       } else {
         const browser = navigator.language || ''
-        setLang(browser.toLowerCase().startsWith('fr') ? 'fr' : 'en')
+        const browserLang = browser.toLowerCase().slice(0, 2) as Lang
+        setLang(ALL_LANGS.includes(browserLang) ? browserLang : 'en')
       }
     } catch { /* localStorage indisponible */ }
     setLangDetected(true)
   }, [])
 
-  function setAndStore(l: Lang) {
+  const setAndStore = useCallback((l: Lang) => {
     setLang(l)
     setLangDetected(true)
     try { localStorage.setItem('tel:lang', l) } catch { /* ok */ }
-  }
+    broadcastLangChange(l)
+  }, [])
 
   return [lang, setAndStore, langDetected]
 }

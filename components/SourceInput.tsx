@@ -38,8 +38,8 @@ function getModeIcon(mode: InputMode): string {
     case 'keyword': return '⊕'
     case 'crossing': return '×'
     case 'book': return '📖'
-    case 'upload': return '▣'
-    case 'voice': return '🎙'
+    case 'upload': return '+'
+    case 'voice': return '●'
   }
 }
 
@@ -70,9 +70,11 @@ export default function SourceInput({ onCross, isLoading, prefill, register = 's
 
   // Voice recording state
   const [recordingIndex, setRecordingIndex] = useState<number | null>(null)
+  const [recordingVecu, setRecordingVecu] = useState(false)
   // File upload state  
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null)
   const [uploadingIndex, setUploadingIndex] = useState<number | null>(null)
+  const [uploadingVecu, setUploadingVecu] = useState(false)
 
   const [inputs, setInputs] = useState<string[]>(['', ''])
   const [bookModes, setBookModes] = useState<boolean[]>([false, false])
@@ -187,8 +189,8 @@ export default function SourceInput({ onCross, isLoading, prefill, register = 's
   // ── File upload (drag & drop / click) ───────────────────────────────────
   const handleFileUpload = useCallback(async (index: number, file: File) => {
     const ext = file.name.split('.').pop()?.toLowerCase() || ''
-    if (!['pdf', 'txt', 'md', 'text'].includes(ext)) {
-      setError(lang === 'en' ? `Unsupported: .${ext}. Use PDF, TXT, MD` : `Non supporté : .${ext}. Utilisez PDF, TXT, MD`)
+    if (!['pdf', 'txt', 'md', 'text', 'pptx', 'ppt', 'png', 'jpg', 'jpeg', 'webp', 'gif'].includes(ext)) {
+      setError(lang === 'en' ? `Unsupported: .${ext}` : `Non supporté : .${ext}`)
       return
     }
     if (file.size > 10 * 1024 * 1024) {
@@ -305,6 +307,7 @@ export default function SourceInput({ onCross, isLoading, prefill, register = 's
             {t('resonate.desc', lang)}
           </p>
           <textarea
+            className={`tel-resonate-area ${vecu.trim().length > 10 ? 'tel-bubble-filled' : ''}`}
             value={vecu}
             onChange={e => { setVecu(e.target.value); setResonanceError(null) }}
             rows={5}
@@ -327,11 +330,103 @@ export default function SourceInput({ onCross, isLoading, prefill, register = 's
             onFocus={e => { e.currentTarget.style.borderColor = 'rgba(201,168,76,0.4)' }}
             onBlur={e => { e.currentTarget.style.borderColor = vecu.trim() ? 'rgba(201,168,76,0.25)' : BORDER }}
           />
+
+          {/* Voice + File buttons for resonance mode */}
+          <div className="flex items-center gap-2 mb-3">
+            {/* Mic button */}
+            <button
+              onClick={() => {
+                if (recordingVecu) { setRecordingVecu(false); return }
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const W = window as any
+                const Ctor = W.SpeechRecognition || W.webkitSpeechRecognition
+                if (!Ctor) { setResonanceError(lang === 'en' ? 'Voice not supported' : 'Voix non supportée'); return }
+                const r = new Ctor()
+                r.lang = lang === 'en' ? 'en-US' : lang === 'fr' ? 'fr-FR' : lang === 'de' ? 'de-DE' : lang === 'es' ? 'es-ES' : lang === 'pt' ? 'pt-BR' : lang === 'it' ? 'it-IT' : lang === 'ja' ? 'ja-JP' : lang === 'ko' ? 'ko-KR' : lang === 'hi' ? 'hi-IN' : lang === 'id' ? 'id-ID' : lang === 'ar' ? 'ar-SA' : 'en-US'
+                r.interimResults = false; r.continuous = false
+                setRecordingVecu(true)
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                r.onresult = (e: any) => { const txt = e.results?.[0]?.[0]?.transcript || ''; if (txt) setVecu(prev => prev ? prev + ' ' + txt : txt); setRecordingVecu(false) }
+                r.onerror = () => setRecordingVecu(false)
+                r.onend = () => setRecordingVecu(false)
+                r.start()
+              }}
+              disabled={resonanceLoading}
+              className={recordingVecu ? 'tel-voice-recording' : ''}
+              style={{
+                display: 'flex', alignItems: 'center', gap: '5px',
+                fontSize: '11px', padding: '6px 12px', borderRadius: '6px',
+                background: recordingVecu ? 'rgba(232,93,74,0.12)' : 'rgba(255,255,255,0.025)',
+                border: `1px solid ${recordingVecu ? 'rgba(232,93,74,0.4)' : 'rgba(255,255,255,0.071)'}`,
+                color: recordingVecu ? '#E85D4A' : '#666',
+                cursor: 'pointer', transition: 'all 200ms ease',
+              }}
+            >
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+                <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+                <line x1="12" y1="19" x2="12" y2="23"/>
+                <line x1="8" y1="23" x2="16" y2="23"/>
+              </svg>
+              {recordingVecu ? (lang === 'en' ? 'Recording…' : 'Écoute…') : (lang === 'en' ? 'Voice' : 'Voix')}
+            </button>
+
+            {/* File upload button */}
+            <button
+              onClick={() => (document.getElementById('vecu-file-input') as HTMLInputElement)?.click()}
+              disabled={resonanceLoading || uploadingVecu}
+              style={{
+                display: 'flex', alignItems: 'center', gap: '5px',
+                fontSize: '11px', padding: '6px 12px', borderRadius: '6px',
+                background: 'rgba(255,255,255,0.025)',
+                border: '1px solid rgba(255,255,255,0.071)',
+                color: uploadingVecu ? '#7AABB5' : '#666',
+                cursor: 'pointer', transition: 'all 200ms ease',
+              }}
+            >
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="12" y1="5" x2="12" y2="19"/>
+                <line x1="5" y1="12" x2="19" y2="12"/>
+              </svg>
+              {uploadingVecu ? (lang === 'en' ? 'Reading…' : 'Lecture…') : (lang === 'en' ? 'File' : 'Fichier')}
+            </button>
+            <input
+              id="vecu-file-input"
+              type="file"
+              accept=".pdf,.txt,.md,.text,.pptx,.ppt,.png,.jpg,.jpeg,.webp,.gif"
+              style={{ display: 'none' }}
+              onChange={async (e) => {
+                const file = e.target.files?.[0]
+                if (!file) return
+                setUploadingVecu(true)
+                try {
+                  const formData = new FormData()
+                  formData.append('file', file)
+                  const res = await fetch('/api/upload', { method: 'POST', body: formData })
+                  const data = await res.json()
+                  if (data.success && data.text) setVecu(prev => prev ? prev + '\n\n' + data.text : data.text)
+                  else setResonanceError(data.error || 'Upload error')
+                } catch { setResonanceError('Upload error') }
+                setUploadingVecu(false)
+                e.target.value = ''
+              }}
+            />
+          </div>
+
           {resonanceError && (
             <p style={{ fontSize: '12px', color: '#8B3A3A', fontStyle: 'italic', marginBottom: '10px' }}>{resonanceError}</p>
           )}
           <button
-            onClick={handleResonate}
+            onClick={() => {
+              // Collision animation on the textarea container
+              const textarea = document.querySelector('.tel-resonate-area')
+              if (textarea) {
+                textarea.classList.remove('tel-bubble-collide')
+                void (textarea as HTMLElement).offsetWidth
+                textarea.classList.add('tel-bubble-collide')
+              }
+              setTimeout(() => handleResonate(), 350)
+            }}
             disabled={resonanceLoading}
             style={{
               width: '100%',
@@ -565,7 +660,12 @@ export default function SourceInput({ onCross, isLoading, prefill, register = 's
                       transition: 'all 200ms ease',
                     }}
                   >
-                    🎙
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+                      <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+                      <line x1="12" y1="19" x2="12" y2="23"/>
+                      <line x1="8" y1="23" x2="16" y2="23"/>
+                    </svg>
                   </button>
                   {/* File upload button */}
                   <button
@@ -581,12 +681,15 @@ export default function SourceInput({ onCross, isLoading, prefill, register = 's
                       transition: 'all 200ms ease',
                     }}
                   >
-                    ▣
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <line x1="12" y1="5" x2="12" y2="19"/>
+                      <line x1="5" y1="12" x2="19" y2="12"/>
+                    </svg>
                   </button>
                   <input
                     ref={(el) => { fileInputRefs.current[i] = el }}
                     type="file"
-                    accept=".pdf,.txt,.md,.text"
+                    accept=".pdf,.txt,.md,.text,.pptx,.ppt,.png,.jpg,.jpeg,.webp,.gif"
                     style={{ display: 'none' }}
                     onChange={(e) => {
                       const file = e.target.files?.[0]

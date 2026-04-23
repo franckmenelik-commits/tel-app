@@ -118,6 +118,14 @@ export default function TransparencyPage() {
       return
     }
 
+    // Collision animation
+    const form = document.querySelector('.tel-audit-form')
+    if (form) {
+      form.classList.remove('tel-bubble-collide')
+      void (form as HTMLElement).offsetWidth
+      form.classList.add('tel-bubble-collide')
+    }
+
     setError(null)
     setReport(null)
     setLoading(true)
@@ -130,6 +138,7 @@ export default function TransparencyPage() {
           textToAudit,
           referenceIds: selectedRefs,
           freeReference: freeReference.trim() || undefined,
+          lang,
         }),
       })
 
@@ -296,7 +305,7 @@ export default function TransparencyPage() {
 
         {/* ── Form ── */}
         {!report && (
-          <div style={{ display: 'flex', flexDirection: 'column' as const, gap: '32px' }}>
+          <div className="tel-audit-form tel-bubble-filled" style={{ display: 'flex', flexDirection: 'column' as const, gap: '32px' }}>
 
             {/* Textarea */}
             <div>
