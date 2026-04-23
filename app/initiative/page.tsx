@@ -129,6 +129,14 @@ export default function InitiativePage() {
       setError(t('init.error', lang))
       return
     }
+    // Collision animation
+    const form = document.querySelector('.tel-initiative-form')
+    if (form) {
+      form.classList.remove('tel-bubble-collide')
+      void (form as HTMLElement).offsetWidth
+      form.classList.add('tel-bubble-collide')
+    }
+
     setError('')
     setReport(null)
     setLoading(true)
@@ -258,7 +266,7 @@ export default function InitiativePage() {
 
         {/* Form */}
         {!report && (
-          <div style={{ marginBottom: '40px' }}>
+          <div className="tel-initiative-form tel-bubble-filled">
             <textarea
               value={probleme}
               onChange={e => setProbleme(e.target.value)}
@@ -276,6 +284,7 @@ export default function InitiativePage() {
               onBlur={e => { e.currentTarget.style.borderColor = BORDER }}
               disabled={loading}
             />
+          </div>
 
             {/* Options */}
             <div style={{

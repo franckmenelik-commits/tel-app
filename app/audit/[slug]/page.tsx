@@ -5,7 +5,7 @@
 
 import { useParams, useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
-import type { TransparencyReport } from '@/app/api/transparency/route'
+import type { TransparencyReport } from '@/app/api/audit/route'
 
 const GOLD = '#C9A84C'
 const BG = '#09090b'
@@ -54,7 +54,7 @@ export default function SharedAuditPage() {
   useEffect(() => {
     if (!slug) return
     try {
-      const stored = localStorage.getItem(`tel:shared:transparency:${slug}`)
+      const stored = localStorage.getItem(`tel:shared:audit:${slug}`) || localStorage.getItem(`tel:shared:transparency:${slug}`)
       if (stored) {
         setReport(JSON.parse(stored) as TransparencyReport)
       } else {
@@ -77,24 +77,24 @@ export default function SharedAuditPage() {
       }
       el.setAttribute('content', content)
     }
-    setMeta('og:title', `Audit TEL Transparence — ${report.documentType}`)
+    setMeta('og:title', `Audit TEL — ${report.documentType}`)
     setMeta('og:description', report.riskSummary)
     setMeta('og:type', 'article')
-    document.title = `Audit — ${report.documentType} — TEL Transparence`
+    document.title = `Audit — ${report.documentType} — TEL`
   }, [report])
 
   if (notFound) {
     return (
       <div style={{ background: BG, minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: '#444' }}>
         <p style={{ fontFamily: 'ui-monospace, monospace', fontSize: '11px', letterSpacing: '0.2em', textTransform: 'uppercase', marginBottom: '16px', color: '#333' }}>
-          TEL Transparence · Lien invalide
+          TEL Audit · Lien invalide
         </p>
         <p style={{ fontFamily: 'Georgia, serif', fontStyle: 'italic', fontSize: '17px', color: '#666', marginBottom: '32px' }}>
           Ce rapport d&apos;audit n&apos;existe plus ou n&apos;a jamais existé.
         </p>
-        <button onClick={() => router.push('/transparency')}
+        <button onClick={() => router.push('/audit')}
           style={{ padding: '10px 24px', borderRadius: '6px', background: 'rgba(201,168,76,0.08)', border: '1px solid rgba(201,168,76,0.25)', color: GOLD, fontFamily: 'ui-monospace, monospace', fontSize: '12px', cursor: 'pointer' }}>
-          ← TEL Transparence
+          ← TEL Audit
         </button>
       </div>
     )
@@ -117,9 +117,9 @@ export default function SharedAuditPage() {
       <header style={{ padding: '20px 40px', borderBottom: `1px solid ${BORDER}`, position: 'sticky', top: 0, background: BG, zIndex: 50 }}>
         <div style={{ maxWidth: '720px', margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <a href="/" style={{ fontWeight: 600, fontSize: '15px', letterSpacing: '0.2em', color: '#ffffff', textTransform: 'uppercase', textDecoration: 'none' }}>TEL</a>
-          <button onClick={() => router.push('/transparency')}
+          <button onClick={() => router.push('/audit')}
             style={{ fontSize: '12px', color: '#666', background: 'none', border: 'none', cursor: 'pointer', fontFamily: '-apple-system, BlinkMacSystemFont, system-ui, sans-serif' }}>
-            ← Transparence
+            ← Audit
           </button>
         </div>
       </header>
@@ -166,9 +166,9 @@ export default function SharedAuditPage() {
         {/* Footer */}
         <div style={{ marginTop: '48px', paddingTop: '24px', borderTop: `1px solid ${BORDER}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <p style={{ fontSize: '11px', color: '#333', fontFamily: 'ui-monospace, monospace' }}>
-            TEL Transparence · theexperiencelayer.org
+            TEL Audit · theexperiencelayer.org
           </p>
-          <button onClick={() => router.push('/transparency')}
+          <button onClick={() => router.push('/audit')}
             style={{ fontSize: '12px', color: '#333', background: 'none', border: 'none', cursor: 'pointer' }}>
             Créer votre propre audit →
           </button>

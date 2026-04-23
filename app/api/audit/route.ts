@@ -1,5 +1,5 @@
 // TEL — The Experience Layer
-// /api/transparency — Audit algorithmique de textes institutionnels
+// /api/audit — Audit algorithmique de textes institutionnels
 //
 // SOUFFLE : Mistral d'abord → Claude fallback → Ollama dernier recours
 
@@ -35,7 +35,7 @@ async function callLLM(prompt: string): Promise<string> {
   // N2 — Mistral API (preferred)
   if (process.env.MISTRAL_API_KEY) {
     try {
-      console.log('[transparency] Essai N2 Mistral...')
+      console.log('[audit] Essai N2 Mistral...')
       const res = await fetch('https://api.mistral.ai/v1/chat/completions', {
         method: 'POST',
         headers: {
@@ -54,21 +54,21 @@ async function callLLM(prompt: string): Promise<string> {
         const data = await res.json()
         const text: string = data.choices?.[0]?.message?.content ?? ''
         if (text.trim()) {
-          console.log('[transparency] N2 Mistral OK')
+          console.log('[audit] N2 Mistral OK')
           return text
         }
       } else {
-        console.warn('[transparency] N2 HTTP', res.status, await res.text().then(t => t.slice(0, 200)))
+        console.warn('[audit] N2 HTTP', res.status, await res.text().then(t => t.slice(0, 200)))
       }
     } catch (err) {
-      console.warn('[transparency] N2 indisponible:', err instanceof Error ? err.message : err)
+      console.warn('[audit] N2 indisponible:', err instanceof Error ? err.message : err)
     }
   }
 
   // N3 — Anthropic Claude (fallback)
   if (process.env.ANTHROPIC_API_KEY) {
     try {
-      console.log('[transparency] Fallback N3 Claude...')
+      console.log('[audit] Fallback N3 Claude...')
       const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
       const response = await client.messages.create({
         model: 'claude-sonnet-4-6',
@@ -77,18 +77,18 @@ async function callLLM(prompt: string): Promise<string> {
       })
       const text = response.content[0].type === 'text' ? response.content[0].text : ''
       if (text.trim()) {
-        console.log('[transparency] N3 Claude OK')
+        console.log('[audit] N3 Claude OK')
         return text
       }
     } catch (err) {
-      console.warn('[transparency] N3 indisponible:', err instanceof Error ? err.message : err)
+      console.warn('[audit] N3 indisponible:', err instanceof Error ? err.message : err)
     }
   }
 
   // N1 — Ollama (dernier recours)
   const ollamaUrl = process.env.OLLAMA_URL || 'http://localhost:11434'
   const ollamaModel = process.env.OLLAMA_MODEL || 'mistral'
-  console.log('[transparency] Fallback N1 Ollama...')
+  console.log('[audit] Fallback N1 Ollama...')
   const res = await fetch(`${ollamaUrl}/api/chat`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -177,7 +177,7 @@ export async function POST(request: Request) {
       headers: { 'Content-Type': 'application/json' },
     })
   } catch (err) {
-    console.error('[/api/transparency] Erreur:', err)
+    console.error('[/api/audit] Erreur:', err)
     const msg = err instanceof Error ? err.message : 'Erreur lors de l\'analyse'
     const lower = msg.toLowerCase()
     const friendly = lower.includes('credit') || lower.includes('balance') || lower.includes('insufficient')

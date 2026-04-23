@@ -37,7 +37,7 @@ function getModeIcon(mode: InputMode): string {
     case 'free_text': return '❝'
     case 'keyword': return '⊕'
     case 'crossing': return '×'
-    case 'book': return '📖'
+    case 'book': return '□'
     case 'upload': return '+'
     case 'voice': return '●'
   }
@@ -71,6 +71,7 @@ export default function SourceInput({ onCross, isLoading, prefill, register = 's
   // Voice recording state
   const [recordingIndex, setRecordingIndex] = useState<number | null>(null)
   const [recordingVecu, setRecordingVecu] = useState(false)
+  const [isBookVecu, setIsBookVecu] = useState(false)
   // File upload state  
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null)
   const [uploadingIndex, setUploadingIndex] = useState<number | null>(null)
@@ -306,30 +307,70 @@ export default function SourceInput({ onCross, isLoading, prefill, register = 's
           <p style={{ fontSize: '12px', color: '#444', lineHeight: 1.6, marginBottom: '16px', fontStyle: 'italic' }}>
             {t('resonate.desc', lang)}
           </p>
-          <textarea
-            className={`tel-resonate-area ${vecu.trim().length > 10 ? 'tel-bubble-filled' : ''}`}
-            value={vecu}
-            onChange={e => { setVecu(e.target.value); setResonanceError(null) }}
-            rows={5}
-            placeholder={t('mode.resonate.placeholder', lang)}
-            disabled={resonanceLoading}
-            style={{
-              width: '100%',
-              padding: '14px 16px',
-              fontSize: '14px',
-              background: SURFACE,
-              border: `1px solid ${vecu.trim() ? 'rgba(201,168,76,0.25)' : BORDER}`,
-              borderRadius: '8px',
-              color: '#e0e0e0',
-              lineHeight: 1.7,
-              resize: 'vertical' as const,
-              outline: 'none',
-              fontFamily: 'Georgia, Times New Roman, serif',
-              marginBottom: '12px',
-            }}
-            onFocus={e => { e.currentTarget.style.borderColor = 'rgba(201,168,76,0.4)' }}
-            onBlur={e => { e.currentTarget.style.borderColor = vecu.trim() ? 'rgba(201,168,76,0.25)' : BORDER }}
-          />
+          {isBookVecu ? (
+            <div className={`tel-resonate-area flex flex-col gap-4 p-5 rounded-xl mb-3 ${vecu.trim().length > 10 ? 'tel-bubble-filled' : ''}`} style={{ background: SURFACE, border: `1px solid ${vecu.trim() ? 'rgba(201,168,76,0.25)' : BORDER}` }}>
+              <input
+                type="text"
+                placeholder={t('input.book.title', lang)}
+                value={vecu.split(' — ')[0] || ''}
+                onChange={(e) => {
+                  const parts = vecu.split(' — ')
+                  setVecu(`${e.target.value} — ${parts[1] || ''} — ${parts[2] || ''}`)
+                }}
+                className="bg-transparent border-none focus:ring-0 text-lg tel-serif font-medium"
+                style={{ color: '#fff', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '8px' }}
+              />
+              <div className="flex gap-6">
+                <input
+                  type="text"
+                  placeholder={t('input.book.author', lang)}
+                  value={vecu.split(' — ')[1] || ''}
+                  onChange={(e) => {
+                    const parts = vecu.split(' — ')
+                    setVecu(`${parts[0] || ''} — ${e.target.value} — ${parts[2] || ''}`)
+                  }}
+                  className="bg-transparent border-none focus:ring-0 text-sm tel-serif italic flex-1"
+                  style={{ color: '#aaa' }}
+                />
+                <input
+                  type="text"
+                  placeholder={t('input.book.page', lang)}
+                  value={vecu.split(' — ')[2] || ''}
+                  onChange={(e) => {
+                    const parts = vecu.split(' — ')
+                    setVecu(`${parts[0] || ''} — ${parts[1] || ''} — ${e.target.value}`)
+                  }}
+                  className="bg-transparent border-none focus:ring-0 text-sm tel-serif flex-1"
+                  style={{ color: '#666', textAlign: 'right' }}
+                />
+              </div>
+            </div>
+          ) : (
+            <textarea
+              className={`tel-resonate-area ${vecu.trim().length > 10 ? 'tel-bubble-filled' : ''}`}
+              value={vecu}
+              onChange={e => { setVecu(e.target.value); setResonanceError(null) }}
+              rows={5}
+              placeholder={t('mode.resonate.placeholder', lang)}
+              disabled={resonanceLoading}
+              style={{
+                width: '100%',
+                padding: '14px 16px',
+                fontSize: '14px',
+                background: SURFACE,
+                border: `1px solid ${vecu.trim() ? 'rgba(201,168,76,0.25)' : BORDER}`,
+                borderRadius: '8px',
+                color: '#e0e0e0',
+                lineHeight: 1.7,
+                resize: 'vertical' as const,
+                outline: 'none',
+                fontFamily: 'Georgia, Times New Roman, serif',
+                marginBottom: '12px',
+              }}
+              onFocus={e => { e.currentTarget.style.borderColor = 'rgba(201,168,76,0.4)' }}
+              onBlur={e => { e.currentTarget.style.borderColor = vecu.trim() ? 'rgba(201,168,76,0.25)' : BORDER }}
+            />
+          )}
 
           {/* Voice + File buttons for resonance mode */}
           <div className="flex items-center gap-2 mb-3">
@@ -362,13 +403,11 @@ export default function SourceInput({ onCross, isLoading, prefill, register = 's
                 cursor: 'pointer', transition: 'all 200ms ease',
               }}
             >
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
                 <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
-                <line x1="12" y1="19" x2="12" y2="23"/>
-                <line x1="8" y1="23" x2="16" y2="23"/>
               </svg>
-              {recordingVecu ? (lang === 'en' ? 'Recording…' : 'Écoute…') : (lang === 'en' ? 'Voice' : 'Voix')}
+              {recordingVecu ? (lang === 'en' ? 'Recording…' : 'Écoute…') : (lang === 'en' ? 'Vocal' : 'Vocal')}
             </button>
 
             {/* File upload button */}
@@ -382,13 +421,34 @@ export default function SourceInput({ onCross, isLoading, prefill, register = 's
                 border: '1px solid rgba(255,255,255,0.071)',
                 color: uploadingVecu ? '#7AABB5' : '#666',
                 cursor: 'pointer', transition: 'all 200ms ease',
+                textTransform: 'uppercase', letterSpacing: '0.05em'
               }}
             >
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <line x1="12" y1="5" x2="12" y2="19"/>
                 <line x1="5" y1="12" x2="19" y2="12"/>
               </svg>
-              {uploadingVecu ? (lang === 'en' ? 'Reading…' : 'Lecture…') : (lang === 'en' ? 'File' : 'Fichier')}
+              {uploadingVecu ? (lang === 'en' ? 'Reading…' : 'Lecture…') : (lang === 'en' ? 'Fichier' : 'Fichier')}
+            </button>
+
+            {/* Book Mode button for Resonate */}
+            <button
+              onClick={() => setIsBookVecu(!isBookVecu)}
+              disabled={resonanceLoading}
+              style={{
+                display: 'flex', alignItems: 'center', gap: '5px',
+                fontSize: '11px', padding: '6px 12px', borderRadius: '6px',
+                background: isBookVecu ? 'rgba(122,171,181,0.1)' : 'rgba(255,255,255,0.025)',
+                border: `1px solid ${isBookVecu ? 'rgba(122,171,181,0.3)' : 'rgba(255,255,255,0.071)'}`,
+                color: isBookVecu ? '#7AABB5' : '#666',
+                cursor: 'pointer', transition: 'all 200ms ease',
+                textTransform: 'uppercase', letterSpacing: '0.05em'
+              }}
+            >
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" /><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+              </svg>
+              <span>Livre</span>
             </button>
             <input
               id="vecu-file-input"
@@ -527,7 +587,7 @@ export default function SourceInput({ onCross, isLoading, prefill, register = 's
       </div>
 
       {/* ── Source inputs ── */}
-      <div className="flex flex-col gap-2 mb-3">
+      <div className="flex flex-col gap-3 mb-6">
         {inputs.map((input, i) => {
           const trimmed = input.trim()
           const isBook = bookModes[i] ?? false
@@ -537,155 +597,255 @@ export default function SourceInput({ onCross, isLoading, prefill, register = 's
           const isValid = trimmed.length > 0
 
           return (
-            <div key={i} className={`relative group flex items-start gap-2 ${isValid ? 'tel-bubble-filled' : ''}`}>
-              {/* Mode badge */}
-              <div
-                className={`flex-shrink-0 w-7 h-7 mt-1 rounded-full flex items-center justify-center text-xs ${recordingIndex === i ? 'tel-voice-recording' : ''}`}
-                style={{
-                  background: recordingIndex === i ? 'rgba(232,93,74,0.15)'
-                    : isBook ? 'rgba(122,171,181,0.08)'
-                    : isValid ? 'rgba(201,168,76,0.06)'
-                    : 'rgba(255,255,255,0.025)',
-                  color: recordingIndex === i ? '#E85D4A'
-                    : isBook ? '#7AABB5'
-                    : isValid ? (urlMeta?.color ?? getModeColor(detected?.mode ?? 'keyword'))
-                    : '#2a2a2a',
-                  border: `1px solid ${recordingIndex === i ? 'rgba(232,93,74,0.4)' : isBook ? 'rgba(122,171,181,0.25)' : isValid ? 'rgba(201,168,76,0.2)' : 'rgba(255,255,255,0.047)'}`,
-                  fontSize: '0.65rem',
-                  transition: 'all 200ms ease',
-                }}
-              >
-                {recordingIndex === i ? '●' : isBook ? '📖' : detected ? (isUrl ? urlMeta!.icon : getModeIcon(detected.mode)) : String(i + 1)}
+            <div 
+              key={i} 
+              className={`relative flex flex-col gap-2 p-4 rounded-xl transition-all duration-300 ${isValid ? 'tel-bubble-filled' : ''}`} 
+              style={{ 
+                background: 'rgba(255,255,255,0.012)', 
+                border: `1px solid ${isValid ? 'rgba(201,168,76,0.1)' : 'rgba(255,255,255,0.04)'}`,
+                boxShadow: isValid ? '0 4px 20px rgba(0,0,0,0.2)' : 'none'
+              }}
+            >
+              {/* Step & Label */}
+              <div className="flex items-center justify-between mb-1">
+                <div className="flex items-center gap-2">
+                   <span style={{ fontSize: '10px', color: GOLD, opacity: 0.6, fontWeight: 700, letterSpacing: '0.1em' }}>
+                     {String(i + 1).padStart(2, '0')}
+                   </span>
+                   <span style={{ fontSize: '10px', color: '#555', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 500 }}>
+                     {isBook ? t('input.mode.book', lang) : (isValid ? (isUrl ? urlMeta!.label : getLangModeLabel(detected?.mode ?? 'keyword')) : t('input.sources', lang))}
+                   </span>
+                </div>
+                {inputs.length > 2 && !isLoading && (
+                  <button 
+                    onClick={() => removeSource(i)}
+                    style={{ background: 'none', border: 'none', color: '#333', cursor: 'pointer', fontSize: '16px', lineHeight: 1, padding: '0 4px' }}
+                    title={lang === 'en' ? 'Remove' : 'Supprimer'}
+                  >×</button>
+                )}
               </div>
 
-              {/* Input + drop zone wrapper */}
-              <div
-                className="flex-1 relative"
-                onDragOver={(e) => { e.preventDefault(); setDragOverIndex(i) }}
-                onDragLeave={() => setDragOverIndex(null)}
-                onDrop={(e) => handleDrop(i, e)}
-              >
-                {/* Drop overlay */}
-                {dragOverIndex === i && (
-                  <div style={{
-                    position: 'absolute', inset: 0, zIndex: 10,
-                    background: 'rgba(122,171,181,0.08)',
-                    border: '2px dashed rgba(122,171,181,0.4)',
-                    borderRadius: '8px',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    pointerEvents: 'none',
-                  }}>
-                    <span style={{ fontSize: '12px', color: '#7AABB5', letterSpacing: '0.06em' }}>
-                      {lang === 'en' ? '▣ Drop file here' : '▣ Déposez le fichier ici'}
-                    </span>
-                  </div>
-                )}
-
-                {/* Upload progress indicator */}
-                {uploadingIndex === i && (
-                  <div style={{
-                    position: 'absolute', inset: 0, zIndex: 10,
-                    background: 'rgba(9,9,11,0.85)',
-                    borderRadius: '8px',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    gap: '8px',
-                  }}>
-                    <div className="tel-loading-dot" />
-                    <span style={{ fontSize: '11px', color: '#7AABB5' }}>
-                      {lang === 'en' ? 'Extracting text…' : 'Extraction du texte…'}
-                    </span>
-                  </div>
-                )}
-
-                <textarea
-                  ref={(el) => { inputRefs.current[i] = el }}
-                  value={input}
-                  onChange={(e) => updateInput(i, e.target.value)}
-                  onPaste={(e) => handlePaste(i, e)}
-                  rows={!isBook && detected?.mode === 'free_text' ? 4 : 1}
-                  placeholder={
-                    isBook
-                      ? t('input.book.placeholder', lang)
-                      : i === 0
-                      ? t('input.placeholder1', lang)
-                      : i === 1
-                      ? t('input.placeholder2', lang)
-                      : `${t('input.sources', lang)} ${i + 1}`
-                  }
-                  disabled={isLoading || uploadingIndex === i}
+              <div className="flex gap-3 items-start">
+                {/* Mode Icon */}
+                <div
+                  className={`flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center text-sm ${recordingIndex === i ? 'tel-voice-recording' : ''}`}
                   style={{
-                    width: '100%',
-                    padding: '10px 14px',
-                    fontSize: '13px',
-                    background: dragOverIndex === i ? 'rgba(122,171,181,0.04)' : 'rgba(255,255,255,0.025)',
-                    border: `1px solid ${dragOverIndex === i ? 'rgba(122,171,181,0.3)' : isValid ? 'rgba(201,168,76,0.25)' : 'rgba(255,255,255,0.071)'}`,
-                    borderRadius: '8px',
-                    color: isValid ? '#e0e0e0' : '#444',
-                    lineHeight: 1.6,
-                    minHeight: detected?.mode === 'free_text' ? '96px' : '38px',
-                    resize: 'none',
-                    outline: 'none',
-                    transition: 'all 200ms ease',
-                    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif',
+                    background: recordingIndex === i ? 'rgba(232,93,74,0.1)'
+                      : isBook ? 'rgba(122,171,181,0.06)'
+                      : isValid ? 'rgba(201,168,76,0.04)'
+                      : 'rgba(255,255,255,0.015)',
+                    color: recordingIndex === i ? '#E85D4A'
+                      : isBook ? '#7AABB5'
+                      : isValid ? (urlMeta?.color ?? getModeColor(detected?.mode ?? 'keyword'))
+                      : '#1a1a1a',
+                    border: `1px solid ${recordingIndex === i ? 'rgba(232,93,74,0.3)' : isBook ? 'rgba(122,171,181,0.2)' : isValid ? 'rgba(201,168,76,0.15)' : 'rgba(255,255,255,0.03)'}`,
+                    transition: 'all 300ms ease',
                   }}
-                  onFocus={e => { e.currentTarget.style.borderColor = 'rgba(201,168,76,0.4)' }}
-                  onBlur={e => { e.currentTarget.style.borderColor = isValid ? 'rgba(201,168,76,0.25)' : 'rgba(255,255,255,0.071)' }}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && !e.shiftKey && detected?.mode !== 'free_text') {
-                      e.preventDefault()
-                      if (i < inputs.length - 1) {
-                        inputRefs.current[i + 1]?.focus()
-                      } else {
-                        handleCross()
+                >
+                  {recordingIndex === i ? (
+                    <div className="w-2 h-2 rounded-full bg-current animate-pulse" />
+                  ) : isBook ? (
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" /><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+                    </svg>
+                  ) : detected ? (
+                    isUrl ? <span style={{ fontSize: '14px' }}>{urlMeta!.icon}</span> : 
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                       {detected.mode === 'keyword' && <><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></>}
+                       {detected.mode === 'crossing' && <path d="M18 6L6 18M6 6l12 12"/>}
+                       {detected.mode === 'free_text' && <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>}
+                    </svg>
+                  ) : <span style={{ opacity: 0.15 }}>?</span>}
+                </div>
+
+                <div
+                  className="flex-1 relative"
+                  onDragOver={(e) => { e.preventDefault(); setDragOverIndex(i) }}
+                  onDragLeave={() => setDragOverIndex(null)}
+                  onDrop={(e) => handleDrop(i, e)}
+                >
+                  {/* Drop overlay */}
+                  {dragOverIndex === i && (
+                    <div style={{
+                      position: 'absolute', inset: 0, zIndex: 10,
+                      background: 'rgba(122,171,181,0.08)',
+                      border: '2px dashed rgba(122,171,181,0.4)',
+                      borderRadius: '8px',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      pointerEvents: 'none',
+                    }}>
+                      <span style={{ fontSize: '12px', color: '#7AABB5', letterSpacing: '0.04em' }}>
+                        {lang === 'en' ? '▣ Drop file' : '▣ Déposer le fichier'}
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Upload progress */}
+                  {uploadingIndex === i && (
+                    <div style={{
+                      position: 'absolute', inset: 0, zIndex: 10,
+                      background: 'rgba(9,9,11,0.85)',
+                      borderRadius: '8px',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      gap: '8px',
+                    }}>
+                      <div className="tel-loading-dot" />
+                    </div>
+                  )}
+
+                  {isBook ? (
+                    <div className="flex flex-col gap-2 w-full py-2">
+                      <input
+                        type="text"
+                        placeholder={t('input.book.title', lang)}
+                        value={input.split(' — ')[0] || ''}
+                        onChange={(e) => {
+                          const parts = input.split(' — ')
+                          updateInput(i, `${e.target.value} — ${parts[1] || ''} — ${parts[2] || ''}`)
+                        }}
+                        className="bg-transparent border-none focus:ring-0 text-sm md:text-base tel-serif font-medium"
+                        style={{ color: '#fff', borderBottom: '1px solid rgba(255,255,255,0.03)', paddingBottom: '4px' }}
+                      />
+                      <div className="flex gap-4">
+                        <input
+                          type="text"
+                          placeholder={t('input.book.author', lang)}
+                          value={input.split(' — ')[1] || ''}
+                          onChange={(e) => {
+                            const parts = input.split(' — ')
+                            updateInput(i, `${parts[0] || ''} — ${e.target.value} — ${parts[2] || ''}`)
+                          }}
+                          className="bg-transparent border-none focus:ring-0 text-xs md:text-sm tel-serif italic flex-1"
+                          style={{ color: '#aaa' }}
+                        />
+                        <input
+                          type="text"
+                          placeholder={t('input.book.page', lang)}
+                          value={input.split(' — ')[2] || ''}
+                          onChange={(e) => {
+                            const parts = input.split(' — ')
+                            updateInput(i, `${parts[0] || ''} — ${parts[1] || ''} — ${e.target.value}`)
+                          }}
+                          className="bg-transparent border-none focus:ring-0 text-xs tel-serif flex-1"
+                          style={{ color: '#666', textAlign: 'right' }}
+                        />
+                      </div>
+                    </div>
+                  ) : (
+                    <textarea
+                      ref={(el) => { inputRefs.current[i] = el }}
+                      value={input}
+                      onChange={(e) => updateInput(i, e.target.value)}
+                      onPaste={(e) => handlePaste(i, e)}
+                      rows={detected?.mode === 'free_text' ? 4 : 1}
+                      placeholder={
+                        i === 0
+                          ? t('input.placeholder1', lang)
+                          : i === 1
+                          ? t('input.placeholder2', lang)
+                          : `${t('input.sources', lang)} ${i + 1}`
                       }
-                    }
-                  }}
-                />
+                      disabled={isLoading || uploadingIndex === i}
+                      className="w-full bg-transparent border-none focus:ring-0 text-sm md:text-base tel-serif"
+                      style={{
+                        height: 'auto',
+                        resize: 'none',
+                        color: '#fff',
+                        padding: '4px 0',
+                        lineHeight: '1.6',
+                        outline: 'none',
+                        minHeight: detected?.mode === 'free_text' ? '96px' : '24px',
+                      }}
+                      onFocus={e => { (e.currentTarget.parentElement?.parentElement?.parentElement as HTMLElement).style.borderColor = 'rgba(201,168,76,0.3)' }}
+                      onBlur={e => { (e.currentTarget.parentElement?.parentElement?.parentElement as HTMLElement).style.borderColor = isValid ? 'rgba(201,168,76,0.1)' : 'rgba(255,255,255,0.04)' }}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && !e.shiftKey && detected?.mode !== 'free_text') {
+                          e.preventDefault()
+                          if (i < inputs.length - 1) {
+                            inputRefs.current[i + 1]?.focus()
+                          } else {
+                            handleCross()
+                          }
+                        }
+                      }}
+                    />
+                  )}
+                </div>
               </div>
 
-              {/* Action buttons: Book toggle + Mic + File + type label */}
-              <div className="flex-shrink-0 flex flex-col items-end gap-1 mt-1">
+              {/* Actions & Meta */}
+              <div className="flex items-center justify-between mt-2 pt-2" style={{ borderTop: '1px solid rgba(255,255,255,0.03)' }}>
+                <div className="flex items-center gap-4">
+                  {!isBook && detected?.mode === 'crossing' && detected.crossingTerms && (
+                    <span style={{ color: '#2a2a2a', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                      {detected.crossingTerms[0]} <span style={{ opacity: 0.3 }}>×</span> {detected.crossingTerms[1]}
+                    </span>
+                  )}
+                  {isValid && !isBook && (
+                    <span style={{ fontSize: '10px', color: '#2a2a2a' }}>
+                      {input.length} {lang === 'en' ? 'chars' : 'cars.'}
+                    </span>
+                  )}
+                </div>
+
                 <div className="flex items-center gap-1">
-                  {/* Voice recording button */}
                   <button
                     onClick={() => recordingIndex === i ? setRecordingIndex(null) : startVoiceRecording(i)}
-                    title={lang === 'en' ? 'Record voice' : 'Enregistrer la voix'}
-                    disabled={isLoading}
+                    title={lang === 'en' ? 'Voice' : 'Voix'}
                     style={{
-                      fontSize: '10px', padding: '3px 7px', borderRadius: '4px',
-                      background: recordingIndex === i ? 'rgba(232,93,74,0.15)' : 'transparent',
-                      border: `1px solid ${recordingIndex === i ? 'rgba(232,93,74,0.4)' : 'rgba(255,255,255,0.06)'}`,
-                      color: recordingIndex === i ? '#E85D4A' : '#333',
-                      cursor: 'pointer',
-                      transition: 'all 200ms ease',
+                      display: 'flex', alignItems: 'center', gap: '5px',
+                      fontSize: '9px', padding: '4px 9px', borderRadius: '100px',
+                      background: recordingIndex === i ? 'rgba(232,93,74,0.1)' : 'rgba(255,255,255,0.02)',
+                      border: `1px solid ${recordingIndex === i ? 'rgba(232,93,74,0.3)' : 'transparent'}`,
+                      color: recordingIndex === i ? '#E85D4A' : '#555',
+                      cursor: 'pointer', transition: 'all 200ms ease',
+                      textTransform: 'uppercase', letterSpacing: '0.05em'
                     }}
                   >
-                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
-                      <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
-                      <line x1="12" y1="19" x2="12" y2="23"/>
-                      <line x1="8" y1="23" x2="16" y2="23"/>
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                      <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2" />
                     </svg>
+                    <span>{lang === 'en' ? 'Vocal' : 'Vocal'}</span>
                   </button>
-                  {/* File upload button */}
+
                   <button
                     onClick={() => fileInputRefs.current[i]?.click()}
-                    title={lang === 'en' ? 'Upload PDF/TXT' : 'Importer PDF/TXT'}
-                    disabled={isLoading || uploadingIndex === i}
+                    title={lang === 'en' ? 'File' : 'Fichier'}
                     style={{
-                      fontSize: '10px', padding: '3px 7px', borderRadius: '4px',
-                      background: 'transparent',
-                      border: '1px solid rgba(255,255,255,0.06)',
-                      color: '#333',
-                      cursor: 'pointer',
-                      transition: 'all 200ms ease',
+                      display: 'flex', alignItems: 'center', gap: '5px',
+                      fontSize: '9px', padding: '4px 9px', borderRadius: '100px',
+                      background: 'rgba(255,255,255,0.02)',
+                      border: '1px solid transparent',
+                      color: '#555',
+                      cursor: 'pointer', transition: 'all 200ms ease',
+                      textTransform: 'uppercase', letterSpacing: '0.05em'
                     }}
                   >
-                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                      <line x1="12" y1="5" x2="12" y2="19"/>
-                      <line x1="5" y1="12" x2="19" y2="12"/>
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                      <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
                     </svg>
+                    <span>{lang === 'en' ? 'File' : 'Fichier'}</span>
                   </button>
+
+                  <button
+                    onClick={() => toggleBookMode(i)}
+                    title={t('input.mode.book', lang)}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: '5px',
+                      fontSize: '9px', padding: '4px 9px', borderRadius: '100px',
+                      background: isBook ? 'rgba(122,171,181,0.08)' : 'rgba(255,255,255,0.02)',
+                      border: `1px solid ${isBook ? 'rgba(122,171,181,0.25)' : 'transparent'}`,
+                      color: isBook ? '#7AABB5' : '#555',
+                      cursor: 'pointer', transition: 'all 200ms ease',
+                      textTransform: 'uppercase', letterSpacing: '0.05em'
+                    }}
+                  >
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                      <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" /><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+                    </svg>
+                    <span>{t('input.book.toggle', lang).split('/')[0]}</span>
+                  </button>
+
                   <input
                     ref={(el) => { fileInputRefs.current[i] = el }}
                     type="file"
@@ -694,64 +854,11 @@ export default function SourceInput({ onCross, isLoading, prefill, register = 's
                     onChange={(e) => {
                       const file = e.target.files?.[0]
                       if (file) handleFileUpload(i, file)
-                      e.target.value = '' // reset for re-upload
+                      e.target.value = ''
                     }}
                   />
-                  {/* Book toggle */}
-                  <button
-                    onClick={() => toggleBookMode(i)}
-                    title={t('input.mode.book', lang)}
-                    style={{
-                      fontSize: '10px', padding: '3px 7px', borderRadius: '4px',
-                      background: isBook ? 'rgba(122,171,181,0.12)' : 'transparent',
-                      border: `1px solid ${isBook ? 'rgba(122,171,181,0.35)' : 'rgba(255,255,255,0.06)'}`,
-                      color: isBook ? '#7AABB5' : '#333',
-                      cursor: 'pointer',
-                      transition: 'all 200ms ease',
-                      whiteSpace: 'nowrap' as const,
-                    }}
-                  >
-                    {t('input.book.toggle', lang)}
-                  </button>
                 </div>
-                {!isBook && isValid && detected && (
-                  <span
-                    className="hidden sm:block whitespace-nowrap"
-                    style={{
-                      fontSize: '10px', padding: '3px 6px', borderRadius: '4px',
-                      background: 'rgba(255,255,255,0.025)',
-                      color: urlMeta?.color ?? getModeColor(detected.mode),
-                      letterSpacing: '0.06em',
-                    }}
-                  >
-                    {isUrl ? urlMeta!.label : getLangModeLabel(detected.mode)}
-                  </span>
-                )}
-                {!isBook && detected?.mode === 'crossing' && detected.crossingTerms && (
-                  <span
-                    className="hidden sm:block whitespace-nowrap"
-                    style={{ color: '#2a2a2a', fontSize: '10px' }}
-                  >
-                    {detected.crossingTerms[0]} × {detected.crossingTerms[1]}
-                  </span>
-                )}
               </div>
-
-              {/* Remove button */}
-              {inputs.length > 2 && !isLoading && (
-                <button
-                  onClick={() => removeSource(i)}
-                  className="absolute -right-5 top-2 w-4 h-4 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200"
-                  style={{
-                    background: 'rgba(100,40,40,0.4)',
-                    color: '#8B3A3A',
-                    border: '1px solid rgba(139,58,58,0.3)',
-                    fontSize: '0.6rem',
-                  }}
-                >
-                  ×
-                </button>
-              )}
             </div>
           )
         })}
@@ -759,22 +866,24 @@ export default function SourceInput({ onCross, isLoading, prefill, register = 's
 
       {/* ── Add source ── */}
       {!isLoading && (
-        <button
-          onClick={addSource}
-          className="w-full py-2 text-xs mb-4"
-          style={{
-            color: '#333',
-            border: 'none',
-            background: 'transparent',
-            cursor: 'pointer',
-            fontSize: '12px',
-            transition: 'color 200ms ease',
-          }}
-          onMouseEnter={e => { e.currentTarget.style.color = '#666' }}
-          onMouseLeave={e => { e.currentTarget.style.color = '#333' }}
-        >
-          {t('input.add', lang)}
-        </button>
+        <div className="flex justify-center mb-6">
+          <button
+            onClick={addSource}
+            style={{
+              display: 'flex', alignItems: 'center', gap: '8px',
+              color: '#333', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.04)',
+              padding: '6px 16px', borderRadius: '100px',
+              cursor: 'pointer', fontSize: '11px', fontWeight: 600,
+              textTransform: 'uppercase', letterSpacing: '0.1em',
+              transition: 'all 200ms ease',
+            }}
+            onMouseEnter={e => { e.currentTarget.style.color = GOLD; e.currentTarget.style.borderColor = 'rgba(201,168,76,0.3)' }}
+            onMouseLeave={e => { e.currentTarget.style.color = '#333'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.04)' }}
+          >
+            <span>+</span>
+            {t('input.add', lang)}
+          </button>
+        </div>
       )}
 
       {/* ── Contexte SOUFFLE ── */}

@@ -3,11 +3,11 @@
 // TEL — The Experience Layer
 // app/transparency/page.tsx — Audit algorithmique de textes institutionnels
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useLanguage, t } from '@/lib/i18n'
 import { REFERENCE_TEXTS } from '@/lib/reference-texts'
 import { PRELOADED_AUDITS } from '@/lib/preloaded-audits'
-import type { TransparencyReport } from '@/app/api/transparency/route'
+import type { TransparencyReport } from '@/app/api/audit/route'
 
 const GOLD = '#C9A84C'
 const BG = '#09090b'
@@ -70,19 +70,27 @@ export default function TransparencyPage() {
   const [shareToast, setShareToast] = useState(false)
   const [lang] = useLanguage()
 
+  // ─── Universal Input State ───
+  const [isBookMode, setIsBookMode] = useState(false)
+  const [isRecording, setIsRecording] = useState(false)
+  const [uploading, setUploading] = useState(false)
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const audioChunksRef = useRef<Blob[]>([])
+
   const LOADING_STEPS = [
-    t('transp.loading.1', lang),
-    t('transp.loading.2', lang),
-    t('transp.loading.3', lang),
-    t('transp.loading.4', lang),
-    t('transp.loading.5', lang),
+    t('audit.loading.1', lang),
+    t('audit.loading.2', lang),
+    t('audit.loading.3', lang),
+    t('audit.loading.4', lang),
+    t('audit.loading.5', lang),
   ]
 
   const RISK_CONFIG = {
-    faible:   { color: '#4CAF50', label: t('transp.risk.low', lang) },
-    modéré:   { color: '#FF9800', label: t('transp.risk.mod', lang) },
-    élevé:    { color: '#FF5722', label: t('transp.risk.high', lang) },
-    critique: { color: '#F44336', label: t('transp.risk.crit', lang) },
+    faible:   { color: '#4CAF50', label: t('audit.risk.low', lang) },
+    modéré:   { color: '#FF9800', label: t('audit.risk.mod', lang) },
+    élevé:    { color: '#FF5722', label: t('audit.risk.high', lang) },
+    critique: { color: '#F44336', label: t('audit.risk.crit', lang) },
   }
 
   // Loading message rotation
@@ -100,6 +108,48 @@ export default function TransparencyPage() {
     return () => clearInterval(interval)
   }, [loading])
 
+  // ─── Input Handlers ───
+  const startRecording = async () => {
+    if (isRecording) {
+      mediaRecorderRef.current?.stop()
+      setIsRecording(false)
+      return
+    }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      const mr = new MediaRecorder(stream)
+      mediaRecorderRef.current = mr
+      audioChunksRef.current = []
+      mr.ondataavailable = (e) => { if (e.data.size > 0) audioChunksRef.current.push(e.data) }
+      mr.onstop = async () => {
+        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' })
+        const formData = new FormData()
+        formData.append('audio', audioBlob)
+        setUploading(true)
+        try {
+          const res = await fetch('/api/transcribe', { method: 'POST', body: formData })
+          const data = await res.json()
+          if (data.text) setTextToAudit(prev => prev ? prev + '\n' + data.text : data.text)
+        } catch (err) { console.error('Transcription error:', err) }
+        finally { setUploading(false) }
+      }
+      mr.start()
+      setIsRecording(true)
+    } catch (err) { console.error('Mic access denied:', err) }
+  }
+
+  const handleFileUpload = async (file: File) => {
+    setUploading(true)
+    const formData = new FormData()
+    formData.append('file', file)
+    try {
+      const res = await fetch('/api/upload', { method: 'POST', body: formData })
+      const data = await res.json()
+      if (data.text) setTextToAudit(prev => prev ? prev + '\n' + data.text : data.text)
+    } catch (err) { console.error('Upload error:', err) }
+    finally { setUploading(false) }
+  }
+
   // Toggle reference selection
   function toggleRef(id: string) {
     setSelectedRefs(prev =>
@@ -110,11 +160,11 @@ export default function TransparencyPage() {
   // Audit handler
   async function handleAudit() {
     if (!textToAudit.trim() || textToAudit.trim().length < 50) {
-      setError(t('transp.error.short', lang))
+      setError(t('audit.error.short', lang))
       return
     }
     if (selectedRefs.length === 0 && !freeReference.trim()) {
-      setError(t('transp.error.noref', lang))
+      setError(t('audit.error.noref', lang))
       return
     }
 
@@ -131,7 +181,7 @@ export default function TransparencyPage() {
     setLoading(true)
 
     try {
-      const res = await fetch('/api/transparency', {
+      const res = await fetch('/api/audit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -144,7 +194,7 @@ export default function TransparencyPage() {
 
       const data = await res.json()
       if (!res.ok || !data.success) {
-        throw new Error(data.error || t('transp.error.generic', lang))
+        throw new Error(data.error || t('audit.error.generic', lang))
       }
 
       setReport(data.report)
@@ -160,9 +210,9 @@ export default function TransparencyPage() {
     if (!report) return
     const id = Math.random().toString(36).slice(2, 10)
     try {
-      localStorage.setItem(`tel:shared:transparency:${id}`, JSON.stringify(report))
+      localStorage.setItem(`tel:shared:audit:${id}`, JSON.stringify(report))
     } catch { /* localStorage plein */ }
-    const url = `${window.location.origin}/transparency/${id}`
+    const url = `${window.location.origin}/audit/${id}`
     try {
       await navigator.clipboard.writeText(url)
       setShareToast(true)
@@ -233,7 +283,7 @@ export default function TransparencyPage() {
             marginBottom: '24px',
             fontFamily: '-apple-system, BlinkMacSystemFont, system-ui, sans-serif',
           }}>
-            {t('transp.header', lang)}
+            {t('audit.header', lang)}
           </p>
           <h1 style={{
             fontFamily: 'Georgia, Times New Roman, serif',
@@ -244,7 +294,7 @@ export default function TransparencyPage() {
             color: '#ffffff',
             marginBottom: '20px',
           }}>
-            {t('transp.title', lang)}
+            {t('audit.title', lang)}
           </h1>
           <p style={{
             fontFamily: 'Georgia, Times New Roman, serif',
@@ -252,7 +302,7 @@ export default function TransparencyPage() {
             lineHeight: 1.7,
             color: TEXT_SECONDARY,
           }}>
-            {t('transp.subtitle', lang)}
+            {t('audit.subtitle', lang)}
           </p>
         </div>
 
@@ -264,7 +314,7 @@ export default function TransparencyPage() {
               textTransform: 'uppercase' as const, color: TEXT_MUTED,
               marginBottom: '20px', fontFamily: '-apple-system, sans-serif',
             }}>
-              {t('transp.recent', lang)}
+              {t('audit.recent', lang)}
             </p>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '16px' }}>
               {PRELOADED_AUDITS.map(audit => {
@@ -319,34 +369,142 @@ export default function TransparencyPage() {
                 marginBottom: '12px',
                 fontFamily: '-apple-system, BlinkMacSystemFont, system-ui, sans-serif',
               }}>
-                {t('transp.label', lang)}
+                {t('audit.label', lang)}
               </label>
-              <textarea
-                value={textToAudit}
-                onChange={e => setTextToAudit(e.target.value)}
-                placeholder={t('transp.placeholder', lang)}
-                rows={12}
-                style={{
-                  width: '100%',
-                  background: SURFACE,
-                  border: `1px solid ${BORDER}`,
-                  borderRadius: '12px',
-                  padding: '20px',
-                  color: TEXT_PRIMARY,
-                  fontFamily: 'Georgia, Times New Roman, serif',
-                  fontSize: '14px',
-                  lineHeight: 1.7,
-                  resize: 'vertical' as const,
-                  outline: 'none',
-                  boxSizing: 'border-box' as const,
-                  transition: 'border-color 200ms ease',
-                }}
-                onFocus={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.12)' }}
-                onBlur={e => { e.currentTarget.style.borderColor = BORDER }}
-              />
+              {isBookMode ? (
+                <div className="flex flex-col gap-4 p-5 rounded-xl" style={{ background: SURFACE, border: `1px solid ${BORDER}` }}>
+                  <input
+                    type="text"
+                    placeholder={t('input.book.title', lang)}
+                    value={textToAudit.split(' — ')[0] || ''}
+                    onChange={(e) => {
+                      const parts = textToAudit.split(' — ')
+                      setTextToAudit(`${e.target.value} — ${parts[1] || ''} — ${parts[2] || ''}`)
+                    }}
+                    className="bg-transparent border-none focus:ring-0 text-lg tel-serif font-medium"
+                    style={{ color: '#fff', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '8px' }}
+                  />
+                  <div className="flex gap-6">
+                    <input
+                      type="text"
+                      placeholder={t('input.book.author', lang)}
+                      value={textToAudit.split(' — ')[1] || ''}
+                      onChange={(e) => {
+                        const parts = textToAudit.split(' — ')
+                        setTextToAudit(`${parts[0] || ''} — ${e.target.value} — ${parts[2] || ''}`)
+                      }}
+                      className="bg-transparent border-none focus:ring-0 text-sm tel-serif italic flex-1"
+                      style={{ color: '#aaa' }}
+                    />
+                    <input
+                      type="text"
+                      placeholder={t('input.book.page', lang)}
+                      value={textToAudit.split(' — ')[2] || ''}
+                      onChange={(e) => {
+                        const parts = textToAudit.split(' — ')
+                        setTextToAudit(`${parts[0] || ''} — ${parts[1] || ''} — ${e.target.value}`)
+                      }}
+                      className="bg-transparent border-none focus:ring-0 text-sm tel-serif flex-1"
+                      style={{ color: '#666', textAlign: 'right' }}
+                    />
+                  </div>
+                </div>
+              ) : (
+                <textarea
+                  value={textToAudit}
+                  onChange={e => setTextToAudit(e.target.value)}
+                  placeholder={t('audit.placeholder', lang)}
+                  rows={12}
+                  style={{
+                    width: '100%',
+                    background: SURFACE,
+                    border: `1px solid ${BORDER}`,
+                    borderRadius: '12px',
+                    padding: '20px',
+                    color: TEXT_PRIMARY,
+                    fontFamily: 'Georgia, Times New Roman, serif',
+                    fontSize: '14px',
+                    lineHeight: 1.7,
+                    resize: 'vertical' as const,
+                    outline: 'none',
+                    boxSizing: 'border-box' as const,
+                    transition: 'border-color 200ms ease',
+                  }}
+                  onFocus={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.12)' }}
+                  onBlur={e => { e.currentTarget.style.borderColor = BORDER }}
+                />
+              )}
+
+              {/* Input Row Footer */}
+              <div className="flex items-center gap-3 mt-3">
+                <button
+                  onClick={startRecording}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: '6px',
+                    fontSize: '10px', padding: '6px 12px', borderRadius: '100px',
+                    background: isRecording ? 'rgba(232,93,74,0.1)' : 'rgba(255,255,255,0.02)',
+                    border: `1px solid ${isRecording ? 'rgba(232,93,74,0.3)' : 'transparent'}`,
+                    color: isRecording ? '#E85D4A' : '#666',
+                    cursor: 'pointer', transition: 'all 200ms ease',
+                    textTransform: 'uppercase', letterSpacing: '0.05em'
+                  }}
+                >
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+                  </svg>
+                  <span>Vocal</span>
+                </button>
+
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: '6px',
+                    fontSize: '10px', padding: '6px 12px', borderRadius: '100px',
+                    background: 'rgba(255,255,255,0.02)',
+                    border: '1px solid transparent', color: '#666',
+                    cursor: 'pointer', transition: 'all 200ms ease',
+                    textTransform: 'uppercase', letterSpacing: '0.05em'
+                  }}
+                >
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+                  </svg>
+                  <span>Fichier</span>
+                </button>
+
+                <button
+                  onClick={() => setIsBookMode(!isBookMode)}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: '6px',
+                    fontSize: '10px', padding: '6px 12px', borderRadius: '100px',
+                    background: isBookMode ? 'rgba(122,171,181,0.08)' : 'rgba(255,255,255,0.02)',
+                    border: `1px solid ${isBookMode ? 'rgba(122,171,181,0.25)' : 'transparent'}`,
+                    color: isBookMode ? '#7AABB5' : '#666',
+                    cursor: 'pointer', transition: 'all 200ms ease',
+                    textTransform: 'uppercase', letterSpacing: '0.05em'
+                  }}
+                >
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" /><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+                  </svg>
+                  <span>Livre</span>
+                </button>
+
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".pdf,.txt,.pptx,.png,.jpg"
+                  style={{ display: 'none' }}
+                  onChange={(e) => {
+                    const file = e.target.files?.[0]
+                    if (file) handleFileUpload(file)
+                    e.target.value = ''
+                  }}
+                />
+              </div>
               {textToAudit && (
                 <p style={{ fontSize: '11px', color: TEXT_MUTED, marginTop: '8px', fontFamily: 'system-ui' }}>
-                  {textToAudit.length.toLocaleString()} {t('transp.chars', lang)}
+                  {textToAudit.length.toLocaleString()} {t('audit.chars', lang)}
                 </p>
               )}
             </div>
@@ -363,7 +521,7 @@ export default function TransparencyPage() {
                 marginBottom: '16px',
                 fontFamily: '-apple-system, BlinkMacSystemFont, system-ui, sans-serif',
               }}>
-                {t('transp.crosswith', lang)}
+                {t('audit.crosswith', lang)}
               </label>
               <div style={{ display: 'flex', flexDirection: 'column' as const, gap: '8px' }}>
                 {REFERENCE_TEXTS.map(ref => {
@@ -467,7 +625,7 @@ export default function TransparencyPage() {
                     color: TEXT_PRIMARY,
                     fontFamily: '-apple-system, BlinkMacSystemFont, system-ui, sans-serif',
                   }}>
-                    {t('transp.addfree', lang)}
+                    {t('audit.addfree', lang)}
                   </p>
                 </button>
 
@@ -475,7 +633,7 @@ export default function TransparencyPage() {
                   <textarea
                     value={freeReference}
                     onChange={e => setFreeReference(e.target.value)}
-                    placeholder={t('transp.freeph', lang)}
+                    placeholder={t('audit.freeph', lang)}
                     rows={6}
                     style={{
                       width: '100%',
@@ -530,7 +688,7 @@ export default function TransparencyPage() {
                   letterSpacing: '0.02em',
                 }}
               >
-                {loading ? t('transp.auditing', lang) : t('transp.audit', lang)}
+                {loading ? t('audit.auditing', lang) : t('audit.audit', lang)}
               </button>
             </div>
           </div>
@@ -590,7 +748,7 @@ export default function TransparencyPage() {
                 gap: '6px',
               }}
             >
-              {t('transp.back', lang)}
+              {t('audit.back', lang)}
             </button>
 
             {/* Report card */}
@@ -616,7 +774,7 @@ export default function TransparencyPage() {
                       marginBottom: '8px',
                       fontFamily: '-apple-system, BlinkMacSystemFont, system-ui, sans-serif',
                     }}>
-                      {t('transp.audit.label', lang)}
+                      {t('audit.audit.label', lang)}
                     </p>
                     <h2 style={{
                       fontFamily: 'Georgia, Times New Roman, serif',
@@ -672,20 +830,20 @@ export default function TransparencyPage() {
               {/* Sections */}
               <div style={{ padding: '40px' }}>
                 <ReportSection
-                  label={t('transp.says', lang)}
+                  label={t('audit.says', lang)}
                   content={report.whatItSays}
                 />
                 <div style={{ height: '1px', background: BORDER, margin: '8px 0 32px' }} />
 
                 <ReportSection
-                  label={t('transp.hides', lang)}
+                  label={t('audit.hides', lang)}
                   content={report.whatItHides}
                   accent="#FF9800"
                 />
                 <div style={{ height: '1px', background: BORDER, margin: '8px 0 32px' }} />
 
                 <ReportSection
-                  label={t('transp.contradicts', lang)}
+                  label={t('audit.contradicts', lang)}
                   content={report.whatContradictsReferences}
                   accent="#FF5722"
                 />
@@ -709,7 +867,7 @@ export default function TransparencyPage() {
                     fontFamily: '-apple-system, BlinkMacSystemFont, system-ui, sans-serif',
                     opacity: 0.8,
                   }}>
-                    {t('transp.unspeakable', lang)}
+                    {t('audit.unspeakable', lang)}
                   </p>
                   <div style={{
                     fontFamily: 'Georgia, Times New Roman, serif',
@@ -741,7 +899,7 @@ export default function TransparencyPage() {
                     marginBottom: '16px',
                     fontFamily: '-apple-system, BlinkMacSystemFont, system-ui, sans-serif',
                   }}>
-                    {t('transp.question', lang)}
+                    {t('audit.question', lang)}
                   </p>
                   <p style={{
                     fontFamily: 'Georgia, Times New Roman, serif',
@@ -756,7 +914,7 @@ export default function TransparencyPage() {
 
                 {/* Versions institutionnelles */}
                 <p style={{ fontSize: '11px', color: '#444444', lineHeight: 1.6, marginBottom: '32px', fontFamily: 'system-ui' }}>
-                  {t('transp.disclaimer', lang)}
+                  {t('audit.disclaimer', lang)}
                 </p>
 
                 {/* Action buttons */}
@@ -791,7 +949,7 @@ export default function TransparencyPage() {
                       transition: 'all 150ms ease',
                     }}
                   >
-                    {shareToast ? t('transp.copied', lang) : t('transp.share', lang)}
+                    {shareToast ? t('audit.copied', lang) : t('audit.share', lang)}
                   </button>
                 </div>
               </div>
