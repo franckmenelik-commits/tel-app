@@ -32,7 +32,7 @@ export default function ManifestoPage() {
             {[
               { href: '/legends', label: 'Légendes' },
               { href: '/education', label: 'Éducation' },
-              { href: '/transparency', label: 'Transparence' },
+              { href: '/audit', label: 'Audit' },
               { href: '/careers', label: 'Métiers' },
             ].map(link => (
               <Link

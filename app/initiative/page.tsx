@@ -316,133 +316,134 @@ export default function InitiativePage() {
 
         {/* Form */}
         {!report && (
-          <div className="tel-initiative-form tel-bubble-filled">
-            {isBookMode ? (
-              <div className="flex flex-col gap-4 p-5 rounded-xl" style={{ background: SURFACE, border: `1px solid ${BORDER}` }}>
-                <input
-                  type="text"
-                  placeholder={t('input.book.title', lang)}
-                  value={probleme.split(' — ')[0] || ''}
-                  onChange={(e) => {
-                    const parts = probleme.split(' — ')
-                    setProbleme(`${e.target.value} — ${parts[1] || ''} — ${parts[2] || ''}`)
-                  }}
-                  className="bg-transparent border-none focus:ring-0 text-lg tel-serif font-medium"
-                  style={{ color: '#fff', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '8px' }}
-                />
-                <div className="flex gap-6">
+          <>
+            <div className="tel-initiative-form tel-bubble-filled">
+              {isBookMode ? (
+                <div className="flex flex-col gap-4 p-5 rounded-xl" style={{ background: SURFACE, border: `1px solid ${BORDER}` }}>
                   <input
                     type="text"
-                    placeholder={t('input.book.author', lang)}
-                    value={probleme.split(' — ')[1] || ''}
+                    placeholder={t('input.book.title', lang)}
+                    value={probleme.split(' — ')[0] || ''}
                     onChange={(e) => {
                       const parts = probleme.split(' — ')
-                      setProbleme(`${parts[0] || ''} — ${e.target.value} — ${parts[2] || ''}`)
+                      setProbleme(`${e.target.value} — ${parts[1] || ''} — ${parts[2] || ''}`)
                     }}
-                    className="bg-transparent border-none focus:ring-0 text-sm tel-serif italic flex-1"
-                    style={{ color: '#aaa' }}
+                    className="bg-transparent border-none focus:ring-0 text-lg tel-serif font-medium"
+                    style={{ color: '#fff', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '8px' }}
                   />
-                  <input
-                    type="text"
-                    placeholder={t('input.book.page', lang)}
-                    value={probleme.split(' — ')[2] || ''}
-                    onChange={(e) => {
-                      const parts = probleme.split(' — ')
-                      setProbleme(`${parts[0] || ''} — ${parts[1] || ''} — ${e.target.value}`)
-                    }}
-                    className="bg-transparent border-none focus:ring-0 text-sm tel-serif flex-1"
-                    style={{ color: '#666', textAlign: 'right' }}
-                  />
+                  <div className="flex gap-6">
+                    <input
+                      type="text"
+                      placeholder={t('input.book.author', lang)}
+                      value={probleme.split(' — ')[1] || ''}
+                      onChange={(e) => {
+                        const parts = probleme.split(' — ')
+                        setProbleme(`${parts[0] || ''} — ${e.target.value} — ${parts[2] || ''}`)
+                      }}
+                      className="bg-transparent border-none focus:ring-0 text-sm tel-serif italic flex-1"
+                      style={{ color: '#aaa' }}
+                    />
+                    <input
+                      type="text"
+                      placeholder={t('input.book.page', lang)}
+                      value={probleme.split(' — ')[2] || ''}
+                      onChange={(e) => {
+                        const parts = probleme.split(' — ')
+                        setProbleme(`${parts[0] || ''} — ${parts[1] || ''} — ${e.target.value}`)
+                      }}
+                      className="bg-transparent border-none focus:ring-0 text-sm tel-serif flex-1"
+                      style={{ color: '#666', textAlign: 'right' }}
+                    />
+                  </div>
                 </div>
+              ) : (
+                <textarea
+                  value={probleme}
+                  onChange={e => setProbleme(e.target.value)}
+                  placeholder={t('init.placeholder', lang)}
+                  rows={6}
+                  style={{
+                    width: '100%', padding: '18px', borderRadius: '12px',
+                    background: SURFACE, border: `1px solid ${BORDER}`,
+                    color: TEXT1, fontSize: '14px', lineHeight: 1.7,
+                    fontFamily: 'Georgia, serif',
+                    resize: 'vertical', outline: 'none',
+                    transition: 'border-color 200ms ease',
+                  }}
+                  onFocus={e => { e.currentTarget.style.borderColor = 'rgba(201,168,76,0.35)' }}
+                  onBlur={e => { e.currentTarget.style.borderColor = BORDER }}
+                  disabled={loading}
+                />
+              )}
+
+              {/* Universal Input Footer */}
+              <div className="flex items-center gap-3 mt-3">
+                <button
+                  onClick={startRecording}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: '6px',
+                    fontSize: '10px', padding: '6px 12px', borderRadius: '100px',
+                    background: isRecording ? 'rgba(232,93,74,0.1)' : 'rgba(255,255,255,0.02)',
+                    border: `1px solid ${isRecording ? 'rgba(232,93,74,0.3)' : 'transparent'}`,
+                    color: isRecording ? '#E85D4A' : '#666',
+                    cursor: 'pointer', transition: 'all 200ms ease',
+                    textTransform: 'uppercase', letterSpacing: '0.05em'
+                  }}
+                >
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+                  </svg>
+                  <span>Vocal</span>
+                </button>
+
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: '6px',
+                    fontSize: '10px', padding: '6px 12px', borderRadius: '100px',
+                    background: 'rgba(255,255,255,0.02)',
+                    border: '1px solid transparent', color: '#666',
+                    cursor: 'pointer', transition: 'all 200ms ease',
+                    textTransform: 'uppercase', letterSpacing: '0.05em'
+                  }}
+                >
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+                  </svg>
+                  <span>Fichier</span>
+                </button>
+
+                <button
+                  onClick={() => setIsBookMode(!isBookMode)}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: '6px',
+                    fontSize: '10px', padding: '6px 12px', borderRadius: '100px',
+                    background: isBookMode ? 'rgba(122,171,181,0.08)' : 'rgba(255,255,255,0.02)',
+                    border: `1px solid ${isBookMode ? 'rgba(122,171,181,0.25)' : 'transparent'}`,
+                    color: isBookMode ? '#7AABB5' : '#666',
+                    cursor: 'pointer', transition: 'all 200ms ease',
+                    textTransform: 'uppercase', letterSpacing: '0.05em'
+                  }}
+                >
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" /><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+                  </svg>
+                  <span>Livre</span>
+                </button>
+
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".pdf,.txt,.pptx,.png,.jpg"
+                  style={{ display: 'none' }}
+                  onChange={(e) => {
+                    const file = e.target.files?.[0]
+                    if (file) handleFileUpload(file)
+                    e.target.value = ''
+                  }}
+                />
               </div>
-            ) : (
-              <textarea
-                value={probleme}
-                onChange={e => setProbleme(e.target.value)}
-                placeholder={t('init.placeholder', lang)}
-                rows={6}
-                style={{
-                  width: '100%', padding: '18px', borderRadius: '12px',
-                  background: SURFACE, border: `1px solid ${BORDER}`,
-                  color: TEXT1, fontSize: '14px', lineHeight: 1.7,
-                  fontFamily: 'Georgia, serif',
-                  resize: 'vertical', outline: 'none',
-                  transition: 'border-color 200ms ease',
-                }}
-                onFocus={e => { e.currentTarget.style.borderColor = 'rgba(201,168,76,0.35)' }}
-                onBlur={e => { e.currentTarget.style.borderColor = BORDER }}
-                disabled={loading}
-              />
-            )}
-
-            {/* Universal Input Footer */}
-            <div className="flex items-center gap-3 mt-3">
-              <button
-                onClick={startRecording}
-                style={{
-                  display: 'flex', alignItems: 'center', gap: '6px',
-                  fontSize: '10px', padding: '6px 12px', borderRadius: '100px',
-                  background: isRecording ? 'rgba(232,93,74,0.1)' : 'rgba(255,255,255,0.02)',
-                  border: `1px solid ${isRecording ? 'rgba(232,93,74,0.3)' : 'transparent'}`,
-                  color: isRecording ? '#E85D4A' : '#666',
-                  cursor: 'pointer', transition: 'all 200ms ease',
-                  textTransform: 'uppercase', letterSpacing: '0.05em'
-                }}
-              >
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                  <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2" />
-                </svg>
-                <span>Vocal</span>
-              </button>
-
-              <button
-                onClick={() => fileInputRef.current?.click()}
-                style={{
-                  display: 'flex', alignItems: 'center', gap: '6px',
-                  fontSize: '10px', padding: '6px 12px', borderRadius: '100px',
-                  background: 'rgba(255,255,255,0.02)',
-                  border: '1px solid transparent', color: '#666',
-                  cursor: 'pointer', transition: 'all 200ms ease',
-                  textTransform: 'uppercase', letterSpacing: '0.05em'
-                }}
-              >
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                  <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-                </svg>
-                <span>Fichier</span>
-              </button>
-
-              <button
-                onClick={() => setIsBookMode(!isBookMode)}
-                style={{
-                  display: 'flex', alignItems: 'center', gap: '6px',
-                  fontSize: '10px', padding: '6px 12px', borderRadius: '100px',
-                  background: isBookMode ? 'rgba(122,171,181,0.08)' : 'rgba(255,255,255,0.02)',
-                  border: `1px solid ${isBookMode ? 'rgba(122,171,181,0.25)' : 'transparent'}`,
-                  color: isBookMode ? '#7AABB5' : '#666',
-                  cursor: 'pointer', transition: 'all 200ms ease',
-                  textTransform: 'uppercase', letterSpacing: '0.05em'
-                }}
-              >
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                  <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" /><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
-                </svg>
-                <span>Livre</span>
-              </button>
-
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept=".pdf,.txt,.pptx,.png,.jpg"
-                style={{ display: 'none' }}
-                onChange={(e) => {
-                  const file = e.target.files?.[0]
-                  if (file) handleFileUpload(file)
-                  e.target.value = ''
-                }}
-              />
             </div>
-          </div>
 
             {/* Options */}
             <div style={{
@@ -501,7 +502,7 @@ export default function InitiativePage() {
                 ))}
               </div>
             )}
-          </div>
+          </>
         )}
 
         {/* ── Results ────────────────────────────────────────────────────────── */}

@@ -2,14 +2,14 @@
 // lib/preloaded-audits.ts
 // Audits pré-générés des CGU des plateformes majeures
 
-import type { TransparencyReport } from '@/app/api/transparency/route'
+import type { AuditReport } from '@/app/api/audit/route'
 
 export interface PreloadedAudit {
   id: string
   name: string
   subtitle: string
   icon: string
-  report: TransparencyReport
+  report: AuditReport
 }
 
 export const PRELOADED_AUDITS: PreloadedAudit[] = [

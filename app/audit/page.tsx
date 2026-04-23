@@ -7,7 +7,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useLanguage, t } from '@/lib/i18n'
 import { REFERENCE_TEXTS } from '@/lib/reference-texts'
 import { PRELOADED_AUDITS } from '@/lib/preloaded-audits'
-import type { TransparencyReport } from '@/app/api/audit/route'
+import type { AuditReport } from '@/app/api/audit/route'
 
 const GOLD = '#C9A84C'
 const BG = '#09090b'
@@ -57,7 +57,7 @@ function ReportSection({
 
 // ─── Main page ────────────────────────────────────────────────────────────────
 
-export default function TransparencyPage() {
+export default function AuditPage() {
   const [textToAudit, setTextToAudit] = useState('')
   const [selectedRefs, setSelectedRefs] = useState<string[]>([])
   const [freeReference, setFreeReference] = useState('')
@@ -65,7 +65,7 @@ export default function TransparencyPage() {
   const [loading, setLoading] = useState(false)
   const [loadingStep, setLoadingStep] = useState(0)
   const [loadingVisible, setLoadingVisible] = useState(true)
-  const [report, setReport] = useState<TransparencyReport | null>(null)
+  const [report, setReport] = useState<AuditReport | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [shareToast, setShareToast] = useState(false)
   const [lang] = useLanguage()
@@ -318,7 +318,7 @@ export default function TransparencyPage() {
             </p>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '16px' }}>
               {PRELOADED_AUDITS.map(audit => {
-                const risk = { faible: '#4CAF50', modéré: '#FF9800', élevé: '#FF5722', critique: '#F44336' }[audit.report.riskLevel] || '#FF9800'
+                const risk = (({ faible: '#4CAF50', modéré: '#FF9800', élevé: '#FF5722', critique: '#F44336' } as Record<string, string>)[audit.report.riskLevel]) || '#FF9800'
                 return (
                   <button
                     key={audit.id}

@@ -4,7 +4,7 @@
 // SOUFFLE : Mistral d'abord → Claude fallback → Ollama dernier recours
 
 import Anthropic from '@anthropic-ai/sdk'
-import { buildTransparencyPrompt } from '@/lib/prompt'
+import { buildAuditPrompt } from '@/lib/prompt'
 import { getReferencesByIds } from '@/lib/reference-texts'
 import { parseLLMJson } from '@/lib/parse-llm'
 
@@ -18,7 +18,7 @@ interface TransparencyPayload {
   freeReference?: string
 }
 
-export interface TransparencyReport {
+export interface AuditReport {
   documentType: string
   whatItSays: string
   whatItHides: string
@@ -166,11 +166,11 @@ export async function POST(request: Request) {
     }
   }
 
-  const prompt = buildTransparencyPrompt(textToAudit, references)
+  const prompt = buildAuditPrompt(textToAudit, references)
 
   try {
     const raw = await callLLM(prompt)
-    const report = parseLLMJson<TransparencyReport>(raw)
+    const report = parseLLMJson<AuditReport>(raw)
 
     return new Response(JSON.stringify({ success: true, report }), {
       status: 200,

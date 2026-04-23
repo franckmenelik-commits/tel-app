@@ -373,7 +373,7 @@ FIN DES RÉSONANCES\n`
 
 // ─── TEL TRANSPARENCE — Audit algorithmique ──────────────────────────────────
 
-export function buildTransparencyPrompt(textToAudit: string, references: { label: string; content: string }[]): string {
+export function buildAuditPrompt(textToAudit: string, references: { label: string; content: string }[]): string {
   const refsText = references
     .map((r, i) => `RÉFÉRENCE ${i + 1} — ${r.label}\n${r.content}`)
     .join('\n\n---\n\n')

@@ -32,7 +32,7 @@ const METIERS = [
   {
     titre: 'Médiateur humain-algorithme',
     description:
-      "Il audite les décisions algorithmiques avec TEL Transparence pour le compte d'institutions — entreprises, administrations, organisations internationales. Il ne cherche pas à condamner les algorithmes. Il cherche à rendre lisible ce qu'ils font réellement, à qui, et à quel coût humain. Il est l'interlocuteur que les personnes concernées n'avaient pas.",
+      "Il audite les décisions algorithmiques avec TEL Audit pour le compte d'institutions — entreprises, administrations, organisations internationales. Il ne cherche pas à condamner les algorithmes. Il cherche à rendre lisible ce qu'ils font réellement, à qui, et à quel coût humain. Il est l'interlocuteur que les personnes concernées n'avaient pas.",
   },
   {
     titre: 'Curateur de résonance',
@@ -70,7 +70,7 @@ export default function CareersPage() {
             {[
               { href: '/legends', label: 'Légendes' },
               { href: '/education', label: 'Éducation' },
-              { href: '/transparency', label: 'Transparence' },
+              { href: '/audit', label: 'Audit' },
               { href: '/manifesto', label: 'Manifeste' },
             ].map(link => (
               <Link

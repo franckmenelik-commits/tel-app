@@ -5,7 +5,7 @@
 
 import { useParams, useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
-import type { TransparencyReport } from '@/app/api/audit/route'
+import type { AuditReport } from '@/app/api/audit/route'
 
 const GOLD = '#C9A84C'
 const BG = '#09090b'
@@ -48,7 +48,7 @@ export default function SharedAuditPage() {
   const router = useRouter()
   const slug = params?.slug as string
 
-  const [report, setReport] = useState<TransparencyReport | null>(null)
+  const [report, setReport] = useState<AuditReport | null>(null)
   const [notFound, setNotFound] = useState(false)
 
   useEffect(() => {
@@ -56,7 +56,7 @@ export default function SharedAuditPage() {
     try {
       const stored = localStorage.getItem(`tel:shared:audit:${slug}`) || localStorage.getItem(`tel:shared:transparency:${slug}`)
       if (stored) {
-        setReport(JSON.parse(stored) as TransparencyReport)
+        setReport(JSON.parse(stored) as AuditReport)
       } else {
         setNotFound(true)
       }

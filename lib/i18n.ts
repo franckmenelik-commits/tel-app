@@ -26,6 +26,20 @@ export const LANG_LABELS: Record<Lang, string> = {
 export const ALL_LANGS: Lang[] = ['en', 'fr', 'de', 'es', 'pt', 'it', 'ar', 'hi', 'id', 'ja', 'ko']
 
 export const TRANSLATIONS = {
+  // ── Input Book ─────────────────────────────────────────────────────────────
+  'input.book.title': {
+    fr: 'Titre du livre', en: 'Book Title', de: 'Buchtitel', es: 'Título del libro', pt: 'Título do livro',
+    it: 'Titolo del libro', ar: 'عنوان الكتاب', hi: 'पुस्तक का शीर्षक', id: 'Judul Buku', ja: '本のタイトル', ko: '책 제목'
+  },
+  'input.book.author': {
+    fr: 'Auteur', en: 'Author', de: 'Autor', es: 'Autor', pt: 'Autor',
+    it: 'Autore', ar: 'المؤلف', hi: 'लेखक', id: 'Penulis', ja: '著者', ko: '저자'
+  },
+  'input.book.page': {
+    fr: 'Page (ex: 42)', en: 'Page (e.g. 42)', de: 'Seite (z.B. 42)', es: 'Página (p. ej. 42)', pt: 'Página (ex: 42)',
+    it: 'Pagina (es. 42)', ar: 'صفحة (مثلاً 42)', hi: 'पृष्ठ (जैसे 42)', id: 'Halaman (misal 42)', ja: 'ページ（例：42）', ko: '페이지 (예: 42)'
+  },
+
   // ── Hero ────────────────────────────────────────────────────────────────────
   'hero.line1':      {
     fr: 'Croisez deux réalités.',
