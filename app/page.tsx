@@ -1018,7 +1018,7 @@ export default function TELPage() {
             {[
               { href: '/legends', label: t('nav.legends', lang) },
               { href: '/education', label: t('nav.education', lang) },
-              { href: '/transparency', label: t('nav.audit', lang) },
+              { href: '/audit', label: t('nav.audit', lang) },
               { href: '/manifesto', label: t('nav.manifesto', lang) },
               { href: '/careers', label: t('nav.careers', lang) },
             ].map((link, i, arr) => (

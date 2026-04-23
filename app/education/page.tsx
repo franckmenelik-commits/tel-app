@@ -3,7 +3,7 @@
 // TEL — The Experience Layer
 // /education — TEL Éducation : perspectives culturelles pour enseignants
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { useLanguage, t } from '@/lib/i18n'
 
@@ -90,6 +90,14 @@ export default function EducationPage() {
   const [scriptCopied, setScriptCopied] = useState(false)
   const [shareToast, setShareToast] = useState(false)
 
+  // ─── Universal Input State ───
+  const [isBookMode, setIsBookMode] = useState(false)
+  const [isRecording, setIsRecording] = useState(false)
+  const [uploading, setUploading] = useState(false)
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const audioChunksRef = useRef<Blob[]>([])
+
   // ── Loading rotation ─────────────────────────────────────────────────────
   useEffect(() => {
     if (!isLoading) return
@@ -104,6 +112,48 @@ export default function EducationPage() {
     }, 2200)
     return () => clearInterval(interval)
   }, [isLoading])
+
+  // ─── Input Handlers ───
+  const startRecording = async () => {
+    if (isRecording) {
+      mediaRecorderRef.current?.stop()
+      setIsRecording(false)
+      return
+    }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      const mr = new MediaRecorder(stream)
+      mediaRecorderRef.current = mr
+      audioChunksRef.current = []
+      mr.ondataavailable = (e) => { if (e.data.size > 0) audioChunksRef.current.push(e.data) }
+      mr.onstop = async () => {
+        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' })
+        const formData = new FormData()
+        formData.append('audio', audioBlob)
+        setUploading(true)
+        try {
+          const res = await fetch('/api/transcribe', { method: 'POST', body: formData })
+          const data = await res.json()
+          if (data.text) setSujet(prev => prev ? prev + '\n' + data.text : data.text)
+        } catch (err) { console.error('Transcription error:', err) }
+        finally { setUploading(false) }
+      }
+      mr.start()
+      setIsRecording(true)
+    } catch (err) { console.error('Mic access denied:', err) }
+  }
+
+  const handleFileUpload = async (file: File) => {
+    setUploading(true)
+    const formData = new FormData()
+    formData.append('file', file)
+    try {
+      const res = await fetch('/api/upload', { method: 'POST', body: formData })
+      const data = await res.json()
+      if (data.text) setSujet(prev => prev ? prev + '\n' + data.text : data.text)
+    } catch (err) { console.error('Upload error:', err) }
+    finally { setUploading(false) }
+  }
 
   // ── Handlers ──────────────────────────────────────────────────────────────
 
@@ -259,20 +309,128 @@ export default function EducationPage() {
               {/* Sujet */}
               <div className="mb-7">
                 <SectionLabel>{t('edu.form.subject', lang)}</SectionLabel>
-                <input
-                  type="text"
-                  value={sujet}
-                  onChange={e => setSujet(e.target.value)}
-                  placeholder={t('edu.form.subject.ph', lang)}
-                  className="w-full px-4 py-3 rounded-xl text-sm outline-none"
-                  style={{
-                    background: 'rgba(255,255,255,0.03)',
-                    border: sujet.trim() ? '1px solid rgba(201,168,76,0.3)' : '1px solid rgba(255,255,255,0.07)',
-                    color: '#F5ECD7',
-                    fontFamily: 'Georgia, serif',
-                  }}
-                  onKeyDown={e => { if (e.key === 'Enter') handleSubmit() }}
-                />
+                {isBookMode ? (
+                  <div className="flex flex-col gap-4 p-5 rounded-xl" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
+                    <input
+                      type="text"
+                      placeholder={t('input.book.title', lang)}
+                      value={sujet.split(' — ')[0] || ''}
+                      onChange={(e) => {
+                        const parts = sujet.split(' — ')
+                        setSujet(`${e.target.value} — ${parts[1] || ''} — ${parts[2] || ''}`)
+                      }}
+                      className="bg-transparent border-none focus:ring-0 text-lg tel-serif font-medium"
+                      style={{ color: '#fff', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '8px' }}
+                    />
+                    <div className="flex gap-6">
+                      <input
+                        type="text"
+                        placeholder={t('input.book.author', lang)}
+                        value={sujet.split(' — ')[1] || ''}
+                        onChange={(e) => {
+                          const parts = sujet.split(' — ')
+                          setSujet(`${parts[0] || ''} — ${e.target.value} — ${parts[2] || ''}`)
+                        }}
+                        className="bg-transparent border-none focus:ring-0 text-sm tel-serif italic flex-1"
+                        style={{ color: '#aaa' }}
+                      />
+                      <input
+                        type="text"
+                        placeholder={t('input.book.page', lang)}
+                        value={sujet.split(' — ')[2] || ''}
+                        onChange={(e) => {
+                          const parts = sujet.split(' — ')
+                          setSujet(`${parts[0] || ''} — ${parts[1] || ''} — ${e.target.value}`)
+                        }}
+                        className="bg-transparent border-none focus:ring-0 text-sm tel-serif flex-1"
+                        style={{ color: '#666', textAlign: 'right' }}
+                      />
+                    </div>
+                  </div>
+                ) : (
+                  <input
+                    type="text"
+                    value={sujet}
+                    onChange={e => setSujet(e.target.value)}
+                    placeholder={t('edu.form.subject.ph', lang)}
+                    className="w-full px-4 py-3 rounded-xl text-sm outline-none"
+                    style={{
+                      background: 'rgba(255,255,255,0.03)',
+                      border: sujet.trim() ? '1px solid rgba(201,168,76,0.3)' : '1px solid rgba(255,255,255,0.07)',
+                      color: '#F5ECD7',
+                      fontFamily: 'Georgia, serif',
+                    }}
+                    onKeyDown={e => { if (e.key === 'Enter') handleSubmit() }}
+                  />
+                )}
+
+                {/* Universal Input Footer */}
+                <div className="flex items-center gap-3 mt-3">
+                  <button
+                    onClick={startRecording}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: '6px',
+                      fontSize: '10px', padding: '6px 12px', borderRadius: '100px',
+                      background: isRecording ? 'rgba(232,93,74,0.1)' : 'rgba(255,255,255,0.02)',
+                      border: `1px solid ${isRecording ? 'rgba(232,93,74,0.3)' : 'transparent'}`,
+                      color: isRecording ? '#E85D4A' : '#666',
+                      cursor: 'pointer', transition: 'all 200ms ease',
+                      textTransform: 'uppercase', letterSpacing: '0.05em'
+                    }}
+                  >
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                      <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+                    </svg>
+                    <span>Vocal</span>
+                  </button>
+
+                  <button
+                    onClick={() => fileInputRef.current?.click()}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: '6px',
+                      fontSize: '10px', padding: '6px 12px', borderRadius: '100px',
+                      background: 'rgba(255,255,255,0.02)',
+                      border: '1px solid transparent', color: '#666',
+                      cursor: 'pointer', transition: 'all 200ms ease',
+                      textTransform: 'uppercase', letterSpacing: '0.05em'
+                    }}
+                  >
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                      <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+                    </svg>
+                    <span>Fichier</span>
+                  </button>
+
+                  <button
+                    onClick={() => setIsBookMode(!isBookMode)}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: '6px',
+                      fontSize: '10px', padding: '6px 12px', borderRadius: '100px',
+                      background: isBookMode ? 'rgba(122,171,181,0.08)' : 'rgba(255,255,255,0.02)',
+                      border: `1px solid ${isBookMode ? 'rgba(122,171,181,0.25)' : 'transparent'}`,
+                      color: isBookMode ? '#7AABB5' : '#666',
+                      cursor: 'pointer', transition: 'all 200ms ease',
+                      textTransform: 'uppercase', letterSpacing: '0.05em'
+                    }}
+                  >
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                      <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" /><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+                    </svg>
+                    <span>Livre</span>
+                  </button>
+
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept=".pdf,.txt,.pptx,.png,.jpg"
+                    style={{ display: 'none' }}
+                    onChange={(e) => {
+                      const file = e.target.files?.[0]
+                      if (file) handleFileUpload(file)
+                      e.target.value = ''
+                    }}
+                  />
+                </div>
               </div>
 
               {/* Niveau */}
