@@ -3,7 +3,7 @@
 // TEL — The Experience Layer
 // app/initiative/page.tsx — Transformez un problème en plan d'action
 
-import { useState, useRef, useEffect } from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 import { useLanguage, t } from '@/lib/i18n'
 import type { InitiativeReport } from '@/app/api/initiative/route'
 
@@ -269,7 +269,6 @@ export default function InitiativePage() {
     window.print()
   }
 
-  // ── Render ──────────────────────────────────────────────────────────────────
   return (
     <div style={{ minHeight: '100vh', background: BG, color: TEXT1 }}>
       {/* Header */}

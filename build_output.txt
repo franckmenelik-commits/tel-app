@@ -1,0 +1,60 @@
+
+> the-experience-layer@0.1.0 build
+> next build && cp -r .next/static .next/standalone/.next/static && cp -r public .next/standalone/public
+
+  ▲ Next.js 14.2.5
+  - Environments: .env.local
+
+   Creating an optimized production build ...
+ ✓ Compiled successfully
+   Linting and checking validity of types ...
+   Collecting page data ...
+ ⚠ Using edge runtime on a page currently disables static generation for that page
+   Generating static pages (0/18) ...
+ ⚠ metadataBase property in metadata export is not set for resolving social open graph or twitter images, using "http://localhost:3000". See https://nextjs.org/docs/app/api-reference/functions/generate-metadata#metadatabase
+ ⚠ metadataBase property in metadata export is not set for resolving social open graph or twitter images, using "http://localhost:3000". See https://nextjs.org/docs/app/api-reference/functions/generate-metadata#metadatabase
+ ⚠ metadataBase property in metadata export is not set for resolving social open graph or twitter images, using "http://localhost:3000". See https://nextjs.org/docs/app/api-reference/functions/generate-metadata#metadatabase
+ ⚠ metadataBase property in metadata export is not set for resolving social open graph or twitter images, using "http://localhost:3000". See https://nextjs.org/docs/app/api-reference/functions/generate-metadata#metadatabase
+ ⚠ metadataBase property in metadata export is not set for resolving social open graph or twitter images, using "http://localhost:3000". See https://nextjs.org/docs/app/api-reference/functions/generate-metadata#metadatabase
+   Generating static pages (4/18) 
+   Generating static pages (8/18) 
+   Generating static pages (13/18) 
+ ✓ Generating static pages (18/18)
+   Finalizing page optimization ...
+   Collecting build traces ...
+
+Route (app)                              Size     First Load JS
+┌ ○ /                                    41 kB           141 kB
+├ ○ /_not-found                          871 B            88 kB
+├ ƒ /api/audit                           0 B                0 B
+├ ƒ /api/counter                         0 B                0 B
+├ ƒ /api/cross                           0 B                0 B
+├ ƒ /api/debate                          0 B                0 B
+├ ƒ /api/discover                        0 B                0 B
+├ ƒ /api/education                       0 B                0 B
+├ ƒ /api/enrichir                        0 B                0 B
+├ ƒ /api/extract                         0 B                0 B
+├ ƒ /api/health                          0 B                0 B
+├ ƒ /api/initiative                      0 B                0 B
+├ ƒ /api/resonate                        0 B                0 B
+├ ƒ /api/script                          0 B                0 B
+├ ƒ /api/seed                            0 B                0 B
+├ ƒ /api/upload                          0 B                0 B
+├ ○ /audit                               11.5 kB         111 kB
+├ ƒ /audit/[slug]                        2.2 kB         89.3 kB
+├ ○ /careers                             175 B            94 kB
+├ ○ /education                           5.74 kB         106 kB
+├ ƒ /i/[slug]                            4.56 kB        91.7 kB
+├ ○ /initiative                          5.48 kB         105 kB
+├ ○ /legends                             12.5 kB         106 kB
+├ ○ /manifesto                           175 B            94 kB
+└ ƒ /opengraph-image                     0 B                0 B
++ First Load JS shared by all            87.1 kB
+  ├ chunks/23-a3a1b6f47a77ad02.js        31.5 kB
+  ├ chunks/fd9d1056-23bdddb1df3a91c8.js  53.6 kB
+  └ other shared chunks (total)          1.93 kB
+
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+
