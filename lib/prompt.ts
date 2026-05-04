@@ -177,7 +177,7 @@ LE CROISEMENT:
 
 3. ZONES DE DIVERGENCE IRRÉDUCTIBLE (2–4)
    Ce qui NE PEUT PAS être réconcilié.
-   La divergence est la donnée la plus précieuse — pas un bug, une information.
+   Identifie également les BIAIS DE SUPÉRIORITÉ ou la LANGUE DE BOIS BUREAUCRATIQUE dans les sources : là où l'humain est effacé au profit d'une logique purement institutionnelle ou capitaliste.
    Honnêteté absolue sur ce qui résiste à la synthèse.
 
 4. L'INDICIBLE (limite de Wittgenstein)
@@ -393,23 +393,23 @@ TEXTES DE RÉFÉRENCE SUR LES DROITS
 ${refsText}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-TA MISSION : 5 SECTIONS D'AUDIT
+TA MISSION : 5 SECTIONS d'AUDIT (Loi Zéro & Dignité)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-Section 1 — CE QUE LE TEXTE DIT RÉELLEMENT :
-Traduis le jargon juridique en langage humain, clause par clause. Identifie les formulations ambiguës et ce qu'elles signifient concrètement pour l'utilisateur. Sois précis et ancré dans le texte. 3-4 paragraphes.
+Section 1 — TRADUCTION & RÉSONANCE :
+Traduis le jargon institutionnel en langage humain. Que signifie ce texte pour la vie réelle d'une personne ? Identifie les formulations ambiguës et ce qu'elles cachent concrètement. 3-4 paragraphes.
 
-Section 2 — CE QUE LE TEXTE CACHE :
-Quels droits l'utilisateur abandonne-t-il implicitement en signant ce texte, sans en être informé clairement ? Quelles données sont collectées, partagées, monétisées sans que ce soit explicitement dit ? Quelles clauses permettent des changements unilatéraux ? 3-4 paragraphes.
+Section 2 — MÉCANISMES D'EFFACEMENT & BIAIS :
+Quels sont les biais de supériorité de l'institution sur l'individu ? Identifie la "langue de bois" : ces mots qui masquent une prise de pouvoir ou une déshumanisation (ex: "traitement de cas", "rationalisation"). Où le texte traite-t-il l'humain comme une donnée, un coût ou un risque ? 3-4 paragraphes.
 
-Section 3 — CE QUI CONTREDIT LES RÉFÉRENCES :
-Pour chaque texte de référence fourni, identifie précisément où le texte audité viole, contourne, ou s'écarte des principes de droits fondamentaux. Cite des passages spécifiques du texte audité en face des articles de référence. 3-4 paragraphes.
+Section 3 — VIOLATIONS DE LA DIGNITÉ (RÉFÉRENCES) :
+Identifie précisément où le texte viole, contourne ou s'écarte des principes de droits fondamentaux fournis en référence. Cite des passages spécifiques du texte audité face aux articles de référence. 3-4 paragraphes.
 
-Section 4 — L'INDICIBLE :
-Ce que même cette analyse ne peut capturer sur l'expérience vécue de quelqu'un qui signe ce texte sans le comprendre — un travailleur précaire, un mineur, une personne en situation d'urgence, quelqu'un qui ne maîtrise pas la langue. Ce que le formalisme juridique efface de l'humain. 2 paragraphes.
+Section 4 — L'INDICIBLE & L'HUMAIN :
+Ce que cette analyse juridique efface : le vécu d'un travailleur précaire, d'une personne en urgence, ou de quelqu'un qui ne maîtrise pas les codes de l'institution. Ce qui reste inexprimé derrière le formalisme. 2 paragraphes.
 
-Section 5 — QUESTION INEXPOSÉE :
-La question que personne ne pose sur ce texte — ni les juristes, ni les activistes, ni les régulateurs. La question qui révèle la tension architecturale invisible dans ce document. Une seule question. Nouvelle. Surprenante. Nécessaire.
+Section 5 — QUESTION DE RUPTURE :
+La question que personne ne pose — ni les juristes, ni les institutions. La question qui révèle la tension de pouvoir invisible dans ce document. Une seule question. Nécessaire.
 
 Retourne UNIQUEMENT du JSON valide :
 {

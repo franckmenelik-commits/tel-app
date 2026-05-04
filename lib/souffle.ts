@@ -132,7 +132,12 @@ async function appelNiveau1(prompt: string): Promise<string> {
 
 async function appelNiveau2(prompt: string): Promise<string> {
   const apiKey = process.env.MISTRAL_API_KEY
-  if (!apiKey) throw new Error('MISTRAL_API_KEY non configurée')
+  
+  // SOVEREIGNTY FALLBACK: If no API key, try Ollama with a larger context/model if possible
+  if (!apiKey) {
+    console.info('[SOUFFLE] No Mistral API key, falling back to Ollama for Niveau 2 (La Traversée)')
+    return appelNiveau1(prompt)
+  }
 
   const response = await fetch(`${MISTRAL_API_BASE}/chat/completions`, {
     method: 'POST',
@@ -159,12 +164,17 @@ async function appelNiveau2(prompt: string): Promise<string> {
 
 async function appelNiveau3(prompt: string): Promise<string> {
   const apiKey = process.env.ANTHROPIC_API_KEY
-  if (!apiKey) throw new Error('ANTHROPIC_API_KEY non configurée')
+  
+  // SOVEREIGNTY FALLBACK: If no Anthropic key, use Niveau 2 (which might be Ollama)
+  if (!apiKey) {
+    console.info('[SOUFFLE] No Anthropic API key, falling back to Niveau 2 for Niveau 3 (La Révélation)')
+    return appelNiveau2(prompt)
+  }
 
   const client = new Anthropic({ apiKey })
   const response = await client.messages.create({
     model: CLAUDE_MODEL,
-    max_tokens: 2048,
+    max_tokens: 4096,
     messages: [{ role: 'user', content: prompt }],
   })
   return response.content[0].type === 'text' ? response.content[0].text : ''

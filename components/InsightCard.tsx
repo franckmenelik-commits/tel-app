@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import ConfidenceBar from './ConfidenceBar'
 import type { InsightCard as InsightCardType, Resonance } from '@/lib/types'
 import { t, type Lang } from '@/lib/i18n'
+import { generateDignityReport, downloadFile } from '@/lib/export'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -486,6 +487,11 @@ export default function InsightCard({
     } catch { window.prompt('Copiez le script :', text) }
   }
 
+  const handleDignityExport = () => {
+    const report = generateDignityReport(card, card.sources ?? [])
+    downloadFile(report, `tel-dignity-report-${card.theme.replace(/[^a-z0-9]/gi, '-').toLowerCase().slice(0, 30)}.md`, 'text/markdown')
+  }
+
   // ── Render ─────────────────────────────────────────────────────────────────
 
   return (
@@ -891,6 +897,9 @@ export default function InsightCard({
                 </ActionBtn>
                 <ActionBtn onClick={() => window.print()} title={L === 'en' ? 'Export as PDF' : 'Exporter en PDF'}>
                   {t('card.use.pdf', L)}
+                </ActionBtn>
+                <ActionBtn onClick={handleDignityExport} title={L === 'en' ? 'Export Dignity Report (Markdown)' : 'Exporter le Rapport de Dignité (Markdown)'}>
+                  {L === 'en' ? 'Dignity Report' : 'Rapport ONG'}
                 </ActionBtn>
                 <ActionBtn onClick={handleApprofondir} title={L === 'en' ? 'Relaunch with same sources' : 'Relancer avec les mêmes sources'}>
                   {t('card.use.deepen', L)}

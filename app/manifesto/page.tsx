@@ -91,7 +91,7 @@ export default function ManifestoPage() {
           }}
         >
           <p style={{ marginBottom: '32px' }}>
-            TEL n&apos;est pas une IA. C&apos;est une interface qui utilise l&apos;IA pour vous redonner votre humanité.
+            TEL n&apos;est pas une IA. C&apos;est une infrastructure souveraine pour la dignité humaine.
           </p>
 
           <p style={{ marginBottom: '32px' }}>
@@ -111,7 +111,7 @@ export default function ManifestoPage() {
           </p>
 
           <p style={{ marginBottom: '48px' }}>
-            TEL est dans le système. Il refuse d&apos;en être l&apos;alibi moral.
+            TEL agit dans le système, mais refuse d&apos;en être l&apos;alibi moral. Il est un bouclier pour les vécus que la machine — qu&apos;elle soit bureaucratique, capitaliste ou coloniale — cherche à effacer.
           </p>
 
           <hr style={{ border: 'none', borderTop: '1px solid rgba(255,255,255,0.047)', margin: '48px 0' }} />
@@ -123,8 +123,8 @@ export default function ManifestoPage() {
           <ul style={{ listStyle: 'none', padding: 0, marginBottom: '48px' }}>
             {[
               'Il rend visibles les tensions irréductibles sans chercher à les dissoudre.',
-              'Il montre ses propres angles morts.',
-              "Il s'auto-critique avant que vous ne le fassiez.",
+              'Il protège la souveraineté de votre perception face au prêt-à-penser.',
+              "Il s'auto-critique pour ne jamais devenir une autorité absolue.",
             ].map((item, i) => (
               <li key={i} style={{ marginBottom: '16px', paddingLeft: '20px', position: 'relative' }}>
                 <span style={{ position: 'absolute', left: 0, color: '#C9A84C', fontSize: '12px' }}>—</span>
@@ -139,10 +139,10 @@ export default function ManifestoPage() {
 
           <ul style={{ listStyle: 'none', padding: 0, marginBottom: '48px' }}>
             {[
-              "Il ne prétend pas réconcilier l'humanité.",
-              'Il ne vend pas de la sagesse comme un produit.',
-              "Il ne réduit pas un être humain à une donnée.",
-              "Il ne simule pas. Il révèle.",
+              "Il ne prétend pas réconcilier l'humanité sous une seule bannière.",
+              'Il ne vend pas de la sagesse comme un produit de consommation.',
+              "Il ne réduit jamais un être humain à une donnée statistique.",
+              "Il refuse de valider la hiérarchie des vécus.",
             ].map((item, i) => (
               <li key={i} style={{ marginBottom: '16px', paddingLeft: '20px', position: 'relative' }}>
                 <span style={{ position: 'absolute', left: 0, color: 'rgba(255,255,255,0.2)', fontSize: '12px' }}>—</span>
@@ -154,11 +154,15 @@ export default function ManifestoPage() {
           <hr style={{ border: 'none', borderTop: '1px solid rgba(255,255,255,0.047)', margin: '48px 0' }} />
 
           <p style={{ marginBottom: '32px', fontStyle: 'italic', color: '#aaaaaa' }}>
-            Avant d&apos;être une donnée pour un algorithme, avant d&apos;être un dossier pour une institution, avant d&apos;être une statistique pour un gouvernement — une personne est un être humain.
+            Avant d&apos;être une donnée pour un algorithme, un dossier pour l&apos;ICE, une statistique pour un gouvernement ou une main-d&apos;œuvre pour le capital — une personne est un être humain souverain. 
+          </p>
+
+          <p style={{ marginBottom: '32px', fontStyle: 'italic', color: '#aaaaaa' }}>
+            Refuser qu&apos;une culture, une origine ou une perception différente fasse de nous des &quot;sous-humains&quot; est la raison d&apos;être de TEL.
           </p>
 
           <p style={{ color: '#888888' }}>
-            TEL est construit sur ce principe. Ou il ne vaut rien.
+            TEL est cette infrastructure. Ou il ne vaut rien.
           </p>
         </div>
 
