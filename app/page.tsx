@@ -1,6 +1,13 @@
 'use client'
 
-import { useState, useCallback, useEffect, useRef } from 'react'
+import { useState, useCallback, useEffect, useRef, useMemo } from 'react'
+import gsap from 'gsap'
+import { useGSAP } from '@gsap/react'
+import { ScrollTrigger } from 'gsap/ScrollTrigger'
+
+if (typeof window !== 'undefined') {
+  gsap.registerPlugin(useGSAP, ScrollTrigger)
+}
 import dynamic from 'next/dynamic'
 import CrossingSpheres from '@/components/CrossingSpheres'
 import SourceInput from '@/components/SourceInput'
@@ -164,13 +171,14 @@ export default function TELPage() {
     return () => clearInterval(timer)
   }, [demoCards])
 
-  // ── Hero typewriter — once per session, after lang is detected ─────────────
+  // ── Hero GSAP reveal — once per session, after lang is detected ────────────
+  const heroContainerRef = useRef<HTMLDivElement>(null)
+
   useEffect(() => {
-    if (!langDetected) return   // wait for real lang before typing
+    if (!langDetected) return
     if (heroPlayed.current) return
     try {
       if (sessionStorage.getItem('tel:hero-played')) {
-        // Already played — show full text immediately
         setHeroText(t('hero.line1', lang))
         setHeroLine2Visible(true)
         setHeroCtaVisible(true)
@@ -178,23 +186,36 @@ export default function TELPage() {
       }
     } catch { /* ok */ }
     heroPlayed.current = true
-    const fullText = t('hero.line1', lang)
-    let i = 0
-    const type = () => {
-      if (i <= fullText.length) {
-        setHeroText(fullText.slice(0, i))
-        i++
-        setTimeout(type, 30)
-      } else {
-        // Title done — fade in line2 after 800ms, CTA after 1200ms
-        setTimeout(() => setHeroLine2Visible(true), 800)
-        setTimeout(() => setHeroCtaVisible(true), 1200)
+    setHeroText(t('hero.line1', lang))
+
+    // GSAP timeline for hero reveal
+    const tl = gsap.timeline({ delay: 0.3 })
+    tl.from('.hero-char', {
+      opacity: 0,
+      y: 20,
+      duration: 0.4,
+      stagger: 0.025,
+      ease: 'power2.out',
+      onComplete: () => {
+        setTimeout(() => setHeroLine2Visible(true), 400)
+        setTimeout(() => setHeroCtaVisible(true), 800)
         try { sessionStorage.setItem('tel:hero-played', '1') } catch { /* ok */ }
-      }
-    }
-    setTimeout(type, 400)
+      },
+    })
+
+    return () => { tl.kill() }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lang, langDetected])
+
+  // Split hero text into individual characters for GSAP animation
+  const heroChars = useMemo(() => {
+    if (!heroText) return null
+    return heroText.split('').map((char, i) => (
+      <span key={i} className="hero-char" style={{ display: 'inline-block' }}>
+        {char === ' ' ? '\u00A0' : char}
+      </span>
+    ))
+  }, [heroText])
 
   // ── Loading message rotation ───────────────────────────────────────────────
   useEffect(() => {
@@ -464,17 +485,24 @@ export default function TELPage() {
     setShowingSidebar(false)
   }, [])
 
-  // ── IntersectionObserver — scroll fade-in ─────────────────────────────────
-  useEffect(() => {
+  // ── GSAP ScrollTrigger — scroll reveal animations ─────────────────────────
+  useGSAP(() => {
     const els = document.querySelectorAll('.tel-animate')
     if (!els.length) return
-    const observer = new IntersectionObserver(
-      (entries) => entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('tel-visible') }),
-      { threshold: 0.12 }
-    )
-    els.forEach(el => observer.observe(el))
-    return () => observer.disconnect()
-  }, [appState])
+    els.forEach((el) => {
+      gsap.from(el, {
+        opacity: 0,
+        y: 30,
+        duration: 0.8,
+        ease: 'power2.out',
+        scrollTrigger: {
+          trigger: el,
+          start: 'top 88%',
+          once: true,
+        },
+      })
+    })
+  }, { dependencies: [appState] })
 
   const souffleIndicator = '•'.repeat(Math.min(3, Math.max(1, souffleNiveaux.length)))
   const demo = demoCards[demoIndex] ?? ALL_DEMO_CROSSINGS[0]
@@ -741,10 +769,7 @@ export default function TELPage() {
                     minHeight: '1.2em',
                   }}
                 >
-                  <span>{heroText || '\u00A0'}</span>
-                  {heroText && heroText.length < t('hero.line1', lang).length && (
-                    <span style={{ borderRight: '2px solid #C9A84C', marginLeft: '2px', animation: 'blink 0.7s step-end infinite' }} />
-                  )}
+                  <span>{heroChars || '\u00A0'}</span>
                   <br />
                   <span style={{ opacity: heroLine2Visible ? 1 : 0, transition: 'opacity 600ms ease' }}>
                     {t('hero.line2', lang)}

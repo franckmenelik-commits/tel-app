@@ -3,11 +3,17 @@
  * lib/export.ts — Génération de rapports pour la Dignité Humaine (ONG/Activistes)
  */
 
-import { LogosInsightResponse, ExtractedSource } from './types'
+import { LogosInsightResponse } from './types'
+
+interface ReportSource {
+  title: string
+  geographicContext?: string
+  content?: string
+}
 
 export function generateDignityReport(
   insight: LogosInsightResponse,
-  sources: ExtractedSource[]
+  sources: ReportSource[]
 ): string {
   const date = new Date().toLocaleDateString('fr-FR', {
     year: 'numeric',
@@ -58,13 +64,13 @@ ${insight.questionNoOneHasAsked}
 ## 🚀 PISTES D'ACTION
 
 #### 👤 Pour l'Individu
-${insight.actionables.individu}
+${insight.actionables?.individu ?? 'Non disponible'}
 
 #### 🔬 Pour le Chercheur / Praticien
-${insight.actionables.chercheur}
+${insight.actionables?.chercheur ?? 'Non disponible'}
 
 #### 🏛️ Pour l'Institution / ONG
-${insight.actionables.institution}
+${insight.actionables?.institution ?? 'Non disponible'}
 
 ---
 

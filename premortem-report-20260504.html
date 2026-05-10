@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TEL Premortem Report — Mai 2026</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Georgia&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: #0a0e1a;
+    color: #c8ccd8;
+    font-family: 'Inter', -apple-system, sans-serif;
+    line-height: 1.7;
+    padding: 40px 20px;
+  }
+
+  .container { max-width: 860px; margin: 0 auto; }
+
+  h1 {
+    font-size: 28px;
+    font-weight: 300;
+    color: #fff;
+    letter-spacing: -0.02em;
+    margin-bottom: 8px;
+  }
+
+  .subtitle {
+    font-size: 13px;
+    color: #555;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 48px;
+  }
+
+  .frame {
+    background: rgba(220, 50, 50, 0.06);
+    border: 1px solid rgba(220, 50, 50, 0.2);
+    border-radius: 12px;
+    padding: 28px 32px;
+    margin-bottom: 48px;
+    font-family: Georgia, serif;
+    font-size: 16px;
+    line-height: 1.8;
+    color: #cc6666;
+  }
+
+  /* ── Synthesis Section ── */
+  .synthesis {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-bottom: 48px;
+  }
+
+  .synthesis-card {
+    background: rgba(255,255,255,0.025);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 12px;
+    padding: 24px;
+  }
+
+  .synthesis-card.full { grid-column: 1 / -1; }
+
+  .synthesis-card .label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    margin-bottom: 12px;
+    font-weight: 600;
+  }
+
+  .synthesis-card .label.red { color: #cc4444; }
+  .synthesis-card .label.orange { color: #cc8833; }
+  .synthesis-card .label.blue { color: #4488cc; }
+  .synthesis-card .label.green { color: #44aa66; }
+  .synthesis-card .label.gold { color: #C9A84C; }
+
+  .synthesis-card p {
+    font-size: 14px;
+    line-height: 1.75;
+  }
+
+  .synthesis-card strong { color: #fff; }
+
+  /* ── Failure Cards ── */
+  .section-title {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: #444;
+    margin-bottom: 24px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+  }
+
+  .failure-card {
+    background: rgba(255,255,255,0.02);
+    border: 1px solid rgba(255,255,255,0.05);
+    border-radius: 12px;
+    padding: 28px 32px;
+    margin-bottom: 20px;
+    border-left: 3px solid;
+  }
+
+  .failure-card:nth-child(1) { border-left-color: #cc4444; }
+  .failure-card:nth-child(2) { border-left-color: #cc6633; }
+  .failure-card:nth-child(3) { border-left-color: #ccaa33; }
+  .failure-card:nth-child(4) { border-left-color: #44aa66; }
+  .failure-card:nth-child(5) { border-left-color: #4488cc; }
+  .failure-card:nth-child(6) { border-left-color: #7744cc; }
+  .failure-card:nth-child(7) { border-left-color: #cc4488; }
+
+  .failure-card h3 {
+    font-size: 16px;
+    font-weight: 500;
+    color: #fff;
+    margin-bottom: 16px;
+  }
+
+  .failure-card .story {
+    font-family: Georgia, serif;
+    font-size: 14px;
+    line-height: 1.85;
+    color: #999;
+    margin-bottom: 20px;
+  }
+
+  .failure-card .assumption {
+    font-size: 13px;
+    padding: 12px 16px;
+    background: rgba(255,255,255,0.025);
+    border-radius: 6px;
+    margin-bottom: 16px;
+    color: #aaa;
+  }
+
+  .failure-card .assumption strong { color: #C9A84C; }
+
+  .failure-card .signals {
+    font-size: 12px;
+    color: #666;
+  }
+
+  .failure-card .signals span { color: #cc6666; }
+
+  /* ── Checklist ── */
+  .checklist {
+    background: rgba(68, 170, 102, 0.04);
+    border: 1px solid rgba(68, 170, 102, 0.15);
+    border-radius: 12px;
+    padding: 28px 32px;
+    margin-bottom: 48px;
+  }
+
+  .checklist li {
+    list-style: none;
+    padding: 8px 0;
+    padding-left: 24px;
+    position: relative;
+    font-size: 14px;
+  }
+
+  .checklist li::before {
+    content: '□';
+    position: absolute;
+    left: 0;
+    color: #44aa66;
+  }
+
+  .footer {
+    text-align: center;
+    font-size: 11px;
+    color: #333;
+    padding-top: 32px;
+    border-top: 1px solid rgba(255,255,255,0.03);
+  }
+
+  @media (max-width: 600px) {
+    .synthesis { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <h1>⚰️ Premortem — TEL, The Experience Layer</h1>
+  <p class="subtitle">Méthode Gary Klein · 7 agents · Mai 2026</p>
+
+  <div class="frame">
+    Nous sommes en novembre 2026. TEL a échoué. Le MRR est à 200$. 47 utilisateurs. Les ONG n'ont pas signé. Le mouvement n'a pas pris. Le site existe encore, mais personne ne vient. C'est fini. Voici pourquoi.
+  </div>
+
+  <!-- ══ SYNTHESIS ══ -->
+
+  <div class="synthesis">
+
+    <div class="synthesis-card">
+      <p class="label red">🎯 Échec le plus probable</p>
+      <p><strong>Le fossé discours/produit.</strong> TEL se présente comme une "infrastructure pour la dignité humaine" mais un visiteur qui arrive sur le site ne comprend pas ce qu'il peut FAIRE en 10 secondes. La mission philosophique est puissante, mais elle ne remplace pas un "aha moment" immédiat. Les gens partent avant d'essayer.</p>
+    </div>
+
+    <div class="synthesis-card">
+      <p class="label orange">💀 Échec le plus dangereux</p>
+      <p><strong>L'épuisement du fondateur solo.</strong> Tu codes, tu philosophes, tu fais le design, le serveur, le marketing, les ventes, le support. Ce n'est pas un risque business, c'est un risque humain. Si tu tombes, TEL tombe. Et le burnout est silencieux : tu ne le vois pas arriver jusqu'à ce que tu ne puisses plus ouvrir ton laptop.</p>
+    </div>
+
+    <div class="synthesis-card full">
+      <p class="label blue">🔮 L'hypothèse cachée</p>
+      <p><strong>Tu assumes que la qualité du produit créera sa propre distribution.</strong> C'est l'hypothèse la plus dangereuse parce qu'elle est invisible. TEL est un produit remarquable — les Insight Cards sont d'une profondeur rare, l'architecture SOUFFLE est élégante, la vision Law Zero est historique. Mais aucun de ces éléments ne se transforme automatiquement en utilisateurs. Les meilleurs produits au monde meurent dans l'indifférence chaque jour. <strong>La distribution n'est pas une conséquence de la qualité. C'est un travail séparé, aussi important que le code.</strong></p>
+    </div>
+
+    <div class="synthesis-card full">
+      <p class="label gold">🛠️ Le plan révisé</p>
+      <p><strong>1. Lancer avec un seul use-case tueur, pas 8 modules.</strong> Au lieu de présenter TEL comme une "infrastructure pour la dignité", lance-le comme : "Colle 2 articles. Découvre ce que personne n'a encore vu." Un verbe, une action, un résultat. La philosophie vient APRÈS l'expérience, pas avant.</p>
+      <p style="margin-top:12px"><strong>2. Pricing : commence 100% gratuit pendant 90 jours.</strong> Ton premier problème n'est pas le revenu, c'est la preuve. Tu as besoin de 500 personnes qui disent "TEL m'a montré quelque chose que je n'avais jamais vu." Les fourchettes révisées : Free illimité → Pro à 9$/mois (pas 19$) → Institutional à 149$/mois (pas 500$). Le tier Sovereign n'existe pas tant que tu n'as pas 3 institutions qui payent déjà.</p>
+      <p style="margin-top:12px"><strong>3. Distribution : choisis UN canal et domine-le.</strong> Pas Twitter + LinkedIn + TikTok + ONG + universités. Un seul. Suggestion : crée 1 Insight Card publique par jour sur un sujet viral (actualité × philosophie) et poste-la sur Twitter/X. Le format card est fait pour ça. En 90 jours, tu auras 90 preuves publiques de ce que TEL peut faire.</p>
+      <p style="margin-top:12px"><strong>4. Trouve un co-équipier avant de chercher des clients.</strong> Un profil complémentaire : quelqu'un qui sait vendre, qui connaît les ONG, ou qui peut faire le community management. Tu ne peux pas être à la fois l'architecte et le maçon.</p>
+      <p style="margin-top:12px"><strong>5. Coûts API : plafonne à 50$/mois max.</strong> Mets un rate limit strict (3 croisements/jour pour le free, 20 pour le pro). Ne scale les API qu'avec les revenus. Utilise Ollama comme défaut réel, pas comme fallback théorique.</p>
+    </div>
+  </div>
+
+  <!-- ══ FAILURE CARDS ══ -->
+
+  <p class="section-title">Analyses détaillées — 7 scénarios d'échec</p>
+
+  <div class="failure-card">
+    <h3>1. Le fossé discours/produit</h3>
+    <div class="story">
+      <p>En juin 2026, TEL lance avec sa page d'accueil qui parle de "Law Zero", de "souveraineté des vécus", de "Wittgenstein". Un journaliste tech curieux arrive, lit le manifeste, trouve ça fascinant. Mais quand il essaie de comprendre ce que le produit FAIT, il ne trouve pas de réponse en moins de 30 secondes. Il part. Il ne reviendra pas.</p>
+      <p style="margin-top:12px">Le même scénario se répète 200 fois. Les gens qui arrivent sur TEL sont soit des intellectuels qui adorent le discours mais n'utilisent pas l'outil, soit des utilisateurs pratiques qui ne comprennent pas le discours et ferment l'onglet. Le produit tombe dans le trou entre les deux audiences.</p>
+    </div>
+    <div class="assumption"><strong>Hypothèse sous-jacente :</strong> "La profondeur de la vision attirera naturellement les bons utilisateurs."</div>
+    <div class="signals"><span>⚠️ Signaux d'alerte :</span> Le taux de rebond dépasse 80%. Les sessions durent moins de 45 secondes. Les gens lisent le manifeste mais ne lancent jamais un croisement.</div>
+  </div>
+
+  <div class="failure-card">
+    <h3>2. Zéro distribution, zéro communauté</h3>
+    <div class="story">
+      <p>TEL est déployé sur Coolify. Le domaine theexperiencelayer.org existe. Mais en dehors de toi et de quelques amis, personne ne sait qu'il existe. Tu postes une fois sur Twitter, une fois sur LinkedIn. 12 likes. 0 inscriptions. Tu retournes coder parce que c'est plus confortable que de faire du marketing.</p>
+      <p style="margin-top:12px">En septembre, tu réalises que tu as passé 4 mois à améliorer un produit que 30 personnes utilisent. La boucle "améliorer → personne ne voit → améliorer encore" est un piège mortel. Sans distribution, chaque feature ajoutée est un investissement à rendement zéro.</p>
+    </div>
+    <div class="assumption"><strong>Hypothèse sous-jacente :</strong> "Un bon produit se vend tout seul."</div>
+    <div class="signals"><span>⚠️ Signaux d'alerte :</span> Moins de 10 nouveaux utilisateurs par semaine après le premier mois. Aucune mention organique de TEL sur les réseaux sociaux par des inconnus.</div>
+  </div>
+
+  <div class="failure-card">
+    <h3>3. Pricing déconnecté du marché</h3>
+    <div class="story">
+      <p>Tu lances le tier Pro à 19$/mois. Un utilisateur potentiel compare : ChatGPT Plus fait "tout" pour 20$. Perplexity Pro fait la recherche pour 20$. TEL fait... des croisements de vécus pour 19$. La proposition de valeur n'est pas assez claire pour justifier un abonnement supplémentaire dans un portefeuille déjà saturé d'abonnements IA.</p>
+      <p style="margin-top:12px">Le tier Institutional à 500$/mois ne trouve aucun acheteur parce qu'aucune ONG n'a de "budget IA" dans sa grille. Elles ont des budgets "recherche", "plaidoyer", "terrain". TEL ne rentre dans aucune de ces cases. Et surtout, personne à l'intérieur de l'ONG n'est prêt à défendre l'achat devant le directeur financier.</p>
+    </div>
+    <div class="assumption"><strong>Hypothèse sous-jacente :</strong> "Les gens payeront pour la lucidité comme ils payent pour la productivité."</div>
+    <div class="signals"><span>⚠️ Signaux d'alerte :</span> Ratio conversion Free→Pro inférieur à 1%. Aucune institution ne dépasse la phase de démo.</div>
+  </div>
+
+  <div class="failure-card">
+    <h3>4. Les coûts API mangent les économies</h3>
+    <div class="story">
+      <p>Chaque croisement Niveau 2 (Mistral) coûte ~0.02$. Chaque croisement Niveau 3 (Claude) coûte ~0.15$. Avec 200 utilisateurs gratuits qui font 3 croisements/jour, ça fait 600 requêtes/jour. À 0.05$ moyen, c'est 30$/jour, soit 900$/mois. Avec 0$ de revenus.</p>
+      <p style="margin-top:12px">En août, ta carte bancaire personnelle a été débitée de 2700$ en coûts API. Tu commences à rate-limiter agressivement les utilisateurs gratuits. L'expérience se dégrade. Les premiers utilisateurs partent. Tu te retrouves à financer un service public avec tes économies.</p>
+    </div>
+    <div class="assumption"><strong>Hypothèse sous-jacente :</strong> "Je financerai les coûts API avec les futurs revenus Pro."</div>
+    <div class="signals"><span>⚠️ Signaux d'alerte :</span> Coûts API > 200$/mois sans revenus correspondants. Tu commences à hésiter avant d'approuver une dépense personnelle.</div>
+  </div>
+
+  <div class="failure-card">
+    <h3>5. La qualité Ollama déçoit</h3>
+    <div class="story">
+      <p>Un professeur d'université essaie TEL pour préparer un cours. Le système tombe sur Ollama (Mistral 7B local). L'Insight Card produite est superficielle, avec des convergences génériques et un "indicible" qui ne dit rien. Le professeur compare avec ce que ChatGPT produit gratuitement. Il conclut que TEL est inférieur et ne revient plus.</p>
+      <p style="margin-top:12px">Le problème : tu as vendu la souveraineté comme une feature, mais les utilisateurs ne se soucient pas de la souveraineté si le résultat est médiocre. La souveraineté est un argument pour les institutions, pas pour les individus. Et les institutions ne sont pas encore là.</p>
+    </div>
+    <div class="assumption"><strong>Hypothèse sous-jacente :</strong> "Les modèles locaux sont suffisamment bons pour l'expérience de base."</div>
+    <div class="signals"><span>⚠️ Signaux d'alerte :</span> Les utilisateurs sur Ollama ont un taux de retour inférieur de 60% à ceux sur Claude/Mistral API.</div>
+  </div>
+
+  <div class="failure-card">
+    <h3>6. Le marché ONG est un mirage</h3>
+    <div class="story">
+      <p>Tu contactes 15 ONG en juin. 3 répondent. 1 accepte une démo. La personne qui fait la démo est enthousiaste. Elle transmet à son supérieur. Le supérieur demande : "Est-ce que c'est conforme RGPD ? Avez-vous un DPA ? Un audit SOC 2 ? Un SLA avec uptime garanti ? Un support en cas de panne ?" Tu n'as rien de tout ça. Le dossier est classé.</p>
+      <p style="margin-top:12px">Le cycle de vente ONG/institutionnel prend 6-12 mois minimum. Même si une ONG dit oui en juin, le premier paiement n'arrive pas avant janvier 2027. Et tu n'as pas 7 mois de runway.</p>
+    </div>
+    <div class="assumption"><strong>Hypothèse sous-jacente :</strong> "Les ONG achèteront parce que la mission est alignée avec leurs valeurs."</div>
+    <div class="signals"><span>⚠️ Signaux d'alerte :</span> Après 3 mois, aucun contrat institutional signé. Les conversations s'enlisent dans des questions de conformité.</div>
+  </div>
+
+  <div class="failure-card">
+    <h3>7. L'épuisement du fondateur solo</h3>
+    <div class="story">
+      <p>En septembre, tu travailles 14h/jour depuis 4 mois. Tu codes le matin, tu fais du marketing (mal) l'après-midi, tu gères les bugs le soir. Tu n'as personne à qui parler de tes doutes. Les 47 utilisateurs ne génèrent pas assez de feedback pour valider tes choix. Tu commences à douter de tout : du produit, de la mission, de toi-même.</p>
+      <p style="margin-top:12px">Un jour en octobre, tu ouvres ton laptop et tu ne peux pas. Pas de bug. Pas de crise. Juste l'accumulation silencieuse de 5 mois de charge mentale non partagée. TEL s'arrête parce que toi tu t'arrêtes.</p>
+    </div>
+    <div class="assumption"><strong>Hypothèse sous-jacente :</strong> "Je peux tout faire seul si je travaille assez dur."</div>
+    <div class="signals"><span>⚠️ Signaux d'alerte :</span> Tu commences à procrastiner sur des tâches que tu adorais. Tu évites de regarder les analytics. Tu te sens coupable de prendre un jour off.</div>
+  </div>
+
+  <!-- ══ CHECKLIST ══ -->
+
+  <div class="checklist">
+    <p class="label green" style="font-size:10px; text-transform:uppercase; letter-spacing:0.15em; margin-bottom:16px; font-weight:600;">✅ Checklist pré-lancement — à faire AVANT de lancer</p>
+    <ul>
+      <li><strong>Reformule la homepage en 1 phrase d'action</strong> : "Colle 2 liens. Découvre ce que personne n'a encore vu." Teste-la sur 5 personnes qui ne connaissent pas TEL. Si elles ne comprennent pas en 10 sec, recommence.</li>
+      <li><strong>Fixe un budget API max de 50$/mois</strong> et configure les rate limits en conséquence. Ne dépasse jamais ce plafond avec tes fonds personnels.</li>
+      <li><strong>Publie 1 Insight Card par jour pendant 30 jours</strong> sur un seul canal (Twitter/X recommandé) avant de considérer le lancement comme "fait".</li>
+      <li><strong>Contacte 3 personnes cette semaine</strong> qui pourraient devenir co-fondateur, conseiller, ou premier "champion" dans une ONG.</li>
+      <li><strong>Commence 100% gratuit.</strong> Le pricing viendra quand tu auras 500 utilisateurs qui reviennent. Pas avant.</li>
+    </ul>
+  </div>
+
+  <div class="footer">
+    <p>Premortem généré le 4 mai 2026 · Méthode Gary Klein (HBR) · 7 agents parallèles</p>
+    <p style="margin-top:4px">Sujet : TEL — The Experience Layer · theexperiencelayer.org</p>
+  </div>
+
+</div>
+</body>
+</html>

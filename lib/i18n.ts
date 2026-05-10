@@ -42,30 +42,30 @@ export const TRANSLATIONS = {
 
   // ── Hero ────────────────────────────────────────────────────────────────────
   'hero.line1':      {
-    fr: 'Croisez deux réalités.',
-    en: 'Cross two realities.',
-    de: 'Kreuzen Sie zwei Realitäten.',
-    es: 'Cruza dos realidades.',
-    pt: 'Cruze duas realidades.',
-    it: 'Incrocia due realtà.',
-    ar: 'قاطع واقعين.',
-    hi: 'दो वास्तविकताओं को पार करें।',
-    id: 'Silangkan dua realitas.',
-    ja: '二つの現実を交差させる。',
-    ko: '두 가지 현실을 교차시키다.'
+    fr: 'Collez 2 liens. Voyez ce que personne n\'a vu.',
+    en: 'Paste 2 links. See what no one has seen.',
+    de: 'Fügen Sie 2 Links ein. Sehen Sie, was niemand gesehen hat.',
+    es: 'Pega 2 enlaces. Ve lo que nadie ha visto.',
+    pt: 'Cole 2 links. Veja o que ninguém viu.',
+    it: 'Incolla 2 link. Vedi ciò che nessuno ha visto.',
+    ar: 'الصق رابطين. شاهد ما لم يره أحد.',
+    hi: '2 लिंक पेस्ट करें। वह देखें जो किसी ने नहीं देखा।',
+    id: 'Tempel 2 tautan. Lihat apa yang belum pernah dilihat siapa pun.',
+    ja: '2つのリンクを貼り付けてください。誰も見たことのないものを見てください。',
+    ko: '링크 2개를 붙여넣으세요. 아무도 보지 못한 것을 보세요.'
   },
   'hero.line2':      {
-    fr: "Écoutez ce qu'elles se disent en secret.",
-    en: 'Listen to what they tell each other in secret.',
-    de: 'Hören Sie, was sie sich geheim sagen.',
-    es: 'Escucha lo que se dicen en secreto.',
-    pt: 'Ouça o que eles dizem um au outro em segredo.',
-    it: 'Ascolta quello che si dicono in segreto.',
-    ar: 'استمع إلى ما يقولونه لبعضهم البعض في الخفاء.',
-    hi: 'सुनें कि वे एक-दूसरे से गुप्त रूप से क्या कह रहे हैं।',
-    id: 'Dengarkan apa yang mereka katakan satu sama lain secara rahasia.',
-    ja: '彼らが密かに語り合っていることに耳を傾けてください。',
-    ko: '그들이 서로 비밀리에 나누는 이야기에 귀를 기울여 보세요.'
+    fr: 'TEL croise vos sources et révèle le pattern invisible.',
+    en: 'TEL crosses your sources and reveals the invisible pattern.',
+    de: 'TEL kreuzt Ihre Quellen und enthüllt das unsichtbare Muster.',
+    es: 'TEL cruza tus fuentes y revela el patrón invisible.',
+    pt: 'TEL cruza suas fontes e revela o padrão invisível.',
+    it: 'TEL incrocia le tue fonti e rivela il pattern invisibile.',
+    ar: 'يقاطع TEL مصادرك ويكشف النمط الخفي.',
+    hi: 'TEL आपके स्रोतों को क्रॉस करता है और अदृश्य पैटर्न प्रकट करता है।',
+    id: 'TEL menyilangkan sumber Anda dan mengungkapkan pola yang tidak terlihat.',
+    ja: 'TELはあなたのソースを交差させ、見えないパターンを明らかにします。',
+    ko: 'TEL은 소스를 교차시켜 보이지 않는 패턴을 드러냅니다.'
   },
   'hero.desc':       {
     fr: "TEL fait le pont entre des vécus qui ne se seraient jamais rencontrés.",
