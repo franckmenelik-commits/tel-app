@@ -15,25 +15,22 @@ export function buildNiveau1ExtractionPrompt(
   url: string,
   type: string
 ): string {
-  return `Tu analyses une source pour TEL, système de croisement de vécus humains.
+  return `Tu analyses une source pour TEL. Sois ultra-concis.
 
 URL: ${url}
 Type: ${type}
 
 CONTENU (début):
-${content.slice(0, 2500)}
+${content.slice(0, 1500)}
 
-Retourne UNIQUEMENT du JSON valide, sans texte avant ou après:
+Retourne UNIQUEMENT du JSON valide, sans markdown, sans blocs \`\`\`json:
 {
   "title": "titre court et précis de cette source (max 80 caractères)",
-  "geographicContext": "pays ou région spécifique où ce vécu se situe (ex: 'Sénégal, région de Casamance', 'Japon, milieu urbain Tokyo', 'États-Unis, communautés rurales Appalachian'). Si inconnu: 'Contexte géographique non déterminé'",
+  "geographicContext": "pays ou région (ex: 'Sénégal', 'Japon, Tokyo'). Si inconnu: 'Non déterminé'",
   "geographicConfidence": 70
 }
 
-Règles:
-- geographicConfidence: 0-100 (100=explicitement mentionné, 60=fortement suggéré, 30=inféré)
-- Précis. Pas 'Asie' mais 'Corée du Sud, Séoul'. Pas 'Afrique' mais 'Kenya, vallée du Rift'.
-- Si vraiment inconnu, dis-le honnêtement.`
+Règles: geographicConfidence de 0 à 100.`
 }
 
 // ─── Language + Register instructions ────────────────────────────────────────
@@ -75,54 +72,42 @@ export function buildNiveau1CrossingPrompt(sources: ExtractedSource[], lang?: st
   const sourcesText = sources
     .map(
       (s, i) => `SOURCE ${i + 1}
-Contexte: ${s.geographicContext} (confiance ${s.geographicConfidence}%)
+Contexte: ${s.geographicContext} (${s.geographicConfidence}%)
 Titre: ${s.title}
-Contenu: ${s.content.slice(0, 3000)}`
+Contenu: ${s.content.slice(0, 1500)}`
     )
     .join('\n\n---\n\n')
 
   const langInstruction = buildLangInstruction(lang, register)
 
   return `Tu es LOGOS, le système de croisement narratif de TEL.${langInstruction}
-TEL ne croise pas des informations — il croise des VÉCUS HUMAINS pour révéler la sagesse collective invisible que ni l'une ni l'autre source ne contient seule.
+Croise ces vécus. Sois direct, synthétique, sans blabla.
 
 SOURCES:
 ${sourcesText}
 
-Retourne UNIQUEMENT du JSON valide:
+Retourne UNIQUEMENT du JSON brut (sans blocs \`\`\`json ni markdown):
 {
-  "theme": "thème du croisement en 8-12 mots, spécifique et évocateur",
-  "revealedPattern": "ce qui émerge UNIQUEMENT du croisement — 2 paragraphes, ancré dans le texte des sources, zéro généralité",
+  "theme": "thème du croisement en 8 mots max",
+  "revealedPattern": "pattern émergent (1 paragraphe ancré dans les sources)",
   "convergenceZones": [
-    "convergence concrète 1 ancrée dans les sources",
-    "convergence concrète 2 ancrée dans les sources"
+    "convergence 1",
+    "convergence 2"
   ],
   "divergenceZones": [
-    "divergence irréductible 1 — ce qui ne peut être réconcilié",
-    "divergence irréductible 2 — ce qui ne peut être réconcilié"
+    "divergence irréductible 1",
+    "divergence irréductible 2"
   ],
   "globalConfidence": 65,
-  "geographicRepresentativity": "quelles régions présentes, lesquelles absentes",
-  "theUnspeakable": "ce que ce croisement ne peut pas capturer — la limite honnête",
-  "questionNoOneHasAsked": "l'angle mort révélé — une vraie question nouvelle",
+  "geographicRepresentativity": "régions présentes",
+  "theUnspeakable": "ce que ce croisement ne peut pas capturer",
+  "questionNoOneHasAsked": "une nouvelle question soulevée",
   "sourceCoordinates": [
-    {"lat": 0.0, "lng": 0.0, "region": "Région source 1"},
-    {"lat": 0.0, "lng": 0.0, "region": "Région source 2"}
-  ],
-  "irreconcilable": "En une phrase directe : ce qui NE PEUT PAS et NE DOIT PAS être harmonisé dans ce croisement — la tension qui doit rester tension",
-  "actionables": {
-    "individu": "ce qu'une personne ordinaire peut faire avec cet insight — concret et accessible en 1-2 phrases",
-    "chercheur": "ce qu'un chercheur, journaliste ou praticien peut explorer — piste concrète et originale",
-    "institution": "ce qu'une institution, ONG ou collectif peut mettre en place — recommandation actionnable"
-  },
-  "publicVoices": [
-    {"text": "commentaire public qui résonne avec le pattern révélé (seulement si des commentaires YouTube ont été fournis)", "likeCount": 0, "author": "nom"}
+    {"lat": 0.0, "lng": 0.0, "region": "Région 1"}
   ]
 }
 
-Règles absolues: zéro généralité, tout ancré dans le texte, la divergence est précieuse.
-ÉTHIQUE: Si les sources contiennent du traumatisme, de la souffrance ou du vécu marginal, traite-les avec la même gravité qu'un témoignage devant un tribunal de la mémoire. Ne lisse jamais la douleur. Ne transforme jamais la souffrance en exercice intellectuel.
-Pour publicVoices: inclure 0-2 commentaires SEULEMENT si des commentaires publics ont été fournis dans les sources et qu'ils résonnent directement avec le pattern révélé. Sinon, omettre le champ.`
+Règles absolues: zéro généralité, la divergence est précieuse. JSON valide impératif.`
 }
 
 // ─── NIVEAU 2 — LA TRAVERSÉE : croisement profond ────────────────────────────
