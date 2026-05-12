@@ -7,6 +7,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useLanguage, t } from '@/lib/i18n'
 import { REFERENCE_TEXTS } from '@/lib/reference-texts'
 import { PRELOADED_AUDITS } from '@/lib/preloaded-audits'
+import { SHIELD_TARGETS } from '@/lib/shield-templates'
 import type { AuditReport } from '@/app/api/audit/route'
 
 const GOLD = '#C9A84C'
@@ -69,6 +70,17 @@ export default function AuditPage() {
   const [error, setError] = useState<string | null>(null)
   const [shareToast, setShareToast] = useState(false)
   const [lang] = useLanguage()
+
+  // ─── Tabs State ───
+  const [activeTab, setActiveTab] = useState<'audit' | 'shield'>('audit')
+
+  // ─── Shield State ───
+  const [shieldPlatform, setShieldPlatform] = useState<string>('openai')
+  const [shieldName, setShieldName] = useState('')
+  const [shieldEmail, setShieldEmail] = useState('')
+  const [shieldResult, setShieldResult] = useState<any>(null)
+  const [shieldLoading, setShieldLoading] = useState(false)
+  const [shieldError, setShieldError] = useState<string | null>(null)
 
   // ─── Universal Input State ───
   const [isBookMode, setIsBookMode] = useState(false)
@@ -226,6 +238,34 @@ export default function AuditPage() {
     window.print()
   }
 
+  async function handleGenerateShield() {
+    if (!shieldName.trim() || !shieldEmail.trim()) {
+      setShieldError('Nom et email requis.')
+      return
+    }
+    setShieldError(null)
+    setShieldResult(null)
+    setShieldLoading(true)
+    try {
+      const res = await fetch('/api/shield', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          platform: shieldPlatform,
+          userName: shieldName.trim(),
+          userEmail: shieldEmail.trim(),
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Erreur inconnue')
+      setShieldResult(data)
+    } catch (err) {
+      setShieldError(err instanceof Error ? err.message : 'Erreur')
+    } finally {
+      setShieldLoading(false)
+    }
+  }
+
   const riskConfig = report ? RISK_CONFIG[report.riskLevel] || RISK_CONFIG.modéré : null
 
   return (
@@ -272,19 +312,49 @@ export default function AuditPage() {
 
       <div style={{ maxWidth: '900px', margin: '0 auto', padding: '64px 40px 120px' }}>
 
-        {/* ── Hero ── */}
-        <div style={{ marginBottom: '64px' }}>
-          <p style={{
-            fontSize: '10px',
-            fontWeight: 500,
-            letterSpacing: '0.15em',
-            textTransform: 'uppercase' as const,
-            color: TEXT_MUTED,
-            marginBottom: '24px',
-            fontFamily: '-apple-system, BlinkMacSystemFont, system-ui, sans-serif',
-          }}>
-            {t('audit.header', lang)}
-          </p>
+        {/* ── Tabs ── */}
+        <div style={{ display: 'flex', gap: '32px', marginBottom: '64px', borderBottom: `1px solid ${BORDER}`, paddingBottom: '16px' }}>
+          <button
+            onClick={() => setActiveTab('audit')}
+            style={{
+              background: 'none', border: 'none', cursor: 'pointer',
+              fontSize: '12px', fontWeight: activeTab === 'audit' ? 600 : 400,
+              color: activeTab === 'audit' ? GOLD : TEXT_MUTED,
+              letterSpacing: '0.15em', textTransform: 'uppercase',
+              transition: 'color 200ms ease'
+            }}
+          >
+            Audit Institutionnel
+          </button>
+          <button
+            onClick={() => setActiveTab('shield')}
+            style={{
+              background: 'none', border: 'none', cursor: 'pointer',
+              fontSize: '12px', fontWeight: activeTab === 'shield' ? 600 : 400,
+              color: activeTab === 'shield' ? GOLD : TEXT_MUTED,
+              letterSpacing: '0.15em', textTransform: 'uppercase',
+              transition: 'color 200ms ease'
+            }}
+          >
+            Bouclier RGPD
+          </button>
+        </div>
+
+        {activeTab === 'audit' && (
+          <>
+            {/* ── Hero Audit ── */}
+            <div style={{ marginBottom: '64px' }}>
+              <p style={{
+                fontSize: '10px',
+                fontWeight: 500,
+                letterSpacing: '0.15em',
+                textTransform: 'uppercase' as const,
+                color: TEXT_MUTED,
+                marginBottom: '24px',
+                fontFamily: '-apple-system, BlinkMacSystemFont, system-ui, sans-serif',
+              }}>
+                {t('audit.header', lang)}
+              </p>
           <h1 style={{
             fontFamily: 'Georgia, Times New Roman, serif',
             fontWeight: 400,
@@ -956,6 +1026,133 @@ export default function AuditPage() {
             </div>
           </div>
         )}
+          </>
+        )}
+
+        {activeTab === 'shield' && (
+          <div className="tel-animate">
+            <div style={{ marginBottom: '48px' }}>
+              <h1 style={{
+                fontFamily: 'Georgia, Times New Roman, serif',
+                fontWeight: 400,
+                fontSize: '36px',
+                lineHeight: 1.2,
+                letterSpacing: '-0.01em',
+                color: '#ffffff',
+                marginBottom: '16px',
+              }}>
+                Bouclier RGPD
+              </h1>
+              <p style={{
+                fontFamily: 'Georgia, Times New Roman, serif',
+                fontSize: '18px',
+                lineHeight: 1.7,
+                color: TEXT_SECONDARY,
+                maxWidth: '600px',
+              }}>
+                Exercez vos droits face aux GAFAM. Générez un email juridique complet (Articles 15, 17, 21) pour exiger l'effacement de vos données.
+              </p>
+            </div>
+
+            <div className="tel-bubble-filled" style={{ padding: '32px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', marginBottom: '32px' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '11px', color: TEXT_MUTED, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '8px' }}>Plateforme</label>
+                  <select
+                    value={shieldPlatform}
+                    onChange={e => setShieldPlatform(e.target.value)}
+                    style={{
+                      width: '100%', padding: '12px 16px', background: SURFACE, border: `1px solid ${BORDER}`,
+                      color: TEXT_PRIMARY, borderRadius: '8px', fontSize: '14px', outline: 'none'
+                    }}
+                  >
+                    {Object.entries(SHIELD_TARGETS).map(([key, target]) => (
+                      <option key={key} value={key}>{target.name}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '11px', color: TEXT_MUTED, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '8px' }}>Votre Nom Complet</label>
+                  <input
+                    type="text"
+                    value={shieldName}
+                    onChange={e => setShieldName(e.target.value)}
+                    placeholder="ex: Jean Dupont"
+                    style={{
+                      width: '100%', padding: '12px 16px', background: SURFACE, border: `1px solid ${BORDER}`,
+                      color: TEXT_PRIMARY, borderRadius: '8px', fontSize: '14px', outline: 'none'
+                    }}
+                  />
+                </div>
+                <div style={{ gridColumn: '1 / -1' }}>
+                  <label style={{ display: 'block', fontSize: '11px', color: TEXT_MUTED, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '8px' }}>Votre Email (lié au compte)</label>
+                  <input
+                    type="email"
+                    value={shieldEmail}
+                    onChange={e => setShieldEmail(e.target.value)}
+                    placeholder="ex: jean.dupont@email.com"
+                    style={{
+                      width: '100%', padding: '12px 16px', background: SURFACE, border: `1px solid ${BORDER}`,
+                      color: TEXT_PRIMARY, borderRadius: '8px', fontSize: '14px', outline: 'none'
+                    }}
+                  />
+                </div>
+              </div>
+
+              {shieldError && (
+                <div style={{ padding: '12px 16px', background: 'rgba(244, 67, 54, 0.1)', border: '1px solid rgba(244, 67, 54, 0.3)', color: '#F44336', borderRadius: '8px', marginBottom: '24px', fontSize: '14px' }}>
+                  {shieldError}
+                </div>
+              )}
+
+              <button
+                onClick={handleGenerateShield}
+                disabled={shieldLoading}
+                className="tel-gold-btn"
+                style={{ width: '100%', padding: '16px', fontSize: '15px' }}
+              >
+                {shieldLoading ? 'Génération en cours...' : 'Générer mon arme juridique'}
+              </button>
+            </div>
+
+            {shieldResult && (
+              <div className="tel-animate" style={{ marginTop: '48px' }}>
+                <h2 style={{ fontSize: '18px', color: '#fff', marginBottom: '24px', fontFamily: 'Georgia, serif' }}>Étapes à suivre :</h2>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '48px' }}>
+                  {shieldResult.steps.map((step: string, i: number) => (
+                    <div key={i} style={{ padding: '16px 20px', background: SURFACE, border: `1px solid ${BORDER}`, borderRadius: '8px', color: TEXT_PRIMARY, fontSize: '14px' }}>
+                      {step}
+                    </div>
+                  ))}
+                </div>
+
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                  <h2 style={{ fontSize: '18px', color: '#fff', fontFamily: 'Georgia, serif' }}>Votre Email :</h2>
+                  <button
+                    onClick={() => {
+                      navigator.clipboard.writeText(shieldResult.email.body);
+                      alert('Copié !');
+                    }}
+                    className="tel-ghost-btn"
+                    style={{ fontSize: '12px' }}
+                  >
+                    Copier l'email
+                  </button>
+                </div>
+                
+                <div style={{ padding: '24px', background: SURFACE, border: `1px solid ${BORDER}`, borderRadius: '12px' }}>
+                  <p style={{ color: TEXT_MUTED, fontSize: '13px', marginBottom: '8px' }}>À : <span style={{ color: TEXT_PRIMARY }}>{shieldResult.email.to}</span></p>
+                  <p style={{ color: TEXT_MUTED, fontSize: '13px', marginBottom: '24px' }}>CC : <span style={{ color: TEXT_PRIMARY }}>{shieldResult.email.cc}</span></p>
+                  <p style={{ color: TEXT_MUTED, fontSize: '13px', marginBottom: '24px' }}>Objet : <span style={{ color: TEXT_PRIMARY }}>{shieldResult.email.subject}</span></p>
+                  <div style={{ whiteSpace: 'pre-wrap', color: TEXT_PRIMARY, fontSize: '14px', lineHeight: 1.6, fontFamily: 'monospace' }}>
+                    {shieldResult.email.body}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
       </div>
     </main>
   )

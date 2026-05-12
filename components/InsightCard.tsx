@@ -1,6 +1,12 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
+import gsap from 'gsap'
+import { useGSAP } from '@gsap/react'
+
+if (typeof window !== 'undefined') {
+  gsap.registerPlugin(useGSAP)
+}
 import ConfidenceBar from './ConfidenceBar'
 import type { InsightCard as InsightCardType, Resonance } from '@/lib/types'
 import { t, type Lang } from '@/lib/i18n'
@@ -122,15 +128,11 @@ function Section({
   visible,
 }: {
   children: React.ReactNode
-  index: number
-  visible: boolean
+  index?: number
+  visible?: boolean
 }) {
   return (
-    <div style={{
-      opacity: visible ? 1 : 0,
-      transform: visible ? 'translateY(0)' : 'translateY(6px)',
-      transition: `opacity 400ms ease ${index * 60}ms, transform 400ms ease ${index * 60}ms`,
-    }}>
+    <div className="insight-section">
       {children}
     </div>
   )
@@ -239,6 +241,29 @@ export default function InsightCard({
   lang = 'fr',
 }: InsightCardProps) {
   const L = lang  // short alias
+  const cardRef = useRef<HTMLDivElement>(null)
+
+  useGSAP(() => {
+    if (!streaming) {
+      gsap.from('.insight-section', {
+        opacity: 0,
+        y: 10,
+        duration: 0.4,
+        stagger: 0.05,
+        ease: 'power2.out',
+        clearProps: 'all'
+      })
+      return
+    }
+    gsap.from('.insight-section', {
+      opacity: 0,
+      y: 20,
+      duration: 0.6,
+      stagger: 0.15,
+      ease: 'power2.out',
+      clearProps: 'all'
+    })
+  }, { scope: cardRef, dependencies: [streaming] })
 
   const SOURCE_TYPE_LABELS: Record<string, string> = {
     ...SOURCE_TYPE_STATIC,
@@ -264,7 +289,6 @@ export default function InsightCard({
   const COUNTER_LOADING_MSGS = lang === 'en'
     ? ['Searching contradictory perspectives…', 'Analysing pattern flaws…', 'Building the counter-argument…', 'Evaluating robustness…']
     : ['Recherche de perspectives contradictoires…', 'Analyse des failles du pattern…', 'Construction du contre-argument…', 'Évaluation de la robustesse…']
-  const [visibleSections, setVisibleSections] = useState<number[]>([])
 
   const [isGeneratingScript, setIsGeneratingScript] = useState(false)
   const [scriptModal, setScriptModal] = useState<string | null>(null)
@@ -290,24 +314,6 @@ export default function InsightCard({
   const [shareToast, setShareToast] = useState(false)
   const [feedbackState, setFeedbackState] = useState<'idle' | 'resonates' | 'inaccurate'>('idle')
   const [expanded, setExpanded] = useState(false)
-
-  useEffect(() => {
-    if (!streaming) {
-      setVisibleSections([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12])
-      return
-    }
-    const SECTION_COUNT = 13
-    let i = 0
-    const interval = setInterval(() => {
-      if (i < SECTION_COUNT) {
-        setVisibleSections(prev => [...prev, i])
-        i++
-      } else {
-        clearInterval(interval)
-      }
-    }, 120)
-    return () => clearInterval(interval)
-  }, [streaming])
 
   useEffect(() => {
     if (!isGeneratingScript) return
@@ -344,7 +350,8 @@ export default function InsightCard({
     day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit',
   })
 
-  const isVisible = (index: number) => visibleSections.includes(index)
+  // We can just return true here to satisfy the `visible` prop since we removed visibleSections state
+  const isVisible = (index: number) => true
   const anglesMorts = card.anglesMorts
   const hasAnglesMorts = anglesMorts && anglesMorts.anglesDetectes.length > 0
   const hasResonances = resonances.length > 0
@@ -504,6 +511,7 @@ export default function InsightCard({
       `}</style>
 
       <div
+        ref={cardRef}
         className="w-full max-w-2xl mx-auto insight-card-print"
         style={{
           background: CARD_BG,
