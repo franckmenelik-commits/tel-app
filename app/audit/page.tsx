@@ -1128,23 +1128,44 @@ export default function AuditPage() {
 
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
                   <h2 style={{ fontSize: '18px', color: '#fff', fontFamily: 'Georgia, serif' }}>Votre Email :</h2>
-                  <button
-                    onClick={() => {
-                      navigator.clipboard.writeText(shieldResult.email.body);
-                      alert('Copié !');
-                    }}
-                    className="tel-ghost-btn"
-                    style={{ fontSize: '12px' }}
-                  >
-                    Copier l'email
-                  </button>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <button
+                      onClick={async () => {
+                        const html2pdf = (await import('html2pdf.js')).default;
+                        const element = document.getElementById('shield-email-content');
+                        if (!element) return;
+                        const opt = {
+                          margin:       0.5,
+                          filename:     `TEL_Bouclier_RGPD_${shieldPlatform}.pdf`,
+                          image:        { type: 'jpeg' as const, quality: 0.98 },
+                          html2canvas:  { scale: 2 },
+                          jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' as const }
+                        };
+                        html2pdf().set(opt).from(element).save();
+                      }}
+                      className="tel-ghost-btn"
+                      style={{ fontSize: '12px', borderColor: 'rgba(201,168,76,0.5)', color: '#d4b05a' }}
+                    >
+                      Télécharger PDF
+                    </button>
+                    <button
+                      onClick={() => {
+                        navigator.clipboard.writeText(shieldResult.email.body);
+                        alert('Copié !');
+                      }}
+                      className="tel-ghost-btn"
+                      style={{ fontSize: '12px' }}
+                    >
+                      Copier l'email
+                    </button>
+                  </div>
                 </div>
                 
-                <div style={{ padding: '24px', background: SURFACE, border: `1px solid ${BORDER}`, borderRadius: '12px' }}>
-                  <p style={{ color: TEXT_MUTED, fontSize: '13px', marginBottom: '8px' }}>À : <span style={{ color: TEXT_PRIMARY }}>{shieldResult.email.to}</span></p>
-                  <p style={{ color: TEXT_MUTED, fontSize: '13px', marginBottom: '24px' }}>CC : <span style={{ color: TEXT_PRIMARY }}>{shieldResult.email.cc}</span></p>
-                  <p style={{ color: TEXT_MUTED, fontSize: '13px', marginBottom: '24px' }}>Objet : <span style={{ color: TEXT_PRIMARY }}>{shieldResult.email.subject}</span></p>
-                  <div style={{ whiteSpace: 'pre-wrap', color: TEXT_PRIMARY, fontSize: '14px', lineHeight: 1.6, fontFamily: 'monospace' }}>
+                <div id="shield-email-content" style={{ padding: '24px', background: '#ffffff', color: '#000000', border: `1px solid ${BORDER}`, borderRadius: '12px' }}>
+                  <p style={{ color: '#444', fontSize: '13px', marginBottom: '8px' }}>À : <span style={{ color: '#000', fontWeight: 'bold' }}>{shieldResult.email.to}</span></p>
+                  <p style={{ color: '#444', fontSize: '13px', marginBottom: '24px' }}>CC : <span style={{ color: '#000', fontWeight: 'bold' }}>{shieldResult.email.cc}</span></p>
+                  <p style={{ color: '#444', fontSize: '13px', marginBottom: '24px' }}>Objet : <span style={{ color: '#000', fontWeight: 'bold' }}>{shieldResult.email.subject}</span></p>
+                  <div style={{ whiteSpace: 'pre-wrap', color: '#000', fontSize: '14px', lineHeight: 1.6, fontFamily: 'Georgia, serif' }}>
                     {shieldResult.email.body}
                   </div>
                 </div>

@@ -179,6 +179,7 @@ export interface InsightCard {
   actionables?: Actionables           // Ce que ça permet — generated with insight
   publicVoices?: PublicVoice[]        // YouTube public reactions selected by LOGOS
   resonanceCount?: number             // How many Pinecone patterns resonated with this crossing
+  engine?: string                     // Sovereignty Badge: 'SOUFFLE N1 - Local Sovereign' etc.
 }
 
 // Full result returned by /api/cross

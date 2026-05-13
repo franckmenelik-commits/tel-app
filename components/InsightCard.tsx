@@ -529,9 +529,25 @@ export default function InsightCard({
           style={{ background: CARD_BG, borderBottom: `1px solid ${BORDER}` }}
         >
           <div className="flex-1 pr-4">
-            <p style={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.15em', color: TEXT_PRIMARY, opacity: 0.4, marginBottom: '8px' }}>
-              {t('card.logos', L)}
-            </p>
+            <div className="flex items-center gap-3 mb-2">
+              <p style={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.15em', color: TEXT_PRIMARY, opacity: 0.4 }}>
+                {t('card.logos', L)}
+              </p>
+              {card.engine && (
+                <span className="no-print" style={{
+                  fontSize: '9px',
+                  padding: '2px 6px',
+                  borderRadius: '4px',
+                  background: card.engine.includes('Local') ? 'rgba(76, 175, 80, 0.1)' : 'rgba(201,168,76,0.05)',
+                  color: card.engine.includes('Local') ? '#4CAF50' : GOLD,
+                  border: `1px solid ${card.engine.includes('Local') ? 'rgba(76, 175, 80, 0.2)' : 'rgba(201,168,76,0.15)'}`,
+                  letterSpacing: '0.04em',
+                  whiteSpace: 'nowrap'
+                }}>
+                  {card.engine.includes('Local') ? '🛡️ ' : ''}{card.engine}
+                </span>
+              )}
+            </div>
             <h2 className="tel-italic" style={{ fontSize: '18px', lineHeight: 1.35, color: '#ffffff' }}>
               {card.theme}
             </h2>

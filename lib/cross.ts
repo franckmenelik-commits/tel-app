@@ -226,6 +226,9 @@ export async function crossNarratives(
       ? parsed.publicVoices
       : allPublicVoices.length > 0 ? allPublicVoices.slice(0, 2) : undefined,
     resonanceCount: resonances.length > 0 ? resonances.length : undefined,
+    engine: niveauxUtilises.includes(3) 
+      ? 'SOUFFLE N3 - Cloud Oracle' 
+      : (niveauxUtilises.includes(2) ? 'SOUFFLE N2 - Deep Traversée' : 'SOUFFLE N1 - Local Sovereign'),
   }
 
   // ── Store public pattern in Pinecone (skip personal/vecu contexts) ────────
