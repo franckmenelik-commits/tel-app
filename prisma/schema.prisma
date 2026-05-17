@@ -1,0 +1,23 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
+}
+
+datasource db {
+  provider   = "postgresql"
+  extensions = [vector]
+}
+
+model MemoryInsight {
+  id              String   @id @default(uuid())
+  sourceId        String   // ID from OpenCLI (e.g. hackernews post id)
+  author          String?
+  text            String
+  domain          String   @default("inconnu")
+  regions         String[]
+  createdAt       DateTime @default(now())
+  
+  // Ollama Embeddings (nomic-embed-text typically uses 768 dimensions)
+  // Wait, nomic-embed-text uses 768 or 384? Ollama nomic-embed-text uses 768.
+  embedding       Unsupported("vector(768)")?
+}
