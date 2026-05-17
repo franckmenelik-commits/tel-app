@@ -44,26 +44,26 @@ export async function POST(req: NextRequest) {
     let ingestedCount = 0
 
     for (const item of items) {
-      if (!item.Text || item.Text.length < 50) continue
+      if (!item.text || item.text.length < 50) continue
 
       try {
-        const vector = await getEmbedding(item.Text)
+        const vector = await getEmbedding(item.text)
         
         await prisma.$executeRaw`
           INSERT INTO "MemoryInsight" ("id", "sourceId", "author", "text", "domain", "createdAt", "embedding")
           VALUES (
             gen_random_uuid(), 
-            ${item.Id.toString()}, 
-            ${item.Author || 'anonymous'}, 
-            ${item.Text}, 
+            ${item.id.toString()}, 
+            ${item.author || 'anonymous'}, 
+            ${item.text}, 
             ${domain}, 
-            ${new Date(item.Created_at || Date.now())}, 
+            ${new Date(item.created_at || Date.now())}, 
             ${vector}::vector
           )
         `
         ingestedCount++
       } catch (err) {
-        console.error(`Failed to ingest item ${item.Id}:`, err)
+        console.error(`Failed to ingest item ${item.id}:`, err)
       }
     }
 
