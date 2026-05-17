@@ -5,6 +5,26 @@ const execPromise = util.promisify(exec)
 
 const API_URL = process.env.API_URL || 'https://theexperiencelayer.org/api/ingest'
 const INGEST_SECRET = process.env.INGEST_SECRET || 'tel-sovereign-ingest-secret'
+const OLLAMA_URL = 'http://localhost:11434/api/embeddings'
+const EMBEDDING_MODEL = 'nomic-embed-text'
+
+async function getEmbedding(text: string): Promise<number[]> {
+  const response = await fetch(OLLAMA_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: EMBEDDING_MODEL,
+      prompt: text
+    })
+  })
+  
+  if (!response.ok) {
+    throw new Error(`Ollama error: ${response.statusText}`)
+  }
+  
+  const data = await response.json()
+  return data.embedding
+}
 
 async function ingestHackerNewsPost(postId: string) {
   console.log(`\n⏳ Ingesting HackerNews post ${postId} via OpenCLI...`)
@@ -16,8 +36,21 @@ async function ingestHackerNewsPost(postId: string) {
       return
     }
 
-    const items = JSON.parse(stdout)
-    console.log(`✅ Extracted ${items.length} items (post + comments). Sending to TEL API for vectorization...`)
+    const rawItems = JSON.parse(stdout)
+    console.log(`✅ Extracted ${rawItems.length} items. Generating local embeddings with Ollama...`)
+    
+    const items = []
+    for (const item of rawItems) {
+      if (!item.text || item.text.length < 50) continue
+      try {
+        item.embedding = await getEmbedding(item.text)
+        items.push(item)
+      } catch (err) {
+        console.error(`Failed to generate embedding for item ${item.id}`, err)
+      }
+    }
+
+    console.log(`🧠 Generated ${items.length} vectors. Sending to TEL API...`)
     
     const response = await fetch(API_URL, {
       method: 'POST',
