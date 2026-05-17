@@ -3,11 +3,10 @@
 //
 // "Babel a dispersé les langages. TEL rassemble les vécus."
 //
-//  NIVEAU 1 — L'ÉCOUTE    : Mistral local via Ollama (gratuit, souverain)
-//  NIVEAU 2 — LA TRAVERSÉE: Mistral API (croisements profonds)
-//  NIVEAU 3 — LA RÉVÉLATION: Claude Anthropic (l'indicible, cas premium)
+//  NIVEAU 1 — L'ÉCOUTE    : Ollama (local) ou Gemini 2.5 Flash Free (OpenRouter)
+//  NIVEAU 2 — LA TRAVERSÉE: Gemini 2.5 Flash Free (OpenRouter)
+//  NIVEAU 3 — LA RÉVÉLATION: Llama 3.3 70B Free (OpenRouter)
 
-import Anthropic from '@anthropic-ai/sdk'
 import { parseLLMJson } from './parse-llm'
 import type {
   ExtractedSource,
@@ -32,9 +31,10 @@ import {
 
 const OLLAMA_BASE = process.env.OLLAMA_URL || 'http://localhost:11434'
 const OLLAMA_MODEL = process.env.OLLAMA_MODEL || 'mistral'
-const MISTRAL_API_BASE = 'https://api.mistral.ai/v1'
-const MISTRAL_MODEL = 'mistral-large-latest'
-const CLAUDE_MODEL = 'claude-sonnet-4-6'
+
+const OPENROUTER_API_BASE = 'https://openrouter.ai/api/v1'
+const OPENROUTER_MODEL_N2 = 'google/gemini-2.5-flash:free'
+const OPENROUTER_MODEL_N3 = 'meta-llama/llama-3.3-70b-instruct:free'
 
 // ─── DISPONIBILITÉ DES NIVEAUX ────────────────────────────────────────────────
 
@@ -53,11 +53,11 @@ async function checkNiveau1(): Promise<boolean> {
 }
 
 function checkNiveau2(): boolean {
-  return !!process.env.MISTRAL_API_KEY
+  return !!process.env.OPENROUTER_API_KEY
 }
 
 function checkNiveau3(): boolean {
-  return !!process.env.ANTHROPIC_API_KEY
+  return !!process.env.OPENROUTER_API_KEY
 }
 
 export async function getSouffleStatut(): Promise<SouffleStatut> {
@@ -131,53 +131,66 @@ async function appelNiveau1(prompt: string): Promise<string> {
 }
 
 async function appelNiveau2(prompt: string): Promise<string> {
-  const apiKey = process.env.MISTRAL_API_KEY
+  const apiKey = process.env.OPENROUTER_API_KEY
   
-  // SOVEREIGNTY FALLBACK: If no API key, try Ollama with a larger context/model if possible
   if (!apiKey) {
-    console.info('[SOUFFLE] No Mistral API key, falling back to Ollama for Niveau 2 (La Traversée)')
+    console.info('[SOUFFLE] No OpenRouter API key, falling back to Ollama for Niveau 2')
     return appelNiveau1(prompt)
   }
 
-  const response = await fetch(`${MISTRAL_API_BASE}/chat/completions`, {
+  const response = await fetch(`${OPENROUTER_API_BASE}/chat/completions`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${apiKey}`,
+      'HTTP-Referer': 'https://theexperiencelayer.org',
+      'X-Title': 'TEL - The Experience Layer',
     },
     body: JSON.stringify({
-      model: MISTRAL_MODEL,
+      model: OPENROUTER_MODEL_N2,
       messages: [{ role: 'user', content: prompt }],
       response_format: { type: 'json_object' },
       temperature: 0.4,
-      max_tokens: 4096,
     }),
     signal: AbortSignal.timeout(120000),
   })
   if (!response.ok) {
     const err = await response.text()
-    throw new Error(`Mistral API ${response.status}: ${err.slice(0, 300)}`)
+    throw new Error(`OpenRouter N2 API ${response.status}: ${err.slice(0, 300)}`)
   }
   const data = await response.json()
   return data.choices?.[0]?.message?.content ?? ''
 }
 
 async function appelNiveau3(prompt: string): Promise<string> {
-  const apiKey = process.env.ANTHROPIC_API_KEY
+  const apiKey = process.env.OPENROUTER_API_KEY
   
-  // SOVEREIGNTY FALLBACK: If no Anthropic key, use Niveau 2 (which might be Ollama)
   if (!apiKey) {
-    console.info('[SOUFFLE] No Anthropic API key, falling back to Niveau 2 for Niveau 3 (La Révélation)')
+    console.info('[SOUFFLE] No OpenRouter API key, falling back to Niveau 2 for Niveau 3')
     return appelNiveau2(prompt)
   }
 
-  const client = new Anthropic({ apiKey })
-  const response = await client.messages.create({
-    model: CLAUDE_MODEL,
-    max_tokens: 4096,
-    messages: [{ role: 'user', content: prompt }],
+  const response = await fetch(`${OPENROUTER_API_BASE}/chat/completions`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${apiKey}`,
+      'HTTP-Referer': 'https://theexperiencelayer.org',
+      'X-Title': 'TEL - The Experience Layer',
+    },
+    body: JSON.stringify({
+      model: OPENROUTER_MODEL_N3,
+      messages: [{ role: 'user', content: prompt }],
+      temperature: 0.4,
+    }),
+    signal: AbortSignal.timeout(120000),
   })
-  return response.content[0].type === 'text' ? response.content[0].text : ''
+  if (!response.ok) {
+    const err = await response.text()
+    throw new Error(`OpenRouter N3 API ${response.status}: ${err.slice(0, 300)}`)
+  }
+  const data = await response.json()
+  return data.choices?.[0]?.message?.content ?? ''
 }
 
 // ─── FALLBACK INTELLIGENT ─────────────────────────────────────────────────────
@@ -340,7 +353,7 @@ async function approfondirRevelation(
   lang?: string,
   register?: string
 ): Promise<LogosInsightResponse> {
-  if (!process.env.ANTHROPIC_API_KEY) return insight
+  if (!process.env.OPENROUTER_API_KEY) return insight
 
   try {
     const prompt = buildNiveau3RevelationPrompt(sources, insight, lang, register)
@@ -386,7 +399,7 @@ export async function SOUFFLE(
   if (statut.niveauxActifs.length === 0) {
     throw new Error(
       'TEL nécessite au moins un modèle actif.\n' +
-      'Configurez Ollama (local) ou MISTRAL_API_KEY ou ANTHROPIC_API_KEY.\n' +
+      'Configurez Ollama (local) ou OPENROUTER_API_KEY.\n' +
       'Consultez README.md pour les instructions.'
     )
   }
