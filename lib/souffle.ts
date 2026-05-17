@@ -236,8 +236,10 @@ async function enrichirSource(
   statut: SouffleStatut,
   niveauxUtilises: Set<SouffleNiveau>
 ): Promise<ExtractedSource> {
-  // Don't try to enrich synthetic sources (crossing/free_text modes)
-  if (source.inputMode === 'crossing' && source.url.startsWith('crossing://')) {
+  // Don't try to enrich synthetic sources or sources that already have a proper title 
+  // (like Wikipedia which gives good titles via OpenCLI). This saves massive API time.
+  if ((source.inputMode === 'crossing' && source.url.startsWith('crossing://')) || 
+      (source.title && source.title.length > 5 && !source.title.includes('http'))) {
     return source
   }
 
