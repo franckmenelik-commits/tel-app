@@ -9,7 +9,7 @@ const INGEST_SECRET = process.env.INGEST_SECRET || 'tel-sovereign-ingest-secret'
 async function ingestHackerNewsPost(postId: string) {
   console.log(`\n⏳ Ingesting HackerNews post ${postId} via OpenCLI...`)
   try {
-    const { stdout, stderr } = await execPromise(`npx opencli hackernews item --id ${postId} --json`)
+    const { stdout, stderr } = await execPromise(`npx opencli hackernews item --id ${postId} --format json`)
     
     if (stderr && stderr.toLowerCase().includes('error')) {
       console.error('OpenCLI Error:', stderr)
@@ -34,11 +34,15 @@ async function ingestHackerNewsPost(postId: string) {
     const result = await response.json()
     
     if (!response.ok) {
-      console.error(`❌ API Error:`, result.error)
+      console.error(`❌ API Error:`, result.error || result)
       return
     }
 
     console.log(`🎉 API Response: ${result.message}`)
+    if (result.errors && result.errors.length > 0) {
+      console.error(`⚠️ Some items failed to ingest:`)
+      result.errors.forEach((e: any) => console.error(`  - Item ${e.id}: ${e.error}`))
+    }
     
   } catch (error) {
     console.error(`❌ Failed to ingest post ${postId}:`, error)

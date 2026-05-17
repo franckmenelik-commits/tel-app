@@ -42,6 +42,7 @@ export async function POST(req: NextRequest) {
     }
 
     let ingestedCount = 0
+    const errors: any[] = []
 
     for (const item of items) {
       if (!item.text || item.text.length < 50) continue
@@ -62,15 +63,17 @@ export async function POST(req: NextRequest) {
           )
         `
         ingestedCount++
-      } catch (err) {
+      } catch (err: any) {
         console.error(`Failed to ingest item ${item.id}:`, err)
+        errors.push({ id: item.id, error: err.message || String(err) })
       }
     }
 
     return NextResponse.json({
       success: true,
       message: `Ingested ${ingestedCount} out of ${items.length} items.`,
-      ingestedCount
+      ingestedCount,
+      errors
     })
 
   } catch (err) {
