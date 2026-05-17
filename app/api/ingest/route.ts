@@ -3,29 +3,47 @@ import { PrismaClient } from '@prisma/client'
 
 const prisma = new PrismaClient()
 
-// host.docker.internal connects the container to the Hetzner host
-const OLLAMA_URL = process.env.OLLAMA_URL || 'http://172.17.0.1:11434/api/embeddings'
+// Try multiple common Docker host gateway IPs
+const OLLAMA_URLS = [
+  process.env.OLLAMA_URL,
+  'http://host.docker.internal:11434/api/embeddings',
+  'http://172.17.0.1:11434/api/embeddings',
+  'http://172.18.0.1:11434/api/embeddings',
+  'http://172.19.0.1:11434/api/embeddings'
+].filter(Boolean) as string[]
+
 const EMBEDDING_MODEL = 'nomic-embed-text'
 
 // Simple secret to prevent unauthorized ingestion
 const INGEST_SECRET = process.env.INGEST_SECRET || 'tel-sovereign-ingest-secret'
 
 async function getEmbedding(text: string): Promise<number[]> {
-  const response = await fetch(OLLAMA_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      model: EMBEDDING_MODEL,
-      prompt: text
-    })
-  })
+  let lastError: any
   
-  if (!response.ok) {
-    throw new Error(`Ollama error: ${response.statusText}`)
+  for (const url of OLLAMA_URLS) {
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: EMBEDDING_MODEL,
+          prompt: text
+        })
+      })
+      
+      if (!response.ok) {
+        throw new Error(`Ollama error at ${url}: ${response.statusText}`)
+      }
+      
+      const data = await response.json()
+      return data.embedding
+    } catch (err) {
+      lastError = err
+      // Continue to the next URL
+    }
   }
   
-  const data = await response.json()
-  return data.embedding
+  throw lastError || new Error('All Ollama host URLs failed')
 }
 
 export async function POST(req: NextRequest) {
