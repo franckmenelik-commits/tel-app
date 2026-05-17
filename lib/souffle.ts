@@ -33,8 +33,8 @@ const OLLAMA_BASE = process.env.OLLAMA_URL || 'http://localhost:11434'
 const OLLAMA_MODEL = process.env.OLLAMA_MODEL || 'mistral'
 
 const OPENROUTER_API_BASE = 'https://openrouter.ai/api/v1'
-const OPENROUTER_MODEL_N2 = 'google/gemini-2.5-flash:free'
-const OPENROUTER_MODEL_N3 = 'meta-llama/llama-3.3-70b-instruct:free'
+const OPENROUTER_MODEL_N2 = 'openrouter/free'
+const OPENROUTER_MODEL_N3 = 'openrouter/free'
 
 // ─── DISPONIBILITÉ DES NIVEAUX ────────────────────────────────────────────────
 
