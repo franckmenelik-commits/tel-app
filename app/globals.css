@@ -186,15 +186,12 @@ button {
   animation: carouselSlideIn 600ms ease-out forwards;
 }
 
-/* ── Scroll fade-in ── */
+/* ── Scroll fade-in (controlled by JS/GSAP) ── */
 .tel-animate {
   opacity: 0;
-  transform: translateY(18px);
-  transition: opacity 700ms ease, transform 700ms ease;
 }
 .tel-animate.tel-visible {
   opacity: 1;
-  transform: translateY(0);
 }
 
 /* ── How-it-Works card hover ── */

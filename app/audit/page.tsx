@@ -1030,7 +1030,7 @@ export default function AuditPage() {
         )}
 
         {activeTab === 'shield' && (
-          <div className="tel-animate">
+          <div className="animate-fade-in">
             <div style={{ marginBottom: '48px' }}>
               <h1 style={{
                 fontFamily: 'Georgia, Times New Roman, serif',
@@ -1116,7 +1116,7 @@ export default function AuditPage() {
             </div>
 
             {shieldResult && (
-              <div className="tel-animate" style={{ marginTop: '48px' }}>
+              <div className="animate-fade-in" style={{ marginTop: '48px' }}>
                 <h2 style={{ fontSize: '18px', color: '#fff', marginBottom: '24px', fontFamily: 'Georgia, serif' }}>Étapes à suivre :</h2>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '48px' }}>
                   {shieldResult.steps.map((step: string, i: number) => (

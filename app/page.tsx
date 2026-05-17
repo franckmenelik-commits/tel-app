@@ -490,17 +490,20 @@ export default function TELPage() {
     const els = document.querySelectorAll('.tel-animate')
     if (!els.length) return
     els.forEach((el) => {
-      gsap.from(el, {
-        opacity: 0,
-        y: 30,
-        duration: 0.8,
-        ease: 'power2.out',
-        scrollTrigger: {
-          trigger: el,
-          start: 'top 88%',
-          once: true,
-        },
-      })
+      gsap.fromTo(el, 
+        { opacity: 0, y: 30 },
+        {
+          opacity: 1,
+          y: 0,
+          duration: 0.8,
+          ease: 'power2.out',
+          scrollTrigger: {
+            trigger: el,
+            start: 'top 88%',
+            once: true,
+          },
+        }
+      )
     })
   }, { dependencies: [appState] })
 
