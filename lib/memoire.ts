@@ -152,14 +152,32 @@ export function preparerInsightVectoriel(
   }
 }
 
-// ─── Fonction de recherche (Phase 2 stub) ────────────────────────────────────
+// ─── Fonction de recherche (Phase 3 - pgvector) ──────────────────────────────
+
+export async function detecterResonancesGlobales(insight: InsightCard): Promise<any[]> {
+  try {
+    const response = await fetch('/api/resonance', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ 
+        text: `${insight.theme} ${insight.revealedPattern}` 
+      })
+    })
+
+    if (!response.ok) return []
+    const data = await response.json()
+    return data.resonances || []
+  } catch (err) {
+    console.error("Failed to fetch global resonances:", err)
+    return []
+  }
+}
 
 export function searchSimilarInsights(
   _insight: InsightCard,
   _localHistory: SessionCrossing[]
 ): SessionCrossing[] {
-  // Phase 2: Supabase pgvector cosine similarity search
-  // For now: returns empty (Jaccard resonances handle local session)
+  // Remplacé par detecterResonancesGlobales pour la DB
   return []
 }
 

@@ -28,7 +28,7 @@ import type {
   Resonance,
   EnrichissementProposal,
 } from '@/lib/types'
-import { detecterResonances, sauvegarderSession, chargerSession } from '@/lib/memoire'
+import { detecterResonances, detecterResonancesGlobales, sauvegarderSession, chargerSession } from '@/lib/memoire'
 import { useLanguage, t } from '@/lib/i18n'
 import LanguageSelector from '@/components/LanguageSelector'
 
@@ -394,7 +394,15 @@ export default function TELPage() {
         setSessionHistory(newHistory)
         sauvegarderSession(newHistory)
         if (sessionHistoryRef.current.length > 0) {
-          setCurrentResonances(detecterResonances(card, sessionHistoryRef.current))
+          const localResonances = detecterResonances(card, sessionHistoryRef.current)
+          const globalResonances = await detecterResonancesGlobales(card)
+          
+          // Merge local and global resonances, avoiding duplicates by source ID
+          const combined = [...globalResonances, ...localResonances].slice(0, 4)
+          setCurrentResonances(combined)
+        } else {
+          const globalResonances = await detecterResonancesGlobales(card)
+          setCurrentResonances(globalResonances.slice(0, 4))
         }
 
         // Living Map
@@ -477,12 +485,21 @@ export default function TELPage() {
     setDiscoveryInfo(null)
   }, [])
 
-  const handleLoadFromHistory = useCallback((item: SessionCrossing) => {
+  const handleLoadFromHistory = useCallback(async (item: SessionCrossing) => {
     setCurrentCard(item.card)
     setSouffleNiveaux(item.souffleNiveaux)
+    
+    // Optimistic local update
     setCurrentResonances(detecterResonances(item.card, sessionHistoryRef.current.filter(c => c.id !== item.id)))
     setAppState('result')
     setShowingSidebar(false)
+
+    // Fetch global resonances
+    const globalResonances = await detecterResonancesGlobales(item.card)
+    setCurrentResonances(prev => {
+      const combined = [...globalResonances, ...prev].slice(0, 4)
+      return combined
+    })
   }, [])
 
   // ── GSAP ScrollTrigger — scroll reveal animations ─────────────────────────
