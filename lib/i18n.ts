@@ -180,7 +180,7 @@ export const TRANSLATIONS = {
   // ── Book / Œuvre input mode ──────────────────────────────────────────────────
   'input.mode.book':           { fr: 'Œuvre Littéraire / Cinématographique', en: 'Book / Film', de: 'Buch / Film', es: 'Libro / Película', pt: 'Livro / Filme', it: 'Libro / Film', ar: 'كتاب / فيلم', hi: 'पुस्तक / फिल्म', id: 'Buku / Film', ja: '本 / 映画', ko: '책 / 영화' },
   'input.book.placeholder':    { fr: 'Titre de l\'œuvre (ex: Les Misérables)…', en: 'Title of the work (ex: The Great Gatsby)…' },
-  'input.book.toggle':         { fr: 'Document / Œuvre', en: 'Book / Document', de: 'Buch / Dokument', es: 'Libro / Documento', pt: 'Livro / Documento', it: 'Libro / Documento', ar: 'كتاب / وثيقة', hi: 'पुस्तक / दस्तावेज़', id: 'Buku / Dokumen', ja: '本 / ドキュメント', ko: '책 / 문서' },
+  'input.book.toggle':         { fr: 'Livre', en: 'Book', de: 'Buch', es: 'Libro', pt: 'Livro', it: 'Libro', ar: 'كتاب', hi: 'पुस्तक', id: 'Buku', ja: '本', ko: '책' },
   'hint.mode.book':            { fr: 'Livre / Film',                   en: 'Book / Film' },
   'hint.book.example':         { fr: 'Les Misérables, 1984…',          en: 'The Great Gatsby, 1984…' },
 
