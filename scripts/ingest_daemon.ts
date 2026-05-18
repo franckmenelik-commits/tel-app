@@ -187,23 +187,128 @@ async function ingestRedditSubreddit(subreddit: string, maxPosts = 10) {
   if (items.length > 0) await sendToAPI(items, domain)
 }
 
+// ─── RSS/Feed Ingestion (Global South + Non-Western sources) ──────────────────
+
+interface RSSSource {
+  name: string
+  feedUrl: string
+  domain: string
+  region: string
+}
+
+const GLOBAL_SOURCES: RSSSource[] = [
+  // ── AFRICA ──
+  { name: 'Global Voices',           feedUrl: 'https://globalvoices.org/feed/',                              domain: 'social',         region: '🌍 Global South' },
+  { name: 'AllAfrica',               feedUrl: 'https://allafrica.com/tools/headlines/rdf/latest/headlines.rdf', domain: 'politique',    region: '🌍 Afrique' },
+  
+  // ── INDIA ──
+  { name: 'Scroll.in',               feedUrl: 'https://feeds.feedburner.com/Scrolli',                        domain: 'social',         region: '🇮🇳 Inde' },
+  
+  // ── MIDDLE EAST ──
+  { name: 'Al Jazeera',              feedUrl: 'https://www.aljazeera.com/xml/rss/all.xml',                   domain: 'politique',      region: '🌍 Moyen-Orient' },
+  
+  // ── EAST ASIA ──
+  { name: 'SCMP · Asia',             feedUrl: 'https://www.scmp.com/rss/91/feed',                            domain: 'politique',      region: '🌏 Asie-Est' },
+  
+  // ── JAPAN ──
+  { name: 'Japan Times',             feedUrl: 'https://www.japantimes.co.jp/feed/',                           domain: 'social',         region: '🇯🇵 Japon' },
+  
+  // ── LATIN AMERICA / BRAZIL ──
+  { name: 'Brasil de Fato',          feedUrl: 'https://www.brasildefato.com.br/rss2.xml',                     domain: 'social',         region: '🇧🇷 Brésil' },
+  
+  // ── KOREA ──
+  { name: 'Korea Herald',            feedUrl: 'https://www.koreaherald.com/common/rss_xml.php?ct=102',        domain: 'social',         region: '🇰🇷 Corée' },
+]
+
+async function parseRSSFeed(feedUrl: string, maxItems = 10): Promise<{ title: string; content: string; link: string }[]> {
+  try {
+    const res = await fetch(feedUrl, {
+      headers: { 'User-Agent': 'TEL-Ingest/1.0 (theexperiencelayer.org)' },
+      signal: AbortSignal.timeout(15000),
+    })
+    if (!res.ok) throw new Error(`HTTP ${res.status}`)
+    const xml = await res.text()
+    
+    const items: { title: string; content: string; link: string }[] = []
+    
+    // Simple XML parsing — extract <item> or <entry> blocks
+    const itemRegex = /<item[^>]*>([\s\S]*?)<\/item>|<entry[^>]*>([\s\S]*?)<\/entry>/gi
+    let match
+    while ((match = itemRegex.exec(xml)) !== null && items.length < maxItems) {
+      const block = match[1] || match[2]
+      
+      const titleMatch = block.match(/<title[^>]*>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/title>/)
+      const descMatch = block.match(/<description[^>]*>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/description>/) ||
+                        block.match(/<content[^>]*>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/content>/) ||
+                        block.match(/<summary[^>]*>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/summary>/)
+      const linkMatch = block.match(/<link[^>]*>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/link>/) ||
+                        block.match(/<link[^>]*href="([^"]*)"/)
+      
+      const title = titleMatch?.[1]?.replace(/<[^>]+>/g, '').trim() || ''
+      const content = descMatch?.[1]?.replace(/<[^>]+>/g, '').replace(/&[a-z]+;/gi, ' ').trim() || ''
+      const link = linkMatch?.[1]?.trim() || ''
+      
+      if (title && (title.length + content.length) > 50) {
+        items.push({ title, content, link })
+      }
+    }
+    
+    return items
+  } catch (err) {
+    console.error(`  ✗ Feed error: ${err instanceof Error ? err.message : err}`)
+    return []
+  }
+}
+
+async function ingestRSSSource(source: RSSSource, maxItems = 10) {
+  console.log(`\n⏳ [${source.region}] ${source.name}...`)
+  
+  const feedItems = await parseRSSFeed(source.feedUrl, maxItems)
+  if (feedItems.length === 0) {
+    console.log(`  ⚠️ No items found`)
+    return
+  }
+  console.log(`✅ Fetched ${feedItems.length} articles from ${source.name}`)
+  
+  const rawItems = feedItems.map((item, i) => ({
+    id: `rss-${source.name.toLowerCase().replace(/[^a-z0-9]/g, '-')}-${Date.now()}-${i}`,
+    text: `${item.title}\n\n${item.content}`,
+    author: source.name,
+    created_at: new Date().toISOString()
+  }))
+  
+  const items = await vectorizeItems(rawItems)
+  if (items.length > 0) await sendToAPI(items, source.domain)
+}
+
 // ─── Main CLI ─────────────────────────────────────────────────────────────────
 
 const HELP = `
-╔══════════════════════════════════════════╗
-║  TEL Sovereign Ingestion Daemon v2.0    ║
-║  theexperiencelayer.org                 ║
-╚══════════════════════════════════════════╝
+╔══════════════════════════════════════════════╗
+║  TEL Sovereign Ingestion Daemon v3.0        ║
+║  "Babel a dispersé. TEL rassemble."         ║
+║  theexperiencelayer.org                     ║
+╚══════════════════════════════════════════════╝
 
 Usage:
   npx tsx scripts/ingest_daemon.ts hackernews <postId>
   npx tsx scripts/ingest_daemon.ts reddit <subreddit> [maxPosts]
   npx tsx scripts/ingest_daemon.ts reddit-batch [maxPerSub]
+  npx tsx scripts/ingest_daemon.ts rss <sourceName> [maxItems]
+  npx tsx scripts/ingest_daemon.ts world [maxPerSource]
+  npx tsx scripts/ingest_daemon.ts world-batch [maxPerSource]
+
+Sources mondiales disponibles:
+  🌍 Global Voices (Global, Afrique, Moyen-Orient, Asie, Latam, Autochtones)
+  🌍 AllAfrica (Afrique panafricaine)
+  🇮🇳 The Wire India, Scroll.in (Inde)
+  🌍 Al Jazeera (Moyen-Orient)
+  🌏 SCMP (Asie-Est)
 
 Examples:
-  npx tsx scripts/ingest_daemon.ts hackernews 1
+  npx tsx scripts/ingest_daemon.ts world 5
   npx tsx scripts/ingest_daemon.ts reddit philosophy 10
-  npx tsx scripts/ingest_daemon.ts reddit-batch 5
+  npx tsx scripts/ingest_daemon.ts world-batch 8
 `
 
 const DEFAULT_SUBREDDITS = [
@@ -248,11 +353,77 @@ async function main() {
         } catch (err) {
           console.error(`❌ Failed r/${sub}:`, err instanceof Error ? err.message : err)
         }
-        // Respect Reddit's rate limit
         await new Promise(r => setTimeout(r, 2000))
       }
-      console.log(`\n✅ Batch ingestion complete!`)
+      console.log(`\n✅ Reddit batch complete!`)
       break
+
+    case 'rss': {
+      const found = GLOBAL_SOURCES.find(s => s.name.toLowerCase().includes((target || '').toLowerCase()))
+      if (!found) {
+        console.log('Sources disponibles:')
+        GLOBAL_SOURCES.forEach(s => console.log(`  ${s.region} ${s.name}`))
+        return
+      }
+      await ingestRSSSource(found, parseInt(extra) || 10)
+      break
+    }
+
+    case 'world': {
+      const maxItems = parseInt(target) || 5
+      console.log(`\n🌍 Ingesting ${GLOBAL_SOURCES.length} Global South sources (${maxItems} articles each)...\n`)
+      for (const src of GLOBAL_SOURCES) {
+        try {
+          await ingestRSSSource(src, maxItems)
+        } catch (err) {
+          console.error(`❌ Failed ${src.name}:`, err instanceof Error ? err.message : err)
+        }
+        await new Promise(r => setTimeout(r, 1500))
+      }
+      console.log(`\n✅ Global South ingestion complete!`)
+      break
+    }
+
+    case 'world-batch': {
+      const maxAll = parseInt(target) || 5
+      console.log(`\n╔══════════════════════════════════════════════╗`)
+      console.log(`║  🌍 TEL FULL WORLD INGESTION                ║`)
+      console.log(`║  Reddit + Global South + HackerNews         ║`)
+      console.log(`╚══════════════════════════════════════════════╝\n`)
+      
+      // 1. Reddit
+      console.log(`\n━━━ PHASE 1: Reddit (${DEFAULT_SUBREDDITS.length} subreddits) ━━━`)
+      for (const sub of DEFAULT_SUBREDDITS) {
+        try { await ingestRedditSubreddit(sub, maxAll) } catch (err) {
+          console.error(`❌ r/${sub}:`, err instanceof Error ? err.message : err)
+        }
+        await new Promise(r => setTimeout(r, 2000))
+      }
+      
+      // 2. Global South
+      console.log(`\n━━━ PHASE 2: Global South (${GLOBAL_SOURCES.length} sources) ━━━`)
+      for (const src of GLOBAL_SOURCES) {
+        try { await ingestRSSSource(src, maxAll) } catch (err) {
+          console.error(`❌ ${src.name}:`, err instanceof Error ? err.message : err)
+        }
+        await new Promise(r => setTimeout(r, 1500))
+      }
+      
+      // 3. Top HackerNews
+      console.log(`\n━━━ PHASE 3: HackerNews (top 3) ━━━`)
+      try {
+        const hnRes = await fetch('https://hacker-news.firebaseio.com/v0/topstories.json')
+        const topIds = await hnRes.json() as number[]
+        for (const id of topIds.slice(0, 3)) {
+          try { await ingestHackerNews(String(id)) } catch {}
+        }
+      } catch {}
+      
+      console.log(`\n╔══════════════════════════════════════════════╗`)
+      console.log(`║  ✅ FULL WORLD INGESTION COMPLETE            ║`)
+      console.log(`╚══════════════════════════════════════════════╝`)
+      break
+    }
 
     default:
       console.log(HELP)
