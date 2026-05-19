@@ -25,12 +25,16 @@ interface PerspectiveCard {
   perspective: string[]
   revelation: string
   tension?: string
+  nonCapture?: string
 }
 
 interface EducationResult {
   cartes: PerspectiveCard[]
   questionsDialogue: string[]
   anglesMortsProgramme: string[]
+  invitationAuDialogue?: string
+  voixManquantes?: string[]
+  indicible?: string
 }
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
@@ -225,6 +229,7 @@ export default function EducationPage() {
       carte.perspective.forEach(p => lines.push(p))
       lines.push(`Révélation : ${carte.revelation}`)
       if (carte.tension) lines.push(`Point de tension : ${carte.tension}`)
+      if (carte.nonCapture) lines.push(`Ce que TEL ne peut pas capturer : ${carte.nonCapture}`)
     })
     lines.push('')
     lines.push('─────────────────────────────')
@@ -236,7 +241,30 @@ export default function EducationPage() {
     lines.push('ANGLES MORTS DU PROGRAMME')
     lines.push('─────────────────────────────')
     result.anglesMortsProgramme.forEach(a => lines.push(`- ${a}`))
+    if (result.invitationAuDialogue) {
+      lines.push('')
+      lines.push('─────────────────────────────')
+      lines.push('INVITATION AU DIALOGUE')
+      lines.push('─────────────────────────────')
+      lines.push(`« ${result.invitationAuDialogue} »`)
+    }
+    if (result.voixManquantes && result.voixManquantes.length > 0) {
+      lines.push('')
+      lines.push('─────────────────────────────')
+      lines.push('VOIX MANQUANTES')
+      lines.push('─────────────────────────────')
+      result.voixManquantes.forEach(v => lines.push(`→ ${v}`))
+    }
+    if (result.indicible) {
+      lines.push('')
+      lines.push('─────────────────────────────')
+      lines.push('L\'INDICIBLE')
+      lines.push('─────────────────────────────')
+      lines.push(result.indicible)
+    }
     lines.push('')
+    lines.push('─────────────────────────────')
+    lines.push('TEL est l\'infrastructure de la dignité humaine.')
     lines.push('Généré par TEL Éducation — theexperiencelayer.org')
     return lines.join('\n')
   }
@@ -662,12 +690,24 @@ export default function EducationPage() {
 
                     {/* Tension */}
                     {carte.tension && (
-                      <div className="pt-3" style={{ borderTop: '1px solid rgba(139,58,58,0.12)' }}>
+                      <div className="pt-3 mb-3" style={{ borderTop: '1px solid rgba(139,58,58,0.12)' }}>
                         <p className="text-xs mb-1" style={{ color: '#555', fontFamily: 'ui-monospace, monospace', letterSpacing: '0.08em' }}>
                           {t('edu.section.tension', lang)}
                         </p>
                         <p className="text-xs" style={{ color: '#8B6A50', fontFamily: 'Georgia, serif', fontStyle: 'italic', lineHeight: 1.6 }}>
                           {carte.tension}
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Ce que TEL ne peut pas capturer */}
+                    {carte.nonCapture && (
+                      <div className="pt-3" style={{ borderTop: '1px solid rgba(122,171,181,0.12)' }}>
+                        <p className="text-xs mb-1" style={{ color: '#555', fontFamily: 'ui-monospace, monospace', letterSpacing: '0.08em' }}>
+                          CE QUE TEL NE PEUT PAS CAPTURER
+                        </p>
+                        <p className="text-xs" style={{ color: '#7AABB5', fontFamily: 'Georgia, serif', fontStyle: 'italic', lineHeight: 1.6 }}>
+                          {carte.nonCapture}
                         </p>
                       </div>
                     )}
@@ -715,6 +755,59 @@ export default function EducationPage() {
                   </ul>
                 </div>
               </div>
+
+              {/* Invitation au dialogue — « Va lui demander » */}
+              {result.invitationAuDialogue && (
+                <>
+                  <Divider />
+                  <div className="mb-10">
+                    <SectionLabel>INVITATION AU DIALOGUE</SectionLabel>
+                    <div className="p-6 rounded-xl text-center" style={{ background: 'rgba(201,168,76,0.04)', border: '1px solid rgba(201,168,76,0.2)' }}>
+                      <p className="text-xs uppercase tracking-widest mb-4" style={{ color: '#555', fontFamily: 'ui-monospace, monospace', letterSpacing: '0.15em' }}>
+                        À LIRE À VOTRE CLASSE
+                      </p>
+                      <p className="text-base leading-relaxed" style={{ color: '#F5ECD7', fontFamily: 'Georgia, serif', fontStyle: 'italic', lineHeight: 1.8 }}>
+                        « {result.invitationAuDialogue} »
+                      </p>
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {/* Voix manquantes */}
+              {result.voixManquantes && result.voixManquantes.length > 0 && (
+                <>
+                  <Divider />
+                  <div className="mb-10">
+                    <SectionLabel>VOIX MANQUANTES</SectionLabel>
+                    <p className="text-xs mb-4" style={{ color: '#2a2a2a', fontFamily: 'Georgia, serif', fontStyle: 'italic' }}>
+                      Perspectives absentes de cette analyse dont la présence enrichirait la discussion
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {result.voixManquantes.map((v, i) => (
+                        <span key={i} className="px-3 py-1.5 rounded-lg text-xs" style={{ background: 'rgba(122,171,181,0.06)', border: '1px dashed rgba(122,171,181,0.25)', color: '#7AABB5', fontFamily: 'ui-monospace, monospace' }}>
+                          {v}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {/* L'indicible — le silence structurel */}
+              {result.indicible && (
+                <>
+                  <Divider />
+                  <div className="mb-10">
+                    <SectionLabel>L'INDICIBLE</SectionLabel>
+                    <div className="p-5 rounded-xl" style={{ background: 'rgba(255,255,255,0.015)', border: '1px solid rgba(255,255,255,0.04)' }}>
+                      <p className="text-sm leading-relaxed text-center" style={{ color: '#555', fontFamily: 'Georgia, serif', fontStyle: 'italic', lineHeight: 1.8 }}>
+                        {result.indicible}
+                      </p>
+                    </div>
+                  </div>
+                </>
+              )}
 
               {/* Footer */}
               <div className="pt-6 text-center" style={{ borderTop: '1px solid rgba(255,255,255,0.03)' }}>
