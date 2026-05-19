@@ -2,7 +2,7 @@
 // POST /api/education — Perspectives culturelles pour enseignants
 
 import Anthropic from '@anthropic-ai/sdk'
-import { buildEducationPrompt } from '@/lib/prompt'
+import { buildEducationPrompt, buildEducationBetaPrompt } from '@/lib/prompt'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 120
@@ -87,10 +87,12 @@ function extractJson(raw: string): string {
 export async function POST(request: Request) {
   try {
     const body = await request.json()
-    const { sujet, origines, niveau } = body as {
+    const { sujet, origines, niveau, mode, lang } = body as {
       sujet: string
       origines: string[]
       niveau: string
+      mode?: 'enseignant' | 'beta'
+      lang?: string
     }
 
     if (!sujet?.trim()) {
@@ -106,11 +108,14 @@ export async function POST(request: Request) {
     // Limit to 15 origins max to avoid LLM token overflow
     const originesLimitees = origines.slice(0, 15)
 
-    const prompt = buildEducationPrompt(sujet.trim(), originesLimitees, niveau.trim())
+    const prompt = mode === 'beta'
+      ? buildEducationBetaPrompt(sujet.trim(), originesLimitees, niveau.trim(), lang || 'fr')
+      : buildEducationPrompt(sujet.trim(), originesLimitees, niveau.trim())
     const raw = await callLLM(prompt)
     const data = JSON.parse(extractJson(raw))
 
-    return Response.json(data)
+    // Tag the response with the mode so the frontend knows how to render it
+    return Response.json({ ...data, _mode: mode || 'enseignant' })
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Erreur inconnue'
     console.error('[/api/education]', message)

@@ -37,6 +37,21 @@ interface EducationResult {
   indicible?: string
 }
 
+interface BetaVoix {
+  qui: string
+  dirait: string
+  questionPourToi: string
+}
+
+interface BetaResult {
+  reformulation: string
+  voix: BetaVoix[]
+  leTrouEntre: string
+  etSiCetaitFaux: string
+  vaLuiDemander: string
+  indicible: string
+}
+
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
@@ -79,6 +94,7 @@ export default function EducationPage() {
   const [autreText, setAutreText] = useState('')
   const [showAutre, setShowAutre] = useState(false)
   const [niveau, setNiveau] = useState('')
+  const [mode, setMode] = useState<'enseignant' | 'beta'>('enseignant')
 
   // Loading state
   const [isLoading, setIsLoading] = useState(false)
@@ -87,6 +103,7 @@ export default function EducationPage() {
 
   // Result state
   const [result, setResult] = useState<EducationResult | null>(null)
+  const [betaResult, setBetaResult] = useState<BetaResult | null>(null)
   const [error, setError] = useState<string | null>(null)
 
   // Export state
@@ -195,16 +212,22 @@ export default function EducationPage() {
     setError(null)
     setIsLoading(true)
     setResult(null)
+    setBetaResult(null)
     try {
       const res = await fetch('/api/education', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sujet: sujet.trim(), origines: selectedOrigins, niveau, lang }),
+        body: JSON.stringify({ sujet: sujet.trim(), origines: selectedOrigins, niveau, lang, mode }),
       })
       const data = await res.json()
       if (!res.ok || data.error) throw new Error(data.error || `HTTP ${res.status}`)
-      if (!data.cartes) throw new Error('Réponse inattendue du serveur.')
-      setResult(data as EducationResult)
+      if (mode === 'beta') {
+        if (!data.voix) throw new Error('Réponse inattendue du serveur.')
+        setBetaResult(data as BetaResult)
+      } else {
+        if (!data.cartes) throw new Error('Réponse inattendue du serveur.')
+        setResult(data as EducationResult)
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erreur inconnue')
     } finally {
@@ -331,7 +354,7 @@ export default function EducationPage() {
           </div>
 
           {/* ── Form ── */}
-          {!result && !isLoading && (
+          {!result && !betaResult && !isLoading && (
             <div className="tel-edu-form tel-bubble-filled p-6 md:p-8 rounded-2xl" style={{ background: 'rgba(10,10,15,0.92)', border: '1px solid rgba(201,168,76,0.12)', backdropFilter: 'blur(28px)' }}>
 
               {/* Sujet */}
@@ -565,6 +588,42 @@ export default function EducationPage() {
                 </p>
               )}
 
+              {/* Mode toggle: Enseignant / Élève */}
+              <div className="mb-7">
+                <SectionLabel>{lang === 'en' ? 'Mode' : 'Mode'}</SectionLabel>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setMode('enseignant')}
+                    className="px-4 py-2 rounded-lg text-xs transition-all duration-200"
+                    style={{
+                      background: mode === 'enseignant' ? 'rgba(201,168,76,0.12)' : 'rgba(255,255,255,0.025)',
+                      border: mode === 'enseignant' ? '1px solid rgba(201,168,76,0.4)' : '1px solid rgba(255,255,255,0.06)',
+                      color: mode === 'enseignant' ? '#C9A84C' : '#555',
+                      fontFamily: 'ui-monospace, monospace',
+                      cursor: 'pointer',
+                    }}>
+                    {lang === 'en' ? '👩‍🏫 Teacher' : '👩‍🏫 Enseignant'}
+                  </button>
+                  <button
+                    onClick={() => setMode('beta')}
+                    className="px-4 py-2 rounded-lg text-xs transition-all duration-200"
+                    style={{
+                      background: mode === 'beta' ? 'rgba(122,171,181,0.12)' : 'rgba(255,255,255,0.025)',
+                      border: mode === 'beta' ? '1px solid rgba(122,171,181,0.4)' : '1px solid rgba(255,255,255,0.06)',
+                      color: mode === 'beta' ? '#7AABB5' : '#555',
+                      fontFamily: 'ui-monospace, monospace',
+                      cursor: 'pointer',
+                    }}>
+                    {lang === 'en' ? '🧒 Student' : '🧒 Élève'}
+                  </button>
+                </div>
+                {mode === 'beta' && (
+                  <p className="text-xs mt-2" style={{ color: '#7AABB5', fontFamily: 'Georgia, serif', fontStyle: 'italic' }}>
+                    {lang === 'en' ? 'TEL becomes a thinking companion. It won\'t give answers — it\'ll show you the world has more than one.' : 'TEL devient un compagnon de pensée. Il ne donnera pas de réponse — il te montrera que le monde en a plus d\'une.'}
+                  </p>
+                )}
+              </div>
+
               {/* Submit */}
               <button onClick={handleSubmit}
                 className="w-full py-4 rounded-xl text-sm uppercase tracking-widest transition-all duration-300"
@@ -606,7 +665,109 @@ export default function EducationPage() {
             </div>
           )}
 
-          {/* ── Result ── */}
+          {/* ── Beta Result (Mode Élève) ── */}
+          {betaResult && !isLoading && (
+            <div>
+              <div className="flex items-center justify-between mb-8 no-print">
+                <button onClick={() => { setBetaResult(null); setError(null) }}
+                  className="text-xs px-4 py-2 rounded-lg transition-all duration-200"
+                  style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', color: '#555', fontFamily: 'ui-monospace, monospace', cursor: 'pointer' }}
+                  onMouseEnter={e => { e.currentTarget.style.color = '#7AABB5'; e.currentTarget.style.borderColor = 'rgba(122,171,181,0.25)' }}
+                  onMouseLeave={e => { e.currentTarget.style.color = '#555'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.07)' }}>
+                  ← {lang === 'en' ? 'New question' : 'Nouvelle question'}
+                </button>
+                <span className="text-xs px-3 py-1 rounded-full" style={{ background: 'rgba(122,171,181,0.08)', border: '1px solid rgba(122,171,181,0.2)', color: '#7AABB5', fontFamily: 'ui-monospace, monospace' }}>
+                  {lang === 'en' ? 'Student Mode' : 'Mode Élève'}
+                </span>
+              </div>
+
+              {/* Reformulation */}
+              <div className="mb-10 text-center">
+                <p className="text-base md:text-lg leading-relaxed" style={{ color: '#F5ECD7', fontFamily: 'Georgia, serif', fontStyle: 'italic', lineHeight: 1.8 }}>
+                  {betaResult.reformulation}
+                </p>
+              </div>
+
+              <Divider />
+
+              {/* Voix */}
+              <SectionLabel>{lang === 'en' ? 'Voices from the world' : 'DES VOIX DU MONDE'}</SectionLabel>
+              <div className="flex flex-col gap-6 mb-10">
+                {betaResult.voix.map((voix, i) => (
+                  <div key={i} className="p-5 rounded-xl" style={{ background: '#0F0F18', border: '1px solid rgba(122,171,181,0.15)' }}>
+                    <p className="text-xs uppercase tracking-widest mb-3" style={{ color: '#7AABB5', fontFamily: 'ui-monospace, monospace', letterSpacing: '0.12em' }}>
+                      {voix.qui}
+                    </p>
+                    <p className="text-sm mb-4" style={{ color: '#DDDDDD', fontFamily: 'Georgia, serif', fontStyle: 'italic', lineHeight: 1.8 }}>
+                      « {voix.dirait} »
+                    </p>
+                    <div className="pt-3" style={{ borderTop: '1px solid rgba(201,168,76,0.1)' }}>
+                      <p className="text-xs" style={{ color: '#C9A84C', fontFamily: 'Georgia, serif', fontStyle: 'italic', lineHeight: 1.6 }}>
+                        {voix.questionPourToi}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <Divider />
+
+              {/* Le trou entre */}
+              <div className="mb-10">
+                <SectionLabel>{lang === 'en' ? 'THE SPACE BETWEEN' : 'LE TROU ENTRE'}</SectionLabel>
+                <p className="text-sm leading-relaxed text-center" style={{ color: '#F5ECD7', fontFamily: 'Georgia, serif', fontStyle: 'italic', lineHeight: 1.8 }}>
+                  {betaResult.leTrouEntre}
+                </p>
+              </div>
+
+              <Divider />
+
+              {/* Et si c'était faux */}
+              <div className="mb-10">
+                <SectionLabel>{lang === 'en' ? 'WHAT IF ALL OF THIS WAS WRONG?' : 'ET SI TOUT ÇA ÉTAIT FAUX ?'}</SectionLabel>
+                <div className="p-4 rounded-xl text-center" style={{ background: 'rgba(139,58,58,0.05)', border: '1px solid rgba(139,58,58,0.15)' }}>
+                  <p className="text-sm" style={{ color: '#B87A6B', fontFamily: 'Georgia, serif', fontStyle: 'italic', lineHeight: 1.6 }}>
+                    {betaResult.etSiCetaitFaux}
+                  </p>
+                </div>
+              </div>
+
+              <Divider />
+
+              {/* Va lui demander — le cœur de TEL */}
+              <div className="mb-10">
+                <SectionLabel>{lang === 'en' ? 'NOW, GO ASK SOMEONE' : 'MAINTENANT, VA LUI DEMANDER'}</SectionLabel>
+                <div className="p-6 rounded-xl text-center" style={{ background: 'rgba(201,168,76,0.04)', border: '1px solid rgba(201,168,76,0.25)' }}>
+                  <p className="text-base leading-relaxed" style={{ color: '#F5ECD7', fontFamily: 'Georgia, serif', fontStyle: 'italic', lineHeight: 1.8 }}>
+                    {betaResult.vaLuiDemander}
+                  </p>
+                </div>
+              </div>
+
+              {/* L'indicible */}
+              {betaResult.indicible && (
+                <>
+                  <Divider />
+                  <div className="mb-10">
+                    <div className="p-5 rounded-xl" style={{ background: 'rgba(255,255,255,0.015)', border: '1px solid rgba(255,255,255,0.04)' }}>
+                      <p className="text-sm leading-relaxed text-center" style={{ color: '#444', fontFamily: 'Georgia, serif', fontStyle: 'italic', lineHeight: 1.8 }}>
+                        {betaResult.indicible}
+                      </p>
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {/* Footer */}
+              <div className="pt-6 text-center" style={{ borderTop: '1px solid rgba(255,255,255,0.03)' }}>
+                <p className="text-xs" style={{ color: '#1a1a1a', fontFamily: 'ui-monospace, monospace' }}>
+                  TEL — {lang === 'en' ? 'The infrastructure of human dignity' : 'L\'infrastructure de la dignité humaine'}
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* ── Teacher Result ── */}
           {result && !isLoading && (
             <div>
               {/* Reset + export bar */}
