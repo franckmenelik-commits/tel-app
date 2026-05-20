@@ -634,11 +634,6 @@ export default function InsightCard({
               <p className="tel-italic" style={{ fontSize: 'clamp(22px, 3.5vw, 28px)', lineHeight: 1.55, color: GOLD, fontFamily: 'Georgia, serif' }}>
                 {card.questionNoOneHasAsked}
               </p>
-              {onCreuser && (
-                <div style={{ marginTop: '14px' }}>
-                  <CreuserBtn seed={card.questionNoOneHasAsked} onClick={onCreuser} lang={L} />
-                </div>
-              )}
             </div>
 
             {/* Condensed pattern preview — visible when NOT expanded */}

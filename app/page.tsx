@@ -469,12 +469,22 @@ export default function TELPage() {
   }, [handleCross])
 
   const handleCreuser = useCallback((seed: string) => {
+    // Get the current card's theme to create a proper A × B crossing
+    const parentTheme = currentCard?.theme || ''
     setCurrentCard(null)
     setCurrentResonances([])
     setAppState('idle')
-    // Creuser launches a keyword/crossing search from the seed fragment
-    setTimeout(() => handleCross([seed], 'culturel_profond'), 100)
-  }, [handleCross])
+    // If the seed is long (a full question or divergence), pair it with the parent theme
+    // Otherwise treat it as a keyword crossing
+    const seedTrimmed = seed.trim().slice(0, 150)
+    if (parentTheme && parentTheme !== seedTrimmed) {
+      // Create a crossing: parent theme × seed
+      setTimeout(() => handleCross([`${seedTrimmed} × ${parentTheme}`], 'culturel_profond'), 100)
+    } else {
+      // Fallback: duplicate the seed into 2 inputs to avoid discovery mode
+      setTimeout(() => handleCross([seedTrimmed, seedTrimmed], 'culturel_profond'), 100)
+    }
+  }, [handleCross, currentCard])
 
   const handleMetaCroisement = useCallback((ids: string[]) => {
     const crossings = ids.map(id => sessionHistoryRef.current.find(c => c.id === id)).filter(Boolean) as SessionCrossing[]
@@ -492,6 +502,17 @@ export default function TELPage() {
     setEnrichissementProposal(null)
     setDiscoveryInfo(null)
   }, [])
+
+  const handleRetry = useCallback(() => {
+    if (pendingInputs.length > 0) {
+      // Re-launch with the same inputs that failed
+      setError(null)
+      setAppState('idle')
+      setTimeout(() => handleCross(pendingInputs, pendingContexte), 100)
+    } else {
+      handleReset()
+    }
+  }, [pendingInputs, pendingContexte, handleCross, handleReset])
 
   const handleLoadFromHistory = useCallback(async (item: SessionCrossing) => {
     setCurrentCard(item.card)
@@ -1024,7 +1045,7 @@ export default function TELPage() {
                   {error}
                 </p>
                 <button
-                  onClick={handleReset}
+                  onClick={handleRetry}
                   className="tel-ghost-btn"
                   style={{ padding: '10px 28px' }}
                 >

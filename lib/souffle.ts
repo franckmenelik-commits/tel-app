@@ -234,71 +234,121 @@ async function appelAvecFallback(
 function inferGeographicContext(source: ExtractedSource): { context: string; confidence: number } {
   const url = source.url.toLowerCase()
   const title = (source.title || '').toLowerCase()
-  const content = (source.content || '').slice(0, 2000).toLowerCase()
+  const content = (source.content || '').slice(0, 3000).toLowerCase()
   const all = `${url} ${title} ${content}`
 
-  // Wikipedia: language prefix tells us the primary audience
+  // ── Step 1: Detect the SOURCE language (Wikipedia prefix, title lang) ──
+  let sourceLang = ''
   const wikiLang = url.match(/([a-z]{2,3})\.wikipedia\.org/)
   if (wikiLang) {
-    const langMap: Record<string, string> = {
-      fr: 'France', en: 'International (anglophone)', de: 'Allemagne', es: 'Espagne',
-      pt: 'Portugal / Brésil', ar: 'Monde arabe', ja: 'Japon', ko: 'Corée',
-      zh: 'Chine', hi: 'Inde', ru: 'Russie', it: 'Italie', nl: 'Pays-Bas',
-      sw: 'Afrique de l\'Est', vi: 'Vietnam', tr: 'Turquie', id: 'Indonésie',
-      he: 'Israël', fa: 'Iran', th: 'Thaïlande', uk: 'Ukraine', pl: 'Pologne',
-    }
-    const country = langMap[wikiLang[1]] || 'Non déterminé'
-    return { context: country, confidence: 75 }
+    sourceLang = wikiLang[1]
+  } else if (/[àâéèêëîïôùûüÿçœæ]/.test(title) || /\b(les|des|une|dans|pour|avec|cette|mais|qui|est|pas)\b/.test(title)) {
+    sourceLang = 'fr'
+  } else if (/[\u3040-\u309f\u30a0-\u30ff]/.test(title)) {
+    sourceLang = 'ja'
+  } else if (/[\uac00-\ud7af]/.test(title)) {
+    sourceLang = 'ko'
+  } else if (/[\u4e00-\u9fff]/.test(title)) {
+    sourceLang = 'zh'
+  } else if (/[\u0600-\u06ff]/.test(title)) {
+    sourceLang = 'ar'
   }
 
-  // Country keywords in title/content
-  const countryPatterns: Array<{ pattern: RegExp; context: string; confidence: number }> = [
-    { pattern: /\b(cameroun|cameroon|douala|yaound[eé])\b/, context: 'Cameroun', confidence: 85 },
-    { pattern: /\b(s[eé]n[eé]gal|dakar|wolof)\b/, context: 'Sénégal', confidence: 85 },
-    { pattern: /\b(nigeria|lagos|igbo|yoruba|nollywood)\b/, context: 'Nigeria', confidence: 85 },
-    { pattern: /\b(kenya|nairobi|swahili)\b/, context: 'Kenya', confidence: 85 },
-    { pattern: /\b(south africa|johannesburg|apartheid|mandela)\b/, context: 'Afrique du Sud', confidence: 85 },
-    { pattern: /\b(ha[iï]ti|port-au-prince|cr[eé]ole)\b/, context: 'Haïti', confidence: 85 },
-    { pattern: /\b(alg[eé]ri[ea]|alger|constantine)\b/, context: 'Algérie', confidence: 85 },
-    { pattern: /\b(maroc|morocco|casablanca|rabat)\b/, context: 'Maroc', confidence: 85 },
-    { pattern: /\b(vietnam|hanoi|saigon|ho chi minh)\b/, context: 'Vietnam', confidence: 85 },
-    { pattern: /\b(india|inde|mumbai|delhi|hindi|bollywood)\b/, context: 'Inde', confidence: 80 },
-    { pattern: /\b(japan|japon|tokyo|osaka)\b/, context: 'Japon', confidence: 80 },
-    { pattern: /\b(china|chine|beijing|shanghai)\b/, context: 'Chine', confidence: 80 },
-    { pattern: /\b(brazil|br[eé]sil|rio|são paulo)\b/, context: 'Brésil', confidence: 80 },
-    { pattern: /\b(mexico|mexique|ciudad)\b/, context: 'Mexique', confidence: 80 },
-    { pattern: /\b(france|paris|lyon|marseille|fran[cç]ais)\b/, context: 'France', confidence: 70 },
-    { pattern: /\b(united states|[eé]tats-unis|america|washington|new york|silicon valley)\b/, context: 'États-Unis', confidence: 70 },
-    { pattern: /\b(united kingdom|royaume-uni|london|londres|british)\b/, context: 'Royaume-Uni', confidence: 75 },
-    { pattern: /\b(palestine|gaza|ramallah)\b/, context: 'Palestine', confidence: 85 },
-    { pattern: /\b(isra[eë]l|tel aviv|jerusalem)\b/, context: 'Israël', confidence: 85 },
-    { pattern: /\b(iran|t[eé]h[eé]ran|persian)\b/, context: 'Iran', confidence: 85 },
-    { pattern: /\b(congo|kinshasa|brazzaville)\b/, context: 'Congo', confidence: 85 },
-    { pattern: /\b(liban|lebanon|beyrouth|beirut)\b/, context: 'Liban', confidence: 85 },
-    { pattern: /\b(cor[eé]e|korea|seoul)\b/, context: 'Corée', confidence: 80 },
-    { pattern: /\b(russie|russia|moscow|moscou)\b/, context: 'Russie', confidence: 80 },
-    { pattern: /\b(turquie|turkey|istanbul|ankara)\b/, context: 'Turquie', confidence: 80 },
+  const langLabels: Record<string, string> = {
+    fr: 'français', en: 'anglais', de: 'allemand', es: 'espagnol',
+    pt: 'portugais', ar: 'arabe', ja: 'japonais', ko: 'coréen',
+    zh: 'mandarin', hi: 'hindi', ru: 'russe', it: 'italien', nl: 'néerlandais',
+    sw: 'swahili', vi: 'vietnamien', tr: 'turc', id: 'indonésien',
+    he: 'hébreu', fa: 'persan', th: 'thaï', uk: 'ukrainien', pl: 'polonais',
+  }
+
+  // ── Step 2: Detect the SUBJECT country/region from content ──
+  const countryPatterns: Array<{ pattern: RegExp; country: string; region: string; confidence: number }> = [
+    // Afrique
+    { pattern: /\b(cameroun|cameroon|douala|yaound[eé])\b/, country: 'Cameroun', region: 'Afrique centrale', confidence: 85 },
+    { pattern: /\b(s[eé]n[eé]gal|dakar|wolof)\b/, country: 'Sénégal', region: 'Afrique de l\'Ouest', confidence: 85 },
+    { pattern: /\b(nigeria|lagos|igbo|yoruba|nollywood)\b/, country: 'Nigeria', region: 'Afrique de l\'Ouest', confidence: 85 },
+    { pattern: /\b(kenya|nairobi)\b/, country: 'Kenya', region: 'Afrique de l\'Est', confidence: 85 },
+    { pattern: /\b(south africa|johannesburg|apartheid|mandela)\b/, country: 'Afrique du Sud', region: 'Afrique australe', confidence: 85 },
+    { pattern: /\b(congo|kinshasa|brazzaville|rdc)\b/, country: 'Congo', region: 'Afrique centrale', confidence: 85 },
+    { pattern: /\b(alg[eé]ri[ea]|alger|constantine|kabylie)\b/, country: 'Algérie', region: 'Afrique du Nord', confidence: 85 },
+    { pattern: /\b(maroc|morocco|casablanca|rabat|amazigh)\b/, country: 'Maroc', region: 'Afrique du Nord', confidence: 85 },
+    { pattern: /\b(egypt|[eé]gypte|cairo|le caire)\b/, country: 'Égypte', region: 'Afrique du Nord', confidence: 85 },
+    { pattern: /\b(ethiopia|[eé]thiopie|addis)\b/, country: 'Éthiopie', region: 'Afrique de l\'Est', confidence: 85 },
+    // Amériques
+    { pattern: /\b(ha[iï]ti|port-au-prince|cr[eé]ole ha[iï]tien)\b/, country: 'Haïti', region: 'Caraïbes', confidence: 85 },
+    { pattern: /\b(brazil|br[eé]sil|rio de janeiro|são paulo|favela)\b/, country: 'Brésil', region: 'Amérique du Sud', confidence: 80 },
+    { pattern: /\b(mexico|mexique|ciudad de m[eé]xico)\b/, country: 'Mexique', region: 'Amérique centrale', confidence: 80 },
+    { pattern: /\b(colombia|colombie|bogot[aá]|medell[ií]n)\b/, country: 'Colombie', region: 'Amérique du Sud', confidence: 80 },
+    { pattern: /\b(argentina|argentine|buenos aires)\b/, country: 'Argentine', region: 'Amérique du Sud', confidence: 80 },
+    { pattern: /\b(united states|[eé]tats-unis|america|washington|new york|silicon valley|california|texas)\b/, country: 'États-Unis', region: 'Amérique du Nord', confidence: 75 },
+    { pattern: /\b(canada|montr[eé]al|toronto|qu[eé]bec|ottawa)\b/, country: 'Canada', region: 'Amérique du Nord', confidence: 75 },
+    // Asie
+    { pattern: /\b(vietnam|hanoi|saigon|ho chi minh|pavn)\b/, country: 'Vietnam', region: 'Asie du Sud-Est', confidence: 85 },
+    { pattern: /\b(india|inde|mumbai|delhi|hindi|bollywood|gandhi)\b/, country: 'Inde', region: 'Asie du Sud', confidence: 80 },
+    { pattern: /\b(japan|japon|tokyo|osaka|kyoto)\b/, country: 'Japon', region: 'Asie de l\'Est', confidence: 80 },
+    { pattern: /\b(china|chine|beijing|shanghai|p[eé]kin)\b/, country: 'Chine', region: 'Asie de l\'Est', confidence: 80 },
+    { pattern: /\b(cor[eé]e|korea|seoul|pyongyang)\b/, country: 'Corée', region: 'Asie de l\'Est', confidence: 80 },
+    { pattern: /\b(indonesia|indon[eé]sie|jakarta)\b/, country: 'Indonésie', region: 'Asie du Sud-Est', confidence: 80 },
+    { pattern: /\b(philippines|manille|manila)\b/, country: 'Philippines', region: 'Asie du Sud-Est', confidence: 80 },
+    { pattern: /\b(pakistan|islamabad|karachi)\b/, country: 'Pakistan', region: 'Asie du Sud', confidence: 80 },
+    { pattern: /\b(bangladesh|dhaka|dacca)\b/, country: 'Bangladesh', region: 'Asie du Sud', confidence: 80 },
+    // Moyen-Orient
+    { pattern: /\b(palestine|gaza|ramallah|cisjordanie)\b/, country: 'Palestine', region: 'Moyen-Orient', confidence: 85 },
+    { pattern: /\b(isra[eë]l|tel aviv|jerusalem|j[eé]rusalem)\b/, country: 'Israël', region: 'Moyen-Orient', confidence: 85 },
+    { pattern: /\b(iran|t[eé]h[eé]ran|persian|perse)\b/, country: 'Iran', region: 'Moyen-Orient', confidence: 85 },
+    { pattern: /\b(liban|lebanon|beyrouth|beirut)\b/, country: 'Liban', region: 'Moyen-Orient', confidence: 85 },
+    { pattern: /\b(iraq|irak|bagdad|baghdad)\b/, country: 'Irak', region: 'Moyen-Orient', confidence: 85 },
+    { pattern: /\b(syrie|syria|damas|alep|aleppo)\b/, country: 'Syrie', region: 'Moyen-Orient', confidence: 85 },
+    // Europe
+    { pattern: /\b(france|paris|lyon|marseille)\b/, country: 'France', region: 'Europe de l\'Ouest', confidence: 75 },
+    { pattern: /\b(united kingdom|royaume-uni|london|londres|british|angleterre)\b/, country: 'Royaume-Uni', region: 'Europe du Nord', confidence: 75 },
+    { pattern: /\b(deutschland|allemagne|berlin|munich|münchen)\b/, country: 'Allemagne', region: 'Europe centrale', confidence: 75 },
+    { pattern: /\b(russie|russia|moscow|moscou|kremlin)\b/, country: 'Russie', region: 'Europe de l\'Est', confidence: 80 },
+    { pattern: /\b(turquie|turkey|istanbul|ankara)\b/, country: 'Turquie', region: 'Eurasie', confidence: 80 },
+    // Océanie
+    { pattern: /\b(australia|australie|sydney|melbourne|aboriginal)\b/, country: 'Australie', region: 'Océanie', confidence: 80 },
   ]
 
-  for (const { pattern, context, confidence } of countryPatterns) {
-    if (pattern.test(all)) return { context, confidence }
-  }
-
-  // YouTube: check language of title for rough inference
-  if (source.type === 'youtube') {
-    // French characters/words strongly suggest francophone
-    if (/[àâéèêëîïôùûüÿçœæ]/.test(title) || /\b(les|des|une|dans|pour|avec|cette|mais|pas|est|qui)\b/.test(title)) {
-      return { context: 'Francophone', confidence: 65 }
+  for (const { pattern, country, region, confidence } of countryPatterns) {
+    if (pattern.test(all)) {
+      // Build layered context: "Vietnam · Asie du Sud-Est · vietnamien"
+      const lang = sourceLang ? langLabels[sourceLang] || sourceLang : ''
+      const parts = [country, region]
+      if (lang) parts.push(lang)
+      return { context: parts.join(' · '), confidence }
     }
-    return { context: 'International', confidence: 50 }
   }
 
-  // Generic article
-  if (/[àâéèêëîïôùûüÿçœæ]/.test(title)) {
-    return { context: 'Francophone', confidence: 55 }
+  // ── Step 3: Fallback to source language only ──
+  if (sourceLang) {
+    const langFallbacks: Record<string, { context: string; confidence: number }> = {
+      fr: { context: 'Monde francophone · français', confidence: 65 },
+      en: { context: 'Monde anglophone · anglais', confidence: 55 },
+      de: { context: 'Monde germanophone · allemand', confidence: 65 },
+      es: { context: 'Monde hispanophone · espagnol', confidence: 60 },
+      pt: { context: 'Lusophonie · portugais', confidence: 60 },
+      ar: { context: 'Monde arabe · arabe', confidence: 65 },
+      ja: { context: 'Japon · Asie de l\'Est · japonais', confidence: 70 },
+      ko: { context: 'Corée · Asie de l\'Est · coréen', confidence: 70 },
+      zh: { context: 'Sinosphère · Asie de l\'Est · mandarin', confidence: 65 },
+      hi: { context: 'Inde · Asie du Sud · hindi', confidence: 65 },
+      ru: { context: 'Russie · Europe de l\'Est · russe', confidence: 65 },
+      sw: { context: 'Afrique de l\'Est · swahili', confidence: 70 },
+      vi: { context: 'Vietnam · Asie du Sud-Est · vietnamien', confidence: 70 },
+      tr: { context: 'Turquie · Eurasie · turc', confidence: 70 },
+      id: { context: 'Indonésie · Asie du Sud-Est · indonésien', confidence: 70 },
+    }
+    if (langFallbacks[sourceLang]) return langFallbacks[sourceLang]
+    return { context: `Source en ${langLabels[sourceLang] || sourceLang}`, confidence: 50 }
   }
 
-  return { context: 'Non déterminé', confidence: 30 }
+  // YouTube without detectable language
+  if (source.type === 'youtube') {
+    return { context: 'Indéterminé · YouTube', confidence: 40 }
+  }
+
+  return { context: 'Indéterminé', confidence: 30 }
 }
 
 // ─── EXTRACTION DES MÉTADONNÉES (PHASE 1) ────────────────────────────────────
