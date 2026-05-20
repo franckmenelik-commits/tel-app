@@ -229,6 +229,78 @@ async function appelAvecFallback(
   )
 }
 
+// ─── INFÉRENCE GÉOGRAPHIQUE RAPIDE (sans appel LLM) ──────────────────────────
+
+function inferGeographicContext(source: ExtractedSource): { context: string; confidence: number } {
+  const url = source.url.toLowerCase()
+  const title = (source.title || '').toLowerCase()
+  const content = (source.content || '').slice(0, 2000).toLowerCase()
+  const all = `${url} ${title} ${content}`
+
+  // Wikipedia: language prefix tells us the primary audience
+  const wikiLang = url.match(/([a-z]{2,3})\.wikipedia\.org/)
+  if (wikiLang) {
+    const langMap: Record<string, string> = {
+      fr: 'France', en: 'International (anglophone)', de: 'Allemagne', es: 'Espagne',
+      pt: 'Portugal / Brésil', ar: 'Monde arabe', ja: 'Japon', ko: 'Corée',
+      zh: 'Chine', hi: 'Inde', ru: 'Russie', it: 'Italie', nl: 'Pays-Bas',
+      sw: 'Afrique de l\'Est', vi: 'Vietnam', tr: 'Turquie', id: 'Indonésie',
+      he: 'Israël', fa: 'Iran', th: 'Thaïlande', uk: 'Ukraine', pl: 'Pologne',
+    }
+    const country = langMap[wikiLang[1]] || 'Non déterminé'
+    return { context: country, confidence: 75 }
+  }
+
+  // Country keywords in title/content
+  const countryPatterns: Array<{ pattern: RegExp; context: string; confidence: number }> = [
+    { pattern: /\b(cameroun|cameroon|douala|yaound[eé])\b/, context: 'Cameroun', confidence: 85 },
+    { pattern: /\b(s[eé]n[eé]gal|dakar|wolof)\b/, context: 'Sénégal', confidence: 85 },
+    { pattern: /\b(nigeria|lagos|igbo|yoruba|nollywood)\b/, context: 'Nigeria', confidence: 85 },
+    { pattern: /\b(kenya|nairobi|swahili)\b/, context: 'Kenya', confidence: 85 },
+    { pattern: /\b(south africa|johannesburg|apartheid|mandela)\b/, context: 'Afrique du Sud', confidence: 85 },
+    { pattern: /\b(ha[iï]ti|port-au-prince|cr[eé]ole)\b/, context: 'Haïti', confidence: 85 },
+    { pattern: /\b(alg[eé]ri[ea]|alger|constantine)\b/, context: 'Algérie', confidence: 85 },
+    { pattern: /\b(maroc|morocco|casablanca|rabat)\b/, context: 'Maroc', confidence: 85 },
+    { pattern: /\b(vietnam|hanoi|saigon|ho chi minh)\b/, context: 'Vietnam', confidence: 85 },
+    { pattern: /\b(india|inde|mumbai|delhi|hindi|bollywood)\b/, context: 'Inde', confidence: 80 },
+    { pattern: /\b(japan|japon|tokyo|osaka)\b/, context: 'Japon', confidence: 80 },
+    { pattern: /\b(china|chine|beijing|shanghai)\b/, context: 'Chine', confidence: 80 },
+    { pattern: /\b(brazil|br[eé]sil|rio|são paulo)\b/, context: 'Brésil', confidence: 80 },
+    { pattern: /\b(mexico|mexique|ciudad)\b/, context: 'Mexique', confidence: 80 },
+    { pattern: /\b(france|paris|lyon|marseille|fran[cç]ais)\b/, context: 'France', confidence: 70 },
+    { pattern: /\b(united states|[eé]tats-unis|america|washington|new york|silicon valley)\b/, context: 'États-Unis', confidence: 70 },
+    { pattern: /\b(united kingdom|royaume-uni|london|londres|british)\b/, context: 'Royaume-Uni', confidence: 75 },
+    { pattern: /\b(palestine|gaza|ramallah)\b/, context: 'Palestine', confidence: 85 },
+    { pattern: /\b(isra[eë]l|tel aviv|jerusalem)\b/, context: 'Israël', confidence: 85 },
+    { pattern: /\b(iran|t[eé]h[eé]ran|persian)\b/, context: 'Iran', confidence: 85 },
+    { pattern: /\b(congo|kinshasa|brazzaville)\b/, context: 'Congo', confidence: 85 },
+    { pattern: /\b(liban|lebanon|beyrouth|beirut)\b/, context: 'Liban', confidence: 85 },
+    { pattern: /\b(cor[eé]e|korea|seoul)\b/, context: 'Corée', confidence: 80 },
+    { pattern: /\b(russie|russia|moscow|moscou)\b/, context: 'Russie', confidence: 80 },
+    { pattern: /\b(turquie|turkey|istanbul|ankara)\b/, context: 'Turquie', confidence: 80 },
+  ]
+
+  for (const { pattern, context, confidence } of countryPatterns) {
+    if (pattern.test(all)) return { context, confidence }
+  }
+
+  // YouTube: check language of title for rough inference
+  if (source.type === 'youtube') {
+    // French characters/words strongly suggest francophone
+    if (/[àâéèêëîïôùûüÿçœæ]/.test(title) || /\b(les|des|une|dans|pour|avec|cette|mais|pas|est|qui)\b/.test(title)) {
+      return { context: 'Francophone', confidence: 65 }
+    }
+    return { context: 'International', confidence: 50 }
+  }
+
+  // Generic article
+  if (/[àâéèêëîïôùûüÿçœæ]/.test(title)) {
+    return { context: 'Francophone', confidence: 55 }
+  }
+
+  return { context: 'Non déterminé', confidence: 30 }
+}
+
 // ─── EXTRACTION DES MÉTADONNÉES (PHASE 1) ────────────────────────────────────
 
 async function enrichirSource(
@@ -236,10 +308,24 @@ async function enrichirSource(
   statut: SouffleStatut,
   niveauxUtilises: Set<SouffleNiveau>
 ): Promise<ExtractedSource> {
-  // Don't try to enrich synthetic sources or sources that already have a proper title 
-  // (like Wikipedia which gives good titles via OpenCLI). This saves massive API time.
-  if ((source.inputMode === 'crossing' && source.url.startsWith('crossing://')) || 
-      (source.title && source.title.length > 5 && !source.title.includes('http'))) {
+  // For synthetic crossing sources, skip entirely
+  if (source.inputMode === 'crossing' && source.url.startsWith('crossing://')) {
+    return source
+  }
+
+  // For sources that already have a proper title (Wikipedia, YouTube via oEmbed),
+  // skip the expensive LLM N1 call but still infer geographic metadata
+  if (source.title && source.title.length > 5 && !source.title.includes('http') && source.geographicContext === 'Pending analysis') {
+    const inferred = inferGeographicContext(source)
+    return {
+      ...source,
+      geographicContext: inferred.context,
+      geographicConfidence: inferred.confidence,
+    }
+  }
+
+  // If already enriched, skip
+  if (source.geographicContext && source.geographicContext !== 'Pending analysis') {
     return source
   }
 
