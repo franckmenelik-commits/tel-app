@@ -95,6 +95,7 @@ interface InsightCardProps {
   streaming?: boolean
   resonances?: Resonance[]
   onCombler?: (inputs: string[]) => void
+  onCreuser?: (seed: string) => void
   onMetaCroisement?: (ids: string[]) => void
   lang?: Lang
 }
@@ -119,6 +120,28 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
 function Divider() {
   return (
     <div style={{ height: '1px', background: BORDER_SUBTLE, margin: '24px 0' }} />
+  )
+}
+
+function CreuserBtn({ seed, onClick, lang }: { seed: string; onClick?: (seed: string) => void; lang: Lang }) {
+  if (!onClick) return null
+  return (
+    <button
+      onClick={(e) => { e.stopPropagation(); onClick(seed) }}
+      className="no-print"
+      style={{
+        display: 'inline-flex', alignItems: 'center', gap: '4px',
+        fontSize: '10px', padding: '3px 10px', borderRadius: '20px',
+        background: 'rgba(122,171,181,0.06)', border: '1px solid rgba(122,171,181,0.15)',
+        color: '#7AABB5', cursor: 'pointer', transition: 'all 200ms ease',
+        letterSpacing: '0.06em', whiteSpace: 'nowrap', marginTop: '6px',
+      }}
+      onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(122,171,181,0.12)'; e.currentTarget.style.borderColor = 'rgba(122,171,181,0.3)' }}
+      onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(122,171,181,0.06)'; e.currentTarget.style.borderColor = 'rgba(122,171,181,0.15)' }}
+      title={lang === 'en' ? 'Dig deeper into this thread' : 'Creuser ce fil'}
+    >
+      ⇢ {lang === 'en' ? 'Dig' : 'Creuser'}
+    </button>
   )
 }
 
@@ -237,6 +260,7 @@ export default function InsightCard({
   streaming = false,
   resonances = [],
   onCombler,
+  onCreuser,
   onMetaCroisement,
   lang = 'fr',
 }: InsightCardProps) {
@@ -610,6 +634,11 @@ export default function InsightCard({
               <p className="tel-italic" style={{ fontSize: 'clamp(22px, 3.5vw, 28px)', lineHeight: 1.55, color: GOLD, fontFamily: 'Georgia, serif' }}>
                 {card.questionNoOneHasAsked}
               </p>
+              {onCreuser && (
+                <div style={{ marginTop: '14px' }}>
+                  <CreuserBtn seed={card.questionNoOneHasAsked} onClick={onCreuser} lang={L} />
+                </div>
+              )}
             </div>
 
             {/* Condensed pattern preview — visible when NOT expanded */}
@@ -674,7 +703,10 @@ export default function InsightCard({
                   {(card.divergenceZones ?? []).map((zone, i) => (
                     <li key={i} className="flex gap-3 tel-divergence-item" style={{ fontSize: '14px', lineHeight: 1.7, color: TEXT_PRIMARY, borderLeft: 'none', paddingLeft: 0 }}>
                       <span style={{ color: '#8B5A2B', flexShrink: 0, marginTop: '3px', fontSize: '8px' }}>◇</span>
-                      <span className="tel-serif">{zone}</span>
+                      <div>
+                        <span className="tel-serif">{zone}</span>
+                        <CreuserBtn seed={zone} onClick={onCreuser} lang={L} />
+                      </div>
                     </li>
                   ))}
                 </ul>
@@ -772,7 +804,19 @@ export default function InsightCard({
                       <p style={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.12em', color: TEXT_FAINT, marginBottom: '8px' }}>{t('card.section.missing', L)}</p>
                       <div className="flex flex-wrap gap-2">
                         {anglesMorts!.perspectivesManquantes.map((p, i) => (
-                          <span key={i} style={{ fontSize: '12px', padding: '3px 10px', borderRadius: '4px', background: 'rgba(255,255,255,0.025)', border: `1px solid ${BORDER}`, color: TEXT_MUTED, fontStyle: 'italic' }}>{p}</span>
+                          <span key={i} className="inline-flex items-center gap-1" style={{ fontSize: '12px', padding: '3px 10px', borderRadius: '4px', background: 'rgba(255,255,255,0.025)', border: `1px solid ${BORDER}`, color: TEXT_MUTED, fontStyle: 'italic' }}>
+                            {p}
+                            {onCreuser && (
+                              <button
+                                onClick={() => onCreuser(p)}
+                                className="no-print"
+                                style={{ background: 'none', border: 'none', color: '#7AABB5', cursor: 'pointer', fontSize: '10px', padding: '0 2px', opacity: 0.7, transition: 'opacity 200ms' }}
+                                onMouseEnter={e => { e.currentTarget.style.opacity = '1' }}
+                                onMouseLeave={e => { e.currentTarget.style.opacity = '0.7' }}
+                                title={L === 'en' ? 'Dig deeper' : 'Creuser'}
+                              >⇢</button>
+                            )}
+                          </span>
                         ))}
                       </div>
                     </div>
@@ -782,7 +826,10 @@ export default function InsightCard({
                       <p style={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.12em', color: TEXT_FAINT, marginBottom: '8px' }}>{t('card.section.avoided', L)}</p>
                       <ul className="flex flex-col gap-1.5">
                         {anglesMorts!.questionsEvitees.map((q, i) => (
-                          <li key={i} className="tel-italic" style={{ fontSize: '12px', lineHeight: 1.6, color: TEXT_MUTED }}>· {q}</li>
+                          <li key={i} className="flex items-start gap-2">
+                            <span className="tel-italic" style={{ fontSize: '12px', lineHeight: 1.6, color: TEXT_MUTED, flex: 1 }}>· {q}</span>
+                            <CreuserBtn seed={q} onClick={onCreuser} lang={L} />
+                          </li>
                         ))}
                       </ul>
                     </div>

@@ -468,6 +468,14 @@ export default function TELPage() {
     setTimeout(() => handleCross(newInputs, 'culturel_profond'), 100)
   }, [handleCross])
 
+  const handleCreuser = useCallback((seed: string) => {
+    setCurrentCard(null)
+    setCurrentResonances([])
+    setAppState('idle')
+    // Creuser launches a keyword/crossing search from the seed fragment
+    setTimeout(() => handleCross([seed], 'culturel_profond'), 100)
+  }, [handleCross])
+
   const handleMetaCroisement = useCallback((ids: string[]) => {
     const crossings = ids.map(id => sessionHistoryRef.current.find(c => c.id === id)).filter(Boolean) as SessionCrossing[]
     if (crossings.length < 2) return
@@ -1045,6 +1053,7 @@ export default function TELPage() {
                   streaming={true}
                   resonances={currentResonances}
                   onCombler={handleCombler}
+                  onCreuser={handleCreuser}
                   onMetaCroisement={handleMetaCroisement}
                   lang={lang}
                 />
