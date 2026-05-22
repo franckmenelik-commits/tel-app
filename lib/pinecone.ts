@@ -34,6 +34,11 @@ export interface FoundResonance {
 }
 
 // ─── Embedding via Mistral ────────────────────────────────────────────────────
+// mistral-embed produces 1024-dimensional vectors.
+// If your Pinecone index was created with 1536 dims (OpenAI legacy), set:
+//   PINECONE_INDEX_DIM=1536   in .env.local  (default assumed from index)
+//   or recreate the index at 1024 dims and set PINECONE_INDEX_DIM=1024
+// The reconciliation below zero-pads or truncates automatically so we never get a 400.
 
 async function getEmbedding(text: string): Promise<number[] | null> {
   const apiKey = process.env.MISTRAL_API_KEY
@@ -59,7 +64,28 @@ async function getEmbedding(text: string): Promise<number[] | null> {
     }
 
     const data = await res.json()
-    return (data.data?.[0]?.embedding as number[]) ?? null
+    const raw = (data.data?.[0]?.embedding as number[]) ?? null
+    if (!raw) return null
+
+    // Reconcile dimension with Pinecone index expectation
+    const targetDim = parseInt(process.env.PINECONE_INDEX_DIM || '1536', 10)
+    if (raw.length === targetDim) return raw
+
+    if (raw.length < targetDim) {
+      // Zero-pad — semantics are slightly degraded but avoids 400 errors
+      console.warn(
+        `[Pinecone] ⚠ Dimension mismatch: embedding=${raw.length}, index=${targetDim}. ` +
+        `Zero-padding. → Recréez l'index Pinecone avec dim=${raw.length} et ajoutez PINECONE_INDEX_DIM=${raw.length} dans .env.local`
+      )
+      return [...raw, ...new Array(targetDim - raw.length).fill(0)]
+    }
+
+    // Truncate — semantics are slightly degraded but avoids 400 errors  
+    console.warn(
+      `[Pinecone] ⚠ Dimension mismatch: embedding=${raw.length}, index=${targetDim}. ` +
+      `Truncating. → Recréez l'index Pinecone avec dim=${raw.length} et ajoutez PINECONE_INDEX_DIM=${raw.length} dans .env.local`
+    )
+    return raw.slice(0, targetDim)
   } catch (err) {
     console.warn('[Pinecone] Erreur embedding:', err instanceof Error ? err.message : err)
     return null

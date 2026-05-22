@@ -122,6 +122,12 @@ export default function SourceInput({ onCross, isLoading, prefill, register = 's
   }
 
   const inputRefs = useRef<(HTMLTextAreaElement | null)[]>([])
+  // Persistent ref to the active SpeechRecognition instance (cross mode)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const recognitionRef = useRef<any>(null)
+  // Persistent ref for Resonate mode mic
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const resonanceRecognitionRef = useRef<any>(null)
 
   const updateInput = useCallback((index: number, value: string) => {
     setInputs(prev => {
@@ -160,7 +166,18 @@ export default function SourceInput({ onCross, isLoading, prefill, register = 's
   }, [updateInput])
 
   // ── Voice recording (Web Speech API — fully client-side, sovereign) ──────
+  const stopVoiceRecording = useCallback(() => {
+    try { recognitionRef.current?.abort() } catch { /* ignore */ }
+    recognitionRef.current = null
+    setRecordingIndex(null)
+  }, [])
+
   const startVoiceRecording = useCallback((index: number) => {
+    // If already recording, abort cleanly
+    if (recognitionRef.current) {
+      stopVoiceRecording()
+      return
+    }
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const W = window as any
     const SpeechRecognitionCtor = W.SpeechRecognition || W.webkitSpeechRecognition
@@ -169,23 +186,63 @@ export default function SourceInput({ onCross, isLoading, prefill, register = 's
       return
     }
     const recognition = new SpeechRecognitionCtor()
-    recognition.lang = lang === 'en' ? 'en-US' : 'fr-FR'
+    recognitionRef.current = recognition
+    recognition.lang = lang === 'en' ? 'en-US'
+      : lang === 'fr' ? 'fr-FR'
+      : lang === 'de' ? 'de-DE'
+      : lang === 'es' ? 'es-ES'
+      : lang === 'pt' ? 'pt-BR'
+      : lang === 'it' ? 'it-IT'
+      : lang === 'ja' ? 'ja-JP'
+      : lang === 'ko' ? 'ko-KR'
+      : lang === 'hi' ? 'hi-IN'
+      : lang === 'id' ? 'id-ID'
+      : lang === 'ar' ? 'ar-SA' : 'en-US'
     recognition.interimResults = false
     recognition.maxAlternatives = 1
     recognition.continuous = false
     setRecordingIndex(index)
+    setError(null)
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     recognition.onresult = (event: any) => {
       const transcript = event.results?.[0]?.[0]?.transcript || ''
       if (transcript.trim()) {
         updateInput(index, transcript.trim())
       }
+      recognitionRef.current = null
       setRecordingIndex(null)
     }
-    recognition.onerror = () => { setRecordingIndex(null) }
-    recognition.onend = () => { setRecordingIndex(null) }
-    recognition.start()
-  }, [lang, updateInput])
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    recognition.onerror = (event: any) => {
+      const errType = event.error || 'unknown'
+      let msg = ''
+      if (errType === 'not-allowed') {
+        msg = lang === 'en' 
+          ? 'Microphone permission denied. Please allow microphone access in your browser settings.'
+          : 'Accès microphone refusé. Veuillez autoriser le micro dans les réglages de votre navigateur.'
+      } else if (errType === 'no-speech') {
+        msg = lang === 'en' ? 'No speech detected. Try speaking louder or closer.' : 'Aucune voix détectée. Parlez plus fort ou plus près.'
+      } else if (errType === 'audio-capture') {
+        msg = lang === 'en' ? 'No microphone found. Please check your hardware.' : 'Aucun microphone détecté. Vérifiez votre matériel.'
+      } else {
+        msg = lang === 'en' ? `Voice capture error: ${errType}` : `Erreur de capture vocale : ${errType}`
+      }
+      setError(msg)
+      recognitionRef.current = null
+      setRecordingIndex(null)
+    }
+    recognition.onend = () => {
+      recognitionRef.current = null
+      setRecordingIndex(null)
+    }
+    try {
+      recognition.start()
+    } catch (e) {
+      setError(lang === 'en' ? 'Could not start microphone.' : 'Impossible de démarrer le microphone.')
+      recognitionRef.current = null
+      setRecordingIndex(null)
+    }
+  }, [lang, updateInput, stopVoiceRecording])
 
   // ── File upload (drag & drop / click) ───────────────────────────────────
   const handleFileUpload = useCallback(async (index: number, file: File) => {
@@ -377,20 +434,58 @@ export default function SourceInput({ onCross, isLoading, prefill, register = 's
             {/* Mic button */}
             <button
               onClick={() => {
-                if (recordingVecu) { setRecordingVecu(false); return }
+                // If already recording — abort cleanly
+                if (recordingVecu) {
+                  try { resonanceRecognitionRef.current?.abort() } catch { /* ignore */ }
+                  resonanceRecognitionRef.current = null
+                  setRecordingVecu(false)
+                  return
+                }
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 const W = window as any
                 const Ctor = W.SpeechRecognition || W.webkitSpeechRecognition
                 if (!Ctor) { setResonanceError(lang === 'en' ? 'Voice not supported' : 'Voix non supportée'); return }
                 const r = new Ctor()
+                resonanceRecognitionRef.current = r
                 r.lang = lang === 'en' ? 'en-US' : lang === 'fr' ? 'fr-FR' : lang === 'de' ? 'de-DE' : lang === 'es' ? 'es-ES' : lang === 'pt' ? 'pt-BR' : lang === 'it' ? 'it-IT' : lang === 'ja' ? 'ja-JP' : lang === 'ko' ? 'ko-KR' : lang === 'hi' ? 'hi-IN' : lang === 'id' ? 'id-ID' : lang === 'ar' ? 'ar-SA' : 'en-US'
                 r.interimResults = false; r.continuous = false
+                setResonanceError(null)
                 setRecordingVecu(true)
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                r.onresult = (e: any) => { const txt = e.results?.[0]?.[0]?.transcript || ''; if (txt) setVecu(prev => prev ? prev + ' ' + txt : txt); setRecordingVecu(false) }
-                r.onerror = () => setRecordingVecu(false)
-                r.onend = () => setRecordingVecu(false)
-                r.start()
+                r.onresult = (e: any) => {
+                  const txt = e.results?.[0]?.[0]?.transcript || ''
+                  if (txt) setVecu(prev => prev ? prev + ' ' + txt : txt)
+                  resonanceRecognitionRef.current = null
+                  setRecordingVecu(false)
+                }
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                r.onerror = (event: any) => {
+                  const errType = event.error || 'unknown'
+                  let msg = ''
+                  if (errType === 'not-allowed') {
+                    msg = lang === 'en' 
+                      ? 'Microphone permission denied.'
+                      : 'Accès microphone refusé.'
+                  } else if (errType === 'no-speech') {
+                    msg = lang === 'en' ? 'No speech detected.' : 'Aucune voix détectée.'
+                  } else if (errType === 'audio-capture') {
+                    msg = lang === 'en' ? 'No microphone found.' : 'Aucun microphone détecté.'
+                  } else {
+                    msg = lang === 'en' ? `Mic error: ${errType}` : `Erreur micro : ${errType}`
+                  }
+                  setResonanceError(msg)
+                  resonanceRecognitionRef.current = null
+                  setRecordingVecu(false)
+                }
+                r.onend = () => {
+                  resonanceRecognitionRef.current = null
+                  setRecordingVecu(false)
+                }
+                try { r.start() } catch {
+                  setResonanceError(lang === 'en' ? 'Could not start microphone.' : 'Impossible de démarrer le microphone.')
+                  resonanceRecognitionRef.current = null
+                  setRecordingVecu(false)
+                }
               }}
               disabled={resonanceLoading}
               className={recordingVecu ? 'tel-voice-recording' : ''}
@@ -790,7 +885,7 @@ export default function SourceInput({ onCross, isLoading, prefill, register = 's
 
                 <div className="flex items-center gap-1">
                   <button
-                    onClick={() => recordingIndex === i ? setRecordingIndex(null) : startVoiceRecording(i)}
+                    onClick={() => recordingIndex === i ? stopVoiceRecording() : startVoiceRecording(i)}
                     title={lang === 'en' ? 'Voice' : 'Voix'}
                     style={{
                       display: 'flex', alignItems: 'center', gap: '5px',

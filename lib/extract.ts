@@ -97,7 +97,7 @@ async function extractYouTube(url: string): Promise<{ title: string; content: st
   } catch { /* ignore */ }
 
   return {
-    title,
+    title: `${title} ⚠️ [Métadonnées]`,
     content: `[Note: Transcription non disponible — croisement basé sur les métadonnées YouTube. Niveau de confiance réduit.]\n\nTitre : ${title}\n\nDescription : ${description}\n\nIdentifiant vidéo : ${videoId}\nURL : ${url}`,
   }
 }

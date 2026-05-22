@@ -4,6 +4,7 @@
 // Ces croisements illustrent la vision : des vécus qui ne se seraient jamais rencontrés.
 
 import type { InsightCard, MapPoint, MapArc } from './types'
+import dynamicCrossing from './dynamic-crossing.json'
 
 // ─── Helper ───────────────────────────────────────────────────────────────────
 
@@ -604,6 +605,9 @@ export const DEMO_BIAIS_SURVIVANTS: InsightCard = {
 // ─── Collection complète ───────────────────────────────────────────────────────
 
 export const ALL_DEMO_CROSSINGS: InsightCard[] = [
+  ...(dynamicCrossing && (dynamicCrossing as Record<string, unknown>).theme
+    ? [{ ...(dynamicCrossing as unknown as InsightCard), createdAt: new Date((dynamicCrossing as { createdAt: string }).createdAt) }]
+    : []),
   DEMO_BIAIS_SURVIVANTS,
   DEMO_MOUMOUE_LUMUMBA,
   DEMO_BOHR_HOPI,
