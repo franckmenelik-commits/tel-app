@@ -44,31 +44,53 @@ async function runAutoCrosser() {
     if (!topIdsRes.ok) throw new Error(`HN API error: ${topIdsRes.statusText}`)
     const topIds = await topIdsRes.json()
 
-    // Grab a few candidates and select two that have external URLs
-    const inputs: string[] = []
-    for (let i = 0; i < 15 && inputs.length < 2; i++) {
+    // Grab up to 8 candidate URLs
+    const candidates: string[] = []
+    for (let i = 0; i < 20 && candidates.length < 8; i++) {
       const storyRes = await fetch(`https://hacker-news.firebaseio.com/v0/item/${topIds[i]}.json`)
       if (storyRes.ok) {
         const story = await storyRes.json()
         if (story.url && (story.url.startsWith('http://') || story.url.startsWith('https://'))) {
-          inputs.push(story.url)
+          candidates.push(story.url)
           console.log(`  ✓ Candidat trouvé : ${story.title} (${story.url})`)
         }
       }
     }
 
-    if (inputs.length < 2) {
-      console.warn('⚠️ Moins de 2 articles avec URL trouvés. Utilisation de termes de secours...')
-      inputs.push('https://en.wikipedia.org/wiki/Artificial_general_intelligence')
-      inputs.push('https://en.wikipedia.org/wiki/Philosophy_of_mind')
+    // Try crossing candidate pairs until one succeeds
+    let success = false
+    let result: any = null
+    let inputs: string[] = []
+
+    // Try adjacent pairs first: (0,1), (2,3), (4,5), etc.
+    for (let idx = 0; idx < candidates.length - 1; idx += 2) {
+      inputs = [candidates[idx], candidates[idx + 1]]
+      console.log(`⏳ Essai de croisement entre : \n  1. ${inputs[0]} \n  2. ${inputs[1]}`)
+      try {
+        result = await crossNarratives(inputs, 'exploration', {
+          onStatus: (statut) => console.log(`  [SOUFFLE] Modèles actifs : ${statut.niveauxActifs.join(', ')}`),
+          onCrossingStart: (niveau) => console.log(`  [SOUFFLE] Démarrage Niveau ${niveau}`),
+        }, 'fr')
+        success = true
+        break
+      } catch (crossErr) {
+        console.warn(`⚠️ Échec du croisement pour la paire [${idx}, ${idx+1}] :`, crossErr instanceof Error ? crossErr.message : crossErr)
+      }
     }
 
-    // 2. Perform the narrative crossing
-    console.log(`⏳ Lancement du croisement SOUFFLE N2 entre : \n  1. ${inputs[0]} \n  2. ${inputs[1]}`)
-    const result = await crossNarratives(inputs, 'exploration', {
-      onStatus: (statut) => console.log(`  [SOUFFLE] Modèles actifs : ${statut.niveauxActifs.join(', ')}`),
-      onCrossingStart: (niveau) => console.log(`  [SOUFFLE] Démarrage Niveau ${niveau}`),
-    }, 'fr')
+    // Fallback to Wikipedia if no HN pairs succeeded
+    if (!success) {
+      console.warn('⚠️ Aucun croisement d\'articles HN n\'a réussi. Utilisation des URLs de secours Wikipedia...')
+      inputs = [
+        'https://en.wikipedia.org/wiki/Artificial_general_intelligence',
+        'https://en.wikipedia.org/wiki/Philosophy_of_mind'
+      ]
+      console.log(`⏳ Lancement du croisement de secours entre : \n  1. ${inputs[0]} \n  2. ${inputs[1]}`)
+      result = await crossNarratives(inputs, 'exploration', {
+        onStatus: (statut) => console.log(`  [SOUFFLE] Modèles actifs : ${statut.niveauxActifs.join(', ')}`),
+        onCrossingStart: (niveau) => console.log(`  [SOUFFLE] Démarrage Niveau ${niveau}`),
+      }, 'fr')
+    }
 
     const insight = result.insight
     insight.id = `dynamic-daily-crossing`
@@ -80,7 +102,7 @@ async function runAutoCrosser() {
     console.log(`🎉 Croisement dynamique quotidien écrit avec succès dans : ${outputPath}`)
 
   } catch (err) {
-    console.error('❌ L\'Auto-Croiseur a échoué:', err instanceof Error ? err.message : err)
+    console.error('❌ L\'Auto-Croiseur a échoué définitivement:', err instanceof Error ? err.message : err)
     process.exit(1)
   }
 }

@@ -1,58 +1,58 @@
 {
   "id": "dynamic-daily-crossing",
-  "theme": "Système Cloud et dépendance aux services tiers",
+  "theme": "Collaboration open-source",
   "sources": [
     {
-      "url": "https://blog.railway.com/p/incident-report-may-19-2026-gcp-account-outage",
+      "url": "https://github.com/bikini/exploitarium",
       "type": "article",
-      "title": "Incident Report: May 19, 2026- GCP Account Suspension",
+      "title": "GitHub - bikini/exploitarium: A single archive of public exploit PoCs and vulnerability research writeups. At the time I post these, none have been reported. Feel free to report them yourself and take",
       "geographicContext": "Indéterminé",
       "geographicConfidence": 30
     },
     {
-      "url": "https://pvk.ca/Blog/2014/03/15/sbcl-the-ultimate-assembly-code-breadboard/",
+      "url": "https://www.openra.net/",
       "type": "article",
-      "title": "Paul Khuong: some Lisp",
+      "title": "OpenRA",
       "geographicContext": "Indéterminé",
       "geographicConfidence": 30
     }
   ],
-  "revealedPattern": "Une erreur de Google Cloud a entraîné une interruption globale des services d'une entreprise, mettant en évidence la dépendance croissante des entreprises à l'utilisation de services cloud et les risques associés.",
+  "revealedPattern": "Les deux sources illustrent une dynamique de partage communautaire : Exploitarium centralise des recherches de vulnérabilités partagées, tandis qu'OpenRA intègre des améliorations guidées par la communauté, montrant comment l'open-source favorise l'innovation collective dans des domaines techniques et créatifs.",
   "convergenceZones": [
-    "La suspension inattendue du compte Google Cloud a entraîné une interruption de service pour toutes les applications hébergées sur la plateforme",
-    "Les problèmes rencontrés ont été exacerbés par le fait que l'entreprise dépendait également d'un contrôleur API hébergé sur Google Cloud pour fonctionner"
+    "Utilisation de plateformes collaboratives (GitHub pour Exploitarium, modding communautaire pour OpenRA)",
+    "Contribution de développeurs indépendants à des projets open-source"
   ],
   "divergenceZones": [
-    "Le fait que les workloads de l'entreprise étaient également hébergées sur des environnements locaux et AWS a permis à certaines applications de continuer à fonctionner pendant la période d'interruption",
-    "La différence entre le code machine pour les instructions Lisp a été mentionnée, mais n'a pas eu d'impact sur le sens de l'instruction"
+    "Exploitarium se concentre sur la sécurité informatique (exploits techniques), OpenRA sur le développement de jeux (modifications et équilibrage)",
+    "Objectifs divergents : découverte de failles vs. amélioration ludique"
   ],
   "globalConfidence": 65,
-  "geographicRepresentativity": "Régions non spécifiées",
-  "theUnspeakable": "Les dépendances croissantes des entreprises aux services cloud peuvent entraîner des risques majeurs en cas de problèmes techniques ou de suspension de compte",
-  "questionNoOneHasAsked": "Quel est le niveau optimal de diversification des environnements d'hébergement pour minimiser les risques associés à la dépendance aux services cloud ?",
+  "geographicRepresentativity": "Communautés internationales",
+  "theUnspeakable": "L'impact à long terme de ces collaborations sur l'innovation technologique et culturelle",
+  "questionNoOneHasAsked": "Comment ces modèles de partage pourraient-ils influencer l'avenir de l'IA ou des jeux éducatifs ?",
   "sourceCoordinates": [
     {
-      "lat": 0,
-      "lng": 0,
-      "region": "Région non spécifiée"
+      "lat": 48.8566,
+      "lng": 2.3522,
+      "region": "France"
     }
   ],
-  "createdAt": "2026-05-20T18:25:32.967Z",
+  "createdAt": "2026-06-27T17:57:53.480Z",
   "anglesMorts": {
     "anglesDetectes": [
       {
         "type": "silence",
-        "description": "Aucune mention des mécanismes de réversion ou de bascule (fallback) mis en place par l'entreprise pour limiter l'impact de la suspension GCP, malgré la critique de la dépendance aux services tiers.",
-        "suggestion": "Ajouter une analyse technique des architectures de résilience (multi-cloud, on-premise fallback) évoquées dans des sources comme les RFC de Paul Khuong ou des retours d'expérience d'ingénierie."
+        "description": "Aucune mention des risques liés à la centralisation de vulnérabilités non rapportées dans Exploitarium, ni des mécanismes de modération communautaire dans OpenRA pour éviter les contributions malveillantes ou biaisées.",
+        "suggestion": "Ajouter une analyse des politiques de signalement des vulnérabilités (CVE) dans Exploitarium et des processus de validation des contributions dans OpenRA."
       }
     ],
     "scoreEquilibre": 60,
     "perspectivesManquantes": [
-      "Perspective des équipes DevOps/Infrastructure ayant géré la crise en temps réel (logs, décisions d'urgence, communication interne)"
+      "Perspective juridique sur la responsabilité des mainteneurs open-source face à des vulnérabilités non corrigées"
     ],
     "questionsEvitees": [
-      "Pourquoi l'entreprise n'a pas anticipé ce risque via des tests de chaos engineering ou des audits de dépendances critiques ?"
+      "Comment les communautés open-source gèrent-elles les conflits d'intérêt ou les contributions sponsorisées non déclarées ?"
     ]
   },
-  "engine": "SOUFFLE N1 - Local Sovereign"
+  "engine": "SOUFFLE N2 - Deep Traversée"
 }

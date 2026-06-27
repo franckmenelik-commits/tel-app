@@ -5,6 +5,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { useLanguage, t } from '@/lib/i18n'
+import Header from '@/components/Header'
 import { REFERENCE_TEXTS } from '@/lib/reference-texts'
 import { PRELOADED_AUDITS } from '@/lib/preloaded-audits'
 import { SHIELD_TARGETS } from '@/lib/shield-templates'
@@ -272,43 +273,7 @@ export default function AuditPage() {
     <main style={{ background: BG, minHeight: '100vh', color: TEXT_PRIMARY }}>
 
       {/* ── Header ── */}
-      <header style={{
-        padding: '20px 40px',
-        borderBottom: `1px solid ${BORDER}`,
-        position: 'sticky',
-        top: 0,
-        background: BG,
-        zIndex: 50,
-      }}>
-        <div style={{ maxWidth: '900px', margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <a href="/" style={{
-            fontWeight: 600,
-            fontSize: '15px',
-            letterSpacing: '0.2em',
-            color: '#ffffff',
-            textTransform: 'uppercase' as const,
-            textDecoration: 'none',
-          }}>
-            TEL
-          </a>
-          <nav style={{ display: 'flex', gap: '24px' }}>
-            {[
-              { href: '/legends', label: t('nav.legends', lang) },
-              { href: '/education', label: t('nav.education', lang) },
-              { href: '/manifesto', label: t('nav.manifesto', lang) },
-              { href: '/careers', label: t('nav.careers', lang) },
-            ].map(link => (
-              <a
-                key={link.href}
-                href={link.href}
-                style={{ fontSize: '12px', color: '#666666', textDecoration: 'none' }}
-              >
-                {link.label}
-              </a>
-            ))}
-          </nav>
-        </div>
-      </header>
+      <Header />
 
       <div style={{ maxWidth: '900px', margin: '0 auto', padding: '64px 40px 120px' }}>
 

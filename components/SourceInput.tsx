@@ -347,7 +347,7 @@ export default function SourceInput({ onCross, isLoading, prefill, register = 's
               background: 'none',
               border: 'none',
               borderBottom: mode === tab.key ? `2px solid ${GOLD}` : '2px solid transparent',
-              color: mode === tab.key ? GOLD : '#444',
+              color: mode === tab.key ? GOLD : '#888',
               cursor: 'pointer',
               transition: 'all 200ms ease',
               marginBottom: '-1px',
@@ -361,7 +361,7 @@ export default function SourceInput({ onCross, isLoading, prefill, register = 's
       {/* ── Mode Croise-moi ── */}
       {mode === 'resonate' && (
         <div>
-          <p style={{ fontSize: '12px', color: '#444', lineHeight: 1.6, marginBottom: '16px', fontStyle: 'italic' }}>
+          <p style={{ fontSize: '12px', color: '#888', lineHeight: 1.6, marginBottom: '16px', fontStyle: 'italic' }}>
             {t('resonate.desc', lang)}
           </p>
           {isBookVecu ? (
@@ -652,7 +652,7 @@ export default function SourceInput({ onCross, isLoading, prefill, register = 's
               </div>
 
               {/* Indicible */}
-              <p style={{ fontSize: '12px', color: '#444', fontStyle: 'italic', lineHeight: 1.6, textAlign: 'center' as const, padding: '0 16px' }}>
+              <p style={{ fontSize: '12px', color: '#777', fontStyle: 'italic', lineHeight: 1.6, textAlign: 'center' as const, padding: '0 16px' }}>
                 {resonanceResult.indicible}
               </p>
             </div>
@@ -675,7 +675,7 @@ export default function SourceInput({ onCross, isLoading, prefill, register = 's
         ].map(({ mode, example }) => (
           <span key={mode} className="flex items-center gap-1">
             <span style={{ color: getModeColor(mode) }}>{getModeIcon(mode)}</span>
-            <span style={{ color: '#444' }}>{getLangModeLabel(mode)}</span>
+            <span style={{ color: '#888' }}>{getLangModeLabel(mode)}</span>
             <span style={{ color: '#2a2a2a' }}>— {example}</span>
           </span>
         ))}
@@ -1154,7 +1154,7 @@ export default function SourceInput({ onCross, isLoading, prefill, register = 's
                 }}
               />
             </div>
-            <span style={{ fontSize: '10px', color: isEmpiricalMode ? '#e0e0e0' : '#444', transition: 'color 200ms ease', letterSpacing: '0.05em' }}>
+            <span style={{ fontSize: '10px', color: isEmpiricalMode ? '#e0e0e0' : '#777', transition: 'color 200ms ease', letterSpacing: '0.05em' }}>
               🧪 {lang === 'en' ? 'Empirical Audit Mode (Omi)' : 'Mode Audit Empirique (Omi)'}
             </span>
           </button>

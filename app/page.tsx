@@ -13,7 +13,7 @@ import CrossingSpheres from '@/components/CrossingSpheres'
 import SourceInput from '@/components/SourceInput'
 import InsightCard from '@/components/InsightCard'
 import EnrichissementPanel from '@/components/EnrichissementPanel'
-import AuthModal from '@/components/AuthModal'
+import Header from '@/components/Header'
 import { ALL_DEMO_CROSSINGS } from '@/lib/demo-crossings'
 import type {
   InsightCard as InsightCardType,
@@ -30,7 +30,7 @@ import type {
 } from '@/lib/types'
 import { detecterResonances, detecterResonancesGlobales, sauvegarderSession, chargerSession } from '@/lib/memoire'
 import { useLanguage, t } from '@/lib/i18n'
-import LanguageSelector from '@/components/LanguageSelector'
+
 
 // Canvas — no SSR
 const LiveMap = dynamic(() => import('@/components/LiveMap'), { ssr: false })
@@ -118,10 +118,7 @@ export default function TELPage() {
   const [pendingContexte, setPendingContexte] = useState<SouffleContexte>('exploration')
   const [isEmpiricalMode, setIsEmpiricalMode] = useState(false)
 
-  // ── Auth state ─────────────────────────────────────────────────────────────
-  const [user, setUser] = useState<string | null>(null)
-  const [showAuthModal, setShowAuthModal] = useState(false)
-  const [showUserMenu, setShowUserMenu] = useState(false)
+
 
   // ── Demo carousel — 3 random crossings per session ─────────────────────────
   const [demoCards, setDemoCards] = useState<typeof ALL_DEMO_CROSSINGS>([])
@@ -142,13 +139,14 @@ export default function TELPage() {
   const sessionHistoryRef = useRef<SessionCrossing[]>([])
   sessionHistoryRef.current = sessionHistory
 
-  // ── Load session + auth from localStorage on mount ─────────────────────────
   useEffect(() => {
     const saved = chargerSession()
     if (saved.length > 0) setSessionHistory(saved)
     try {
-      const savedUser = localStorage.getItem('tel:user:email')
-      if (savedUser) setUser(savedUser)
+      if (sessionStorage.getItem('tel:sidebar:open') === 'true') {
+        sessionStorage.removeItem('tel:sidebar:open')
+        setShowingSidebar(true)
+      }
     } catch { /* ok */ }
   }, [])
 
@@ -233,18 +231,7 @@ export default function TELPage() {
     return () => clearInterval(interval)
   }, [appState, isDiscoveryMode])
 
-  // ── Auth handlers ──────────────────────────────────────────────────────────
-  const handleLogin = useCallback((email: string) => {
-    setUser(email)
-    setShowAuthModal(false)
-    try { localStorage.setItem('tel:user:email', email) } catch { /* ok */ }
-  }, [])
 
-  const handleLogout = useCallback(() => {
-    setUser(null)
-    setShowUserMenu(false)
-    try { localStorage.removeItem('tel:user:email') } catch { /* ok */ }
-  }, [])
 
   // ── Discovery mode (single source) ────────────────────────────────────────
   const runDiscovery = useCallback(async (source: string) => {
@@ -559,17 +546,7 @@ export default function TELPage() {
   const demoSourceB = demo.sources[1]
   const demoQuestion = (lang === 'en' && demo.questionNoOneHasAskedEN) ? demo.questionNoOneHasAskedEN : demo.questionNoOneHasAsked
   const demoTheme = (lang === 'en' && demo.themeEN) ? demo.themeEN : demo.theme
-  const [showExplorer, setShowExplorer] = useState(false)
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
-  useEffect(() => {
-    if (!showExplorer) return
-    const close = (e: MouseEvent) => {
-      if (!(e.target as Element).closest('[data-explorer]')) setShowExplorer(false)
-    }
-    document.addEventListener('mousedown', close)
-    return () => document.removeEventListener('mousedown', close)
-  }, [showExplorer])
   const [prefillSources, setPrefillSources] = useState<string[]>([])
 
   return (
@@ -630,172 +607,16 @@ export default function TELPage() {
         </div>
       )}
 
-      {/* ── Auth Modal ── */}
-      {showAuthModal && (
-        <AuthModal onLogin={handleLogin} onClose={() => setShowAuthModal(false)} />
-      )}
-
       {/* ── Main layout ── */}
       <div className="relative z-10 min-h-screen flex flex-col">
 
         {/* ─── Header ──────────────────────────────────────────────────── */}
-        <header className="flex-shrink-0 px-6 py-4 md:px-10 md:py-5">
-          <div className="flex items-center justify-between">
-            <button
-              onClick={handleReset}
-              style={{ background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', padding: 0 }}
-            >
-              <span
-                style={{
-                  fontWeight: 500,
-                  fontSize: '15px',
-                  letterSpacing: '0.2em',
-                  color: '#ffffff',
-                  textTransform: 'uppercase',
-                }}
-              >
-                TEL
-              </span>
-            </button>
-
-            <div className="flex items-center gap-2">
-              <LanguageSelector />
-              {/* Nav — desktop: Explorer dropdown + Manifeste */}
-              <nav className="hidden md:flex items-center" style={{ marginRight: '8px', gap: '20px' }}>
-                {/* Explorer dropdown */}
-                <div
-                  data-explorer
-                  style={{ position: 'relative' }}
-                >
-                  <button
-                    onClick={() => setShowExplorer(v => !v)}
-                    style={{ fontSize: '12px', color: '#666666', background: 'none', border: 'none', cursor: 'pointer', transition: 'color 200ms ease', padding: 0 }}
-                    onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = '#888' }}
-                    onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = '#666666' }}
-                  >
-                    {t('nav.explore', lang)} ▾
-                  </button>
-                  {showExplorer && (
-                    <div style={{
-                      position: 'absolute', top: 'calc(100% + 8px)', left: '-12px',
-                      background: '#111113', border: '1px solid rgba(255,255,255,0.071)',
-                      borderRadius: '8px', padding: '6px', minWidth: '160px', zIndex: 50,
-                    }}>
-                      {[
-                        { href: '/legends', label: t('nav.legends', lang) },
-                        { href: '/education', label: t('nav.education', lang) },
-                        { href: '/audit', label: t('nav.audit', lang) },
-                        { href: '/initiative', label: t('nav.initiative', lang) },
-                        { href: '/careers', label: t('nav.careers', lang) },
-                      ].map(link => (
-                        <a
-                          key={link.href}
-                          href={link.href}
-                          style={{
-                            display: 'block', padding: '8px 12px', fontSize: '12px',
-                            color: '#666', textDecoration: 'none', borderRadius: '6px',
-                            transition: 'all 200ms ease',
-                          }}
-                          onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.031)'; e.currentTarget.style.color = '#e0e0e0' }}
-                          onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#666' }}
-                        >
-                          {link.label}
-                        </a>
-                      ))}
-                    </div>
-                  )}
-                </div>
-                <a
-                  href="/manifesto"
-                  style={{ fontSize: '12px', color: '#666666', textDecoration: 'none', transition: 'color 200ms ease' }}
-                  onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.color = '#888' }}
-                  onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.color = '#666666' }}
-                >
-                  {t('nav.manifesto', lang)}
-                </a>
-              </nav>
-
-              {/* Mobile hamburger */}
-              <button
-                className="md:hidden"
-                onClick={() => setMobileMenuOpen(v => !v)}
-                style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#666', fontSize: '1.2rem', padding: '4px' }}
-              >
-                {mobileMenuOpen ? '✕' : '☰'}
-              </button>
-
-              {/* Session history */}
-              <button
-                onClick={() => setShowingSidebar(!showingSidebar)}
-                className="tel-ghost-btn"
-                style={{ fontSize: '12px' }}
-              >
-                {t('nav.history', lang)}{sessionHistory.length > 0 ? ` (${sessionHistory.length})` : ''}
-              </button>
-
-              {/* Auth */}
-              {user ? (
-                <div style={{ position: 'relative' }}>
-                  <button
-                    onClick={() => setShowUserMenu(v => !v)}
-                    className="tel-ghost-btn"
-                    style={{ fontSize: '12px', maxWidth: '160px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
-                  >
-                    {user}
-                  </button>
-                  {showUserMenu && (
-                    <div
-                      style={{
-                        position: 'absolute', right: 0, top: 'calc(100% + 6px)',
-                        background: '#111113', border: '1px solid rgba(255,255,255,0.047)',
-                        borderRadius: '8px', padding: '4px', minWidth: '140px', zIndex: 50,
-                      }}
-                    >
-                      <button
-                        onClick={handleLogout}
-                        style={{
-                          width: '100%', textAlign: 'left', padding: '8px 12px',
-                          background: 'none', border: 'none', cursor: 'pointer',
-                          color: '#888', fontSize: '12px', borderRadius: '6px',
-                          transition: 'background 200ms ease',
-                        }}
-                        onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.031)' }}
-                        onMouseLeave={e => { e.currentTarget.style.background = 'none' }}
-                      >
-                        {t('nav.signout', lang)}
-                      </button>
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <button
-                  onClick={() => setShowAuthModal(true)}
-                  className="tel-ghost-btn"
-                  style={{ fontSize: '12px' }}
-                >
-                  {t('nav.signin', lang)}
-                </button>
-              )}
-            </div>
-          </div>
-        </header>
-
-        {/* Mobile nav menu */}
-        {mobileMenuOpen && (
-          <div className="md:hidden" style={{ background: '#111113', borderBottom: '1px solid rgba(255,255,255,0.047)', padding: '12px 24px 16px' }}>
-            {[
-              { href: '/legends', label: t('nav.legends', lang) },
-              { href: '/education', label: t('nav.education', lang) },
-              { href: '/audit', label: t('nav.audit', lang) },
-              { href: '/careers', label: t('nav.careers', lang) },
-              { href: '/manifesto', label: t('nav.manifesto', lang) },
-            ].map(link => (
-              <a key={link.href} href={link.href} style={{ display: 'block', padding: '10px 0', fontSize: '13px', color: '#888', textDecoration: 'none', borderBottom: '1px solid rgba(255,255,255,0.031)' }}>
-                {link.label}
-              </a>
-            ))}
-          </div>
-        )}
+        <Header
+          showingSidebar={showingSidebar}
+          setShowingSidebar={setShowingSidebar}
+          sessionHistoryCount={sessionHistory.length}
+          onLogoClick={handleReset}
+        />
 
         {/* ─── Central content ──────────────────────────────────────────── */}
         <div className="flex-1">

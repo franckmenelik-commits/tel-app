@@ -4,6 +4,7 @@
 // app/audit/[slug]/page.tsx — Rapport d'audit partagé
 
 import { useParams, useRouter } from 'next/navigation'
+import Header from '@/components/Header'
 import { useEffect, useState } from 'react'
 import type { AuditReport } from '@/app/api/audit/route'
 
@@ -114,15 +115,7 @@ export default function SharedAuditPage() {
     <main style={{ background: BG, minHeight: '100vh', color: TEXT_PRIMARY }}>
 
       {/* Header */}
-      <header style={{ padding: '20px 40px', borderBottom: `1px solid ${BORDER}`, position: 'sticky', top: 0, background: BG, zIndex: 50 }}>
-        <div style={{ maxWidth: '720px', margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <a href="/" style={{ fontWeight: 600, fontSize: '15px', letterSpacing: '0.2em', color: '#ffffff', textTransform: 'uppercase', textDecoration: 'none' }}>TEL</a>
-          <button onClick={() => router.push('/audit')}
-            style={{ fontSize: '12px', color: '#666', background: 'none', border: 'none', cursor: 'pointer', fontFamily: '-apple-system, BlinkMacSystemFont, system-ui, sans-serif' }}>
-            ← Audit
-          </button>
-        </div>
-      </header>
+      <Header />
 
       <div style={{ maxWidth: '720px', margin: '0 auto', padding: '64px 40px 120px' }}>
 

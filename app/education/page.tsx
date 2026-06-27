@@ -6,6 +6,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { useLanguage, t } from '@/lib/i18n'
+import Header from '@/components/Header'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -323,20 +324,7 @@ export default function EducationPage() {
       <main className="min-h-screen" style={{ background: '#0A0A0F', color: '#F5ECD7' }}>
 
         {/* ── Top bar ── */}
-        <header className="sticky top-0 z-10 flex items-center justify-between px-6 py-4 no-print"
-          style={{ background: 'rgba(10,10,15,0.96)', borderBottom: '1px solid rgba(201,168,76,0.08)', backdropFilter: 'blur(20px)' }}>
-          <button onClick={() => router.push('/')}
-            className="flex items-center gap-2 text-xs transition-all duration-200"
-            style={{ color: '#333', fontFamily: 'ui-monospace, monospace', background: 'none', border: 'none', cursor: 'pointer' }}
-            onMouseEnter={e => { e.currentTarget.style.color = '#C9A84C' }}
-            onMouseLeave={e => { e.currentTarget.style.color = '#333' }}>
-            ← TEL
-          </button>
-          <span className="text-xs uppercase tracking-widest" style={{ color: '#222', fontFamily: 'ui-monospace, monospace', letterSpacing: '0.22em' }}>
-            {t('edu.header', lang)}
-          </span>
-          <div style={{ width: '60px' }} />
-        </header>
+        <Header />
 
         <div className="max-w-3xl mx-auto px-6 py-14">
 

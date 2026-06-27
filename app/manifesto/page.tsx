@@ -1,7 +1,5 @@
-// TEL — The Experience Layer
-// app/manifesto/page.tsx — Static manifesto page
-
 import Link from 'next/link'
+import Header from '@/components/Header'
 
 export const metadata = {
   title: 'Manifeste — TEL',
@@ -13,39 +11,7 @@ export default function ManifestoPage() {
     <main style={{ background: '#09090b', minHeight: '100vh', color: '#e0e0e0' }}>
 
       {/* ── Header ── */}
-      <header style={{ padding: '20px 40px', borderBottom: '1px solid rgba(255,255,255,0.047)' }}>
-        <div style={{ maxWidth: '720px', margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <Link
-            href="/"
-            style={{
-              fontWeight: 500,
-              fontSize: '15px',
-              letterSpacing: '0.2em',
-              color: '#ffffff',
-              textTransform: 'uppercase' as const,
-              textDecoration: 'none',
-            }}
-          >
-            TEL
-          </Link>
-          <nav style={{ display: 'flex', gap: '24px' }}>
-            {[
-              { href: '/legends', label: 'Légendes' },
-              { href: '/education', label: 'Éducation' },
-              { href: '/audit', label: 'Audit' },
-              { href: '/careers', label: 'Métiers' },
-            ].map(link => (
-              <Link
-                key={link.href}
-                href={link.href}
-                style={{ fontSize: '12px', color: '#666666', textDecoration: 'none' }}
-              >
-                {link.label}
-              </Link>
-            ))}
-          </nav>
-        </div>
-      </header>
+      <Header />
 
       {/* ── Content ── */}
       <article

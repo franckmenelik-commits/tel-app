@@ -579,9 +579,9 @@ export default function InsightCard({
           <button
             onClick={onClose}
             className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center no-print"
-            style={{ border: `1px solid ${BORDER}`, color: '#444', background: 'transparent', fontSize: '1rem', cursor: 'pointer', transition: 'all 200ms ease' }}
-            onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.12)'; e.currentTarget.style.color = TEXT_MUTED }}
-            onMouseLeave={(e) => { e.currentTarget.style.borderColor = BORDER; e.currentTarget.style.color = '#444' }}
+            style={{ border: `1px solid ${BORDER}`, color: '#888', background: 'transparent', fontSize: '1rem', cursor: 'pointer', transition: 'all 200ms ease' }}
+            onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.12)'; e.currentTarget.style.color = TEXT_PRIMARY }}
+            onMouseLeave={(e) => { e.currentTarget.style.borderColor = BORDER; e.currentTarget.style.color = '#888' }}
             title={t('card.close', L)}
           >×</button>
         </div>

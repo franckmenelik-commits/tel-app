@@ -5,6 +5,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import Header from '@/components/Header'
 import { FOUNDATIONAL_CROSSINGS } from '@/lib/legends-data'
 import type { InsightCard as InsightCardType } from '@/lib/types'
 
@@ -373,33 +374,7 @@ export default function LegendsPage() {
     <main style={{ background: '#09090b', minHeight: '100vh', color: TEXT_PRIMARY }}>
 
       {/* Header */}
-      <header style={{ padding: '20px 40px', borderBottom: `1px solid ${BORDER}` }}>
-        <div style={{ maxWidth: '720px', margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <Link
-            href="/"
-            style={{
-              fontWeight: 500, fontSize: '15px', letterSpacing: '0.2em',
-              color: '#ffffff', textTransform: 'uppercase', textDecoration: 'none',
-            }}
-          >
-            TEL
-          </Link>
-          <nav style={{ display: 'flex', gap: '24px', alignItems: 'center' }}>
-            {[
-              { href: '/education', label: 'Éducation' },
-              { href: '/manifesto', label: 'Manifeste' },
-            ].map(link => (
-              <Link
-                key={link.href}
-                href={link.href}
-                style={{ fontSize: '12px', color: '#666', textDecoration: 'none' }}
-              >
-                {link.label}
-              </Link>
-            ))}
-          </nav>
-        </div>
-      </header>
+      <Header />
 
       {/* Hero */}
       <section style={{ maxWidth: '720px', margin: '0 auto', padding: '64px 40px 48px' }}>

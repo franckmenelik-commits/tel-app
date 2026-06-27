@@ -188,7 +188,7 @@ button {
 
 /* ── Scroll fade-in (controlled by JS/GSAP) ── */
 .tel-animate {
-  opacity: 0;
+  opacity: 1; /* Par défaut visible pour résilience mobile/sans-JS */
 }
 .tel-animate.tel-visible {
   opacity: 1;
